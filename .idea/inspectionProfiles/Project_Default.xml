@@ -1,0 +1,49 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="fiscalyear" />
+          <option value="datefinder" />
+          <option value="boto3" />
+          <option value="confluent-kafka" />
+          <option value="jira" />
+          <option value="PyJWT" />
+          <option value="python-Levenshtein" />
+          <option value="phpserialize" />
+          <option value="kafka-python" />
+          <option value="secure-cookie" />
+          <option value="pandas-highcharts" />
+          <option value="wheel" />
+          <option value="odfpy" />
+          <option value="pytesseract" />
+          <option value="nltk" />
+          <option value="Pdf2image" />
+          <option value="python-docx" />
+          <option value="pdfplumber" />
+          <option value="phonenumbers" />
+          <option value="pydig" />
+          <option value="redis" />
+          <option value="lessc" />
+          <option value="mysql-connector" />
+          <option value="html2text" />
+          <option value="gspread" />
+          <option value="invoice2data" />
+          <option value="camelot-py" />
+          <option value="regex" />
+          <option value="opencv-python-headless" />
+          <option value="pdftotext" />
+          <option value="qifparse" />
+          <option value="playwright" />
+          <option value="pytest" />
+          <option value="pytest-playwright" />
+          <option value="pytest-html" />
+          <option value="pytest-json-report" />
+          <option value="pywebpush" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

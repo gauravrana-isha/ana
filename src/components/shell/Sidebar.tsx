@@ -56,6 +56,7 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-[13px] px-3.5 py-3 rounded-[12px] transition-all duration-250",

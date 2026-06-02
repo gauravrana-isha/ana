@@ -37,6 +37,7 @@ export function MobileTabBar() {
           <Link
             key={n.href}
             href={n.href}
+            prefetch={true}
             className="relative flex flex-col items-center flex-1 pt-2"
             aria-current={isActive ? "page" : undefined}
           >
