@@ -65,3 +65,12 @@ body {
     var(--bg);
   min-height: 100dvh;
 }
+
+/* === Hide scrollbar for scroll wheels === */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

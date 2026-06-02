@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ListChecks,
   Compass,
@@ -40,35 +40,23 @@ export function MobileTabBar() {
             className="relative flex flex-col items-center flex-1 pt-2"
             aria-current={isActive ? "page" : undefined}
           >
-            {/* Icon with pop animation */}
-            <motion.div
-              animate={isActive ? { scale: 1 } : { scale: 1 }}
-              className="relative z-[1]"
-            >
-              <AnimatePresence mode="wait">
-                {isActive ? (
-                  <motion.div
-                    key="filled"
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.5, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 25, duration: 0.25 }}
-                  >
-                    <Icon size={26} weight="fill" className="text-accent" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="thin"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <Icon size={24} weight="thin" className="text-ink-soft" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+            {/* Icon with pop animation on active */}
+            <div className="relative z-[1]">
+              {isActive ? (
+                <motion.div
+                  key="filled"
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  <Icon size={26} weight="fill" className="text-accent" />
+                </motion.div>
+              ) : (
+                <div>
+                  <Icon size={24} weight="thin" className="text-ink-soft" />
+                </div>
+              )}
+            </div>
 
             {/* Label */}
             <span
@@ -79,15 +67,6 @@ export function MobileTabBar() {
             >
               {n.label}
             </span>
-
-            {/* Active dot indicator */}
-            {isActive && (
-              <motion.div
-                layoutId="tab-dot"
-                className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-accent"
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
           </Link>
         );
       })}
