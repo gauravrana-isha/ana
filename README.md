@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ana
+
+A personal Sadhana journal for Sadhanapada participants. A digital companion to your physical practice journal — warm, still, contemplative.
+
+**Not** a productivity app. No streaks, badges, points, or guilt metrics.
+
+## Features
+
+- **Tracker** — log daily practices with custom inputs (time, count, minutes, done toggle, icon scale)
+- **Daily Reflection** — 7 contemplative prompts with voice input, symbol stamps, and mood slider
+- **Weekly Reflection + Digest** — 9 prompts (including seva) + data-driven weekly summary with sparklines
+- **Expressions** — freeform rich-text writing with Tiptap editor
+- **Themes** — Contemplative Dark and Digital Parchment (light)
+- **PWA** — installable, works offline with IndexedDB mutation queue
+- **Custom time/number pickers** — no native browser UI, fully themed
+
+## Tech Stack
+
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 16 (App Router, TypeScript) |
+| Styling | Tailwind CSS v4 + CSS variables |
+| Icons | @phosphor-icons/react (thin weight) |
+| Motion | Framer Motion |
+| Database | PostgreSQL (Neon) via Prisma v5 |
+| State | TanStack React Query |
+| Editor | Tiptap |
+| Offline | idb-keyval + service worker |
+| Deploy | Vercel |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your DATABASE_URL and AUTH_SECRET
+
+# Push database schema
+npx prisma db push
+
+# Generate Prisma client
+npx prisma generate
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) — you'll land on onboarding.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string (Neon recommended) |
+| `AUTH_SECRET` | Secret for session cookies |
 
-## Learn More
+## Build & Deploy
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Production build (includes prisma generate)
+npm run build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Start production server
+npm start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Deployed on Vercel with auto-deploy on push to `main`.
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── (shell)/          # Pages with navigation (tracker, daily, weekly, etc.)
+│   ├── onboarding/       # First-launch flow
+│   └── api/              # Route handlers (days, daily, weekly, practices, etc.)
+├── components/
+│   ├── shell/            # Sidebar, MobileTabBar, Topbar
+│   ├── tracker/          # PracticeRow, FieldInput, WeeklyTable, TimePicker
+│   ├── reflection/       # PromptCard, MicButton, StampRow, MoodPicker
+│   ├── weekly/           # Sparkline, TendedRow
+│   ├── expressions/      # TiptapEditor
+│   ├── ui/               # Toast, DatePicker, Skeleton, Loader
+│   └── art/              # Lotus (logo)
+├── lib/
+│   ├── db.ts             # Prisma client
+│   ├── session.ts        # User resolution from cookie
+│   ├── queries.ts        # React Query hooks
+│   ├── dates.ts          # Date utilities
+│   ├── defaults.ts       # Default practice definitions
+│   ├── digest.ts         # Digest template engine
+│   └── offlineQueue.ts   # IndexedDB mutation queue
+└── prisma/
+    └── schema.prisma     # Database schema
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Design Principles
+
+- The journal, alive — warm, still, contemplative
+- No gamification, scores, or compliance metrics
+- Template-based digest — no AI-generated text
+- Offline-first — mutations queue in IndexedDB
+- Every icon is Phosphor (thin weight) — no emojis

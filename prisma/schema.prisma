@@ -1,0 +1,106 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String?   @unique
+  deviceId    String?   @unique
+  theme       Theme     @default(DARK)
+  onboardedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  practices          Practice[]
+  dayLogs            DayLog[]
+  dailyReflections   DailyReflection[]
+  weeklyReflections  WeeklyReflection[]
+  sevaEntries        SevaEntry[]
+  expressions        Expression[]
+}
+
+enum Theme {
+  DARK
+  LIGHT
+}
+
+enum Tier {
+  FIXED
+  CUSTOM
+}
+
+model Practice {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  iconName      String
+  tier          Tier
+  hasDoneToggle Boolean  @default(true)
+  order         Int
+  fields        Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, order])
+}
+
+model DayLog {
+  id      String   @id @default(cuid())
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date    DateTime @db.Date
+  entries Json
+
+  @@unique([userId, date])
+}
+
+model DailyReflection {
+  id      String   @id @default(cuid())
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date    DateTime @db.Date
+  answers Json
+  stamps  Json
+  moodKey String?
+
+  @@unique([userId, date])
+}
+
+model WeeklyReflection {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart DateTime @db.Date
+  answers   Json
+  stamps    Json
+
+  @@unique([userId, weekStart])
+}
+
+model SevaEntry {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+  s1     String
+  s2     String
+  s3     String
+}
+
+model Expression {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  date      DateTime @db.Date
+  kind      String
+  body      String
+  refDates  Json
+  createdAt DateTime @default(now())
+}

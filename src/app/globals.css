@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* === Tailwind v4 Theme Configuration === */
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-nav: var(--nav);
+  --color-good: var(--good);
+  --color-line-chart: var(--line-chart);
+
+  --font-hand: var(--font-caveat), cursive;
+  --font-serif: var(--font-crimson), Georgia, serif;
+  --font-ui: var(--font-inter), sans-serif;
+
+  --radius-9: 9px;
+  --radius-14: 14px;
+  --radius-16: 16px;
+  --radius-20: 20px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* === ANA Design Tokens === */
+:root,
+[data-theme="dark"] {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --surface-2: #222222;
+  --line: #2c2c2c;
+  --ink: #f5f0e8;
+  --ink-soft: #9c948a;
+  --accent: #c4956a;
+  --accent-soft: rgba(196, 149, 106, 0.14);
+  --nav: #141414;
+  --good: #7fa87f;
+  --line-chart: #c4956a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme="light"] {
+  --bg: #faf6f0;
+  --surface: #fffdf9;
+  --surface-2: #f3ece1;
+  --line: #e8ddcd;
+  --ink: #2a2a2a;
+  --ink-soft: #8a8175;
+  --accent: #c2622d;
+  --accent-soft: rgba(194, 98, 45, 0.1);
+  --nav: #fffdf9;
+  --good: #6b9a6b;
+  --line-chart: #c2622d;
+}
+
+/* === Base Styles === */
+html {
+  background-color: var(--bg);
+  color: var(--ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: radial-gradient(140% 70% at 50% -10%, var(--accent-soft), transparent 55%),
+    var(--bg);
+  min-height: 100dvh;
 }
