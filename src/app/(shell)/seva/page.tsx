@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MicButton } from "@/components/reflection/MicButton";
 
 const SEVA_PROMPTS = [
   { key: "s1", q: "What is my current level of intensity in seva?" },
@@ -65,7 +64,6 @@ export default function SevaPage() {
               maxLength={2000}
               rows={2}
             />
-            <MicButton
               onTranscript={(text) =>
                 handleChange(prompt.key, form[prompt.key as keyof typeof form] + text)
               }

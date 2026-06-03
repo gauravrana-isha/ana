@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { ConnectivityIndicator } from "@/components/shell/ConnectivityIndicator";
+import { ThemeColor } from "@/components/shell/ThemeColor";
 import { ToastProvider } from "@/components/ui/Toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
+        <ThemeColor />
         <ConnectivityIndicator />
         {children}
       </ToastProvider>

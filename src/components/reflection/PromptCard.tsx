@@ -1,6 +1,5 @@
 "use client";
 
-import { MicButton } from "./MicButton";
 import { StampRow } from "./StampRow";
 
 interface PromptCardProps {
@@ -22,10 +21,6 @@ export function PromptCard({
   onAnswerChange,
   onStampToggle,
 }: PromptCardProps) {
-  function handleTranscript(text: string) {
-    onAnswerChange(answer + text);
-  }
-
   return (
     <div className="rounded-16 p-5 mb-3.5 bg-surface">
       <div className="flex gap-3 items-start">
@@ -54,7 +49,6 @@ export function PromptCard({
             target.style.height = target.scrollHeight + "px";
           }}
         />
-        <MicButton onTranscript={handleTranscript} />
       </div>
       <div className="ml-[34px]">
         <StampRow selected={stamps} onToggle={onStampToggle} />
