@@ -17,10 +17,25 @@ export default function SettingsPage() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme") as "dark" | "light";
     if (current) setTheme(current);
+
+    // Check if already logged in
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.email) {
+          setLoggedIn(true);
+          setUsername(data.email);
+        } else if (data?.onboarded) {
+          setLoggedIn(true);
+          setUsername("Anonymous");
+        }
+      })
+      .catch(() => {});
   }, []);
 
   function handleThemeChange(newTheme: "dark" | "light") {
@@ -201,7 +216,11 @@ export default function SettingsPage() {
       <section>
         <h2 className="font-hand text-[22px] text-accent mb-3">Account</h2>
         {loggedIn ? (
-          <p className="font-ui text-sm text-good">Signed in ✓</p>
+          <div className="space-y-2">
+            <p className="font-ui text-sm text-ink">
+              Signed in as <span className="text-accent font-medium">{username}</span>
+            </p>
+          </div>
         ) : authMode === "idle" ? (
           <div className="flex gap-3">
             <button
