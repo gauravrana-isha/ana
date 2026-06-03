@@ -64,10 +64,6 @@ export default function SevaPage() {
               maxLength={2000}
               rows={2}
             />
-              onTranscript={(text) =>
-                handleChange(prompt.key, form[prompt.key as keyof typeof form] + text)
-              }
-            />
           </div>
         </div>
       ))}
