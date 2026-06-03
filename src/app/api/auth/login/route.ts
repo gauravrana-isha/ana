@@ -32,11 +32,12 @@ export async function POST(req: NextRequest) {
 
   // Set cookie
   const cookieStore = await cookies();
-  cookieStore.set("ana-device-id", user.deviceId, {
+  cookieStore.set("ana-device-id", user.deviceId!, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
+    secure: process.env.NODE_ENV === "production",
   });
 
   return NextResponse.json({ ok: true, userId: user.id });

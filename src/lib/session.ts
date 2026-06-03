@@ -43,6 +43,7 @@ export async function getOrCreateDeviceUser(): Promise<{ userId: string; deviceI
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
+    secure: process.env.NODE_ENV === "production",
   });
 
   return { userId: user.id, deviceId, isNew: true };

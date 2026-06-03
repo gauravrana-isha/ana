@@ -110,7 +110,10 @@ export default function OnboardingPage() {
             : "Sign in to continue where you left off."}
         </p>
 
-        <div className="w-full max-w-[320px] space-y-3 mt-4">
+        <form
+          className="w-full max-w-[320px] space-y-3 mt-4"
+          onSubmit={(e) => { e.preventDefault(); handleCreateAccount(); }}
+        >
           <input
             type="text"
             placeholder="Username"
@@ -130,7 +133,7 @@ export default function OnboardingPage() {
             <p className="font-ui text-xs text-accent text-center">{authError}</p>
           )}
           <button
-            onClick={handleCreateAccount}
+            type="submit"
             disabled={!username.trim() || password.length < 4 || authLoading}
             className="w-full py-3 rounded-14 bg-accent text-bg font-ui text-sm font-medium
                        disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
@@ -139,6 +142,7 @@ export default function OnboardingPage() {
           </button>
 
           <button
+            type="button"
             onClick={() => { setAuthMode(authMode === "register" ? "login" : "register"); setAuthError(""); }}
             className="w-full py-2 font-ui text-xs text-accent hover:underline transition-colors"
           >
@@ -146,12 +150,13 @@ export default function OnboardingPage() {
           </button>
 
           <button
+            type="button"
             onClick={() => setStep("practices")}
             className="w-full py-2 font-ui text-xs text-ink-soft hover:text-ink transition-colors"
           >
             Skip — use without account
           </button>
-        </div>
+        </form>
       </div>
     );
   }
