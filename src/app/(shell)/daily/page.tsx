@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { Ornament } from "@/components/art/Ornament";
+
+import { useState, useCallback, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FloppyDisk, PencilSimple, SmileyMelting, Smiley, SmileyMeh, SmileyNervous, SmileySad } from "@phosphor-icons/react";
+import { FloppyDisk, PencilSimple } from "@phosphor-icons/react";
 import { ButtonLoader } from "@/components/ui/Loader";
+import { Busy } from "@/components/ui/Busy";
+import { MoodBadge, type MoodKey } from "@/components/art/MoodFace";
 import { PromptCard } from "@/components/reflection/PromptCard";
 import { MoodPicker } from "@/components/reflection/MoodPicker";
-import { Swirl } from "@/components/art/Swirl";
 import { ReflectionSkeleton } from "@/components/ui/Skeleton";
 import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
@@ -22,7 +26,17 @@ const DAILY_PROMPTS = [
 ];
 
 export default function DailyPage() {
-  const [date] = useState(today());
+  return (
+    <Suspense fallback={<ReflectionSkeleton />}>
+      <DailyContent />
+    </Suspense>
+  );
+}
+
+function DailyContent() {
+  // ?date=YYYY-MM-DD opens an earlier day (e.g. from search); otherwise today.
+  const param = useSearchParams().get("date");
+  const [date] = useState(() => (param && /^\d{4}-\d{2}-\d{2}$/.test(param) && param <= today() ? param : today()));
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -108,14 +122,12 @@ export default function DailyPage() {
           <p className="font-serif italic text-lg leading-[1.6] text-ink">
             &ldquo;{quoteData.quote}&rdquo;
           </p>
-          <div className="flex justify-center my-4">
-            <Swirl className="text-ink-soft" />
-          </div>
+          <Ornament name="divider" width={220} className="mx-auto my-6 text-ink-soft/40" />
         </div>
       )}
 
       {/* Title */}
-      <h2 className="font-hand text-[22px] text-accent mb-4">Reflection</h2>
+      <h2 className="font-display text-[19px] font-semibold text-ink mb-4">Reflection</h2>
 
       {showSavedView ? (
         /* Saved view — show answers as read-only cards with edit button */
@@ -127,7 +139,7 @@ export default function DailyPage() {
             return (
               <div key={prompt.key} className="rounded-16 p-5 mb-3.5 bg-surface relative">
                 <div className="flex gap-3 items-start">
-                  <span className="font-hand text-2xl leading-none text-accent shrink-0 min-w-[22px]">
+                  <span className="font-ui text-[13px] font-semibold leading-[1.9] text-ink-soft/70 shrink-0 min-w-[22px] tabular">
                     {prompt.key}
                   </span>
                   <div className="flex-1">
@@ -155,7 +167,7 @@ export default function DailyPage() {
           {/* Edit button */}
           <button
             onClick={() => setEditing(true)}
-            className="fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8
+            className="ana-fab fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8
                        w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
                        shadow-[0_6px_16px_var(--accent-soft)] z-20"
             aria-label="Edit reflection"
@@ -165,7 +177,7 @@ export default function DailyPage() {
         </>
       ) : (
         /* Edit view — input cards */
-        <>
+        <Busy busy={mutation.isPending}>
           {DAILY_PROMPTS.map((prompt) => (
             <PromptCard
               key={prompt.key}
@@ -189,7 +201,7 @@ export default function DailyPage() {
             <button
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending}
-              className="fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8
+              className="ana-fab fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8
                          w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
                          shadow-[0_6px_16px_var(--accent-soft)] z-20
                          disabled:opacity-50 transition-opacity"
@@ -198,19 +210,12 @@ export default function DailyPage() {
               {mutation.isPending ? <ButtonLoader /> : <FloppyDisk size={22} weight="thin" />}
             </button>
           )}
-        </>
+        </Busy>
       )}
     </div>
   );
 }
 
 function MoodIcon({ mood }: { mood: string }) {
-  const icons: Record<string, React.ReactNode> = {
-    blissful: <SmileyMelting size={20} weight="fill" className="text-accent" />,
-    content: <Smiley size={20} weight="fill" className="text-accent" />,
-    neutral: <SmileyMeh size={20} weight="fill" className="text-accent" />,
-    agitated: <SmileyNervous size={20} weight="fill" className="text-accent" />,
-    low: <SmileySad size={20} weight="fill" className="text-accent" />,
-  };
-  return <>{icons[mood] ?? null}</>;
+  return ["low", "agitated", "neutral", "content", "blissful"].includes(mood) ? <MoodBadge k={mood as MoodKey} size={30} /> : null;
 }

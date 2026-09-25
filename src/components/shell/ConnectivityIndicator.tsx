@@ -1,22 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { WifiSlash, ArrowsClockwise } from "@phosphor-icons/react";
 import { getQueueSize } from "@/lib/offlineQueue";
 
 export function ConnectivityIndicator() {
-  const [online, setOnline] = useState(true);
+  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const [queueSize, setQueueSize] = useState(0);
 
   useEffect(() => {
-    setOnline(navigator.onLine);
-
-    const goOnline = () => setOnline(true);
-    const goOffline = () => setOnline(false);
-
-    window.addEventListener("online", goOnline);
-    window.addEventListener("offline", goOffline);
-
     // Check queue size periodically
     const interval = setInterval(async () => {
       const size = await getQueueSize();
@@ -24,8 +16,6 @@ export function ConnectivityIndicator() {
     }, 5000);
 
     return () => {
-      window.removeEventListener("online", goOnline);
-      window.removeEventListener("offline", goOffline);
       clearInterval(interval);
     };
   }, []);
@@ -48,4 +38,13 @@ export function ConnectivityIndicator() {
       )}
     </div>
   );
+}
+
+function subscribeOnline(cb: () => void) {
+  window.addEventListener("online", cb);
+  window.addEventListener("offline", cb);
+  return () => {
+    window.removeEventListener("online", cb);
+    window.removeEventListener("offline", cb);
+  };
 }

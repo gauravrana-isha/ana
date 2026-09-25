@@ -9,19 +9,100 @@ datasource db {
 }
 
 model User {
-  id          String    @id @default(cuid())
-  email       String?   @unique
-  deviceId    String?   @unique
-  theme       Theme     @default(DARK)
-  onboardedAt DateTime?
-  createdAt   DateTime  @default(now())
+  id            String     @id @default(cuid())
+  name          String?
+  email         String?    @unique
+  emailVerified DateTime?
+  image         String?
+  /// Legacy (pre-Google) accounts only. Cleared once the account is claimed.
+  deviceId      String?    @unique
+  role          Role       @default(MEMBER)
+  status        UserStatus @default(PENDING)
+  intention     String?
+  theme         Theme      @default(LIGHT)
+  onboardedAt   DateTime?
+  approvedAt    DateTime?
+  approvedById  String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
 
-  practices          Practice[]
-  dayLogs            DayLog[]
-  dailyReflections   DailyReflection[]
-  weeklyReflections  WeeklyReflection[]
-  sevaEntries        SevaEntry[]
-  expressions        Expression[]
+  accounts          Account[]
+  sessions          Session[]
+  features          UserFeature[]
+  practices         Practice[]
+  dayLogs           DayLog[]
+  dailyReflections  DailyReflection[]
+  weeklyReflections WeeklyReflection[]
+  sevaEntries       SevaEntry[]
+  expressions       Expression[]
+  Person            Person[]
+  Attachment        Attachment[]
+  Commitment        Commitment[]
+
+  @@index([status])
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+/// Which features a user can reach. Feature definitions live in src/lib/features.ts.
+/// A feature is available when the admin allows it AND the user has turned it on.
+model UserFeature {
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature     String
+  allowed     Boolean  @default(true)
+  enabled     Boolean  @default(true)
+  updatedById String?
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@id([userId, feature])
+}
+
+// === Auth.js (Google sign-in) ===
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
 }
 
 enum Theme {
@@ -40,6 +121,8 @@ model Practice {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name          String
   iconName      String
+  /// Id in src/lib/practiceCatalog.ts for library practices; null for custom ones.
+  catalogId     String?
   tier          Tier
   hasDoneToggle Boolean  @default(true)
   order         Int
@@ -93,14 +176,88 @@ model SevaEntry {
   s3     String
 }
 
+/// A moment (formerly "expression"): writing, audio, video or photo, at a date and time,
+/// optionally with people. `date` is kept for older entries; `occurredAt` is the real time.
 model Expression {
-  id        String   @id @default(cuid())
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  date        DateTime           @db.Date
+  occurredAt  DateTime?
+  kind        String
+  body        String
+  place       String?
+  stamps      Json?
+  lookBackOn  DateTime?          @db.Date
+  refDates    Json
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @default(now()) @updatedAt
+  people      ExpressionPerson[]
+  attachments Attachment[]
+
+  @@index([userId, occurredAt])
+}
+
+model Person {
+  id        String             @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  date      DateTime @db.Date
-  kind      String
-  body      String
-  refDates  Json
-  createdAt DateTime @default(now())
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  relation  String?
+  howMet    String?
+  birthday  DateTime?          @db.Date
+  notes     String?
+  photoId   String?            @unique
+  photo     Attachment?        @relation("PersonPhoto", fields: [photoId], references: [id], onDelete: SetNull)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @default(now()) @updatedAt
+  moments   ExpressionPerson[]
+
+  @@index([userId, name])
+}
+
+model ExpressionPerson {
+  expressionId String
+  personId     String
+  expression   Expression @relation(fields: [expressionId], references: [id], onDelete: Cascade)
+  person       Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([expressionId, personId])
+  @@index([personId])
+}
+
+/// A stored file. `storage` is "blob" (Vercel Blob, private) or "local" (dev only).
+model Attachment {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expressionId String?
+  expression   Expression? @relation(fields: [expressionId], references: [id], onDelete: Cascade)
+  kind         String
+  storage      String
+  pathname     String      @unique
+  contentType  String
+  size         Int
+  durationSec  Float?
+  createdAt    DateTime    @default(now())
+  personPhoto  Person?     @relation("PersonPhoto")
+
+  @@index([userId])
+  @@index([expressionId])
+}
+
+/// A letter of commitment to oneself, not tied to any program. Rewriting keeps the old ones.
+model Commitment {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body         String
+  /// "monthly" | "quarterly" | "never"
+  revisit      String    @default("monthly")
+  revisitedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  supersededAt DateTime?
+
+  @@index([userId, createdAt])
 }

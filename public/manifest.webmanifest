@@ -1,14 +1,16 @@
 {
-  "name": "ana — sadhana journal",
+  "name": "ana \u2014 sadhana journal",
   "short_name": "ana",
-  "description": "Your practice, alive.",
-  "start_url": "/tracker",
+  "description": "Your sadhana, and the moments and people worth keeping.",
+  "start_url": "/today?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#0f0f0f",
-  "background_color": "#faf6f0",
-  "categories": ["lifestyle", "health"],
+  "theme_color": "#fbf8f2",
+  "background_color": "#fbf8f2",
+  "categories": [
+    "lifestyle",
+    "health"
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -23,10 +25,61 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/logo.png",
+      "src": "/icons/maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "id": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "shortcuts": [
+    {
+      "name": "Today",
+      "url": "/today?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Tracker",
+      "url": "/tracker?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "New moment",
+      "short_name": "Moment",
+      "url": "/expressions?new=1",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Daily reflection",
+      "short_name": "Reflect",
+      "url": "/daily?source=shortcut",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,738 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-25T08:02:43.287263+00:00",
+  "title": "Design System: ana",
+  "extensions": {
+    "colorMeta": {
+      "cream-paper": {
+        "role": "neutral",
+        "displayName": "Cream Paper",
+        "canonical": "#fbf8f2",
+        "oklch": "oklch(98.0% 0.009 85)",
+        "tonalRamp": [
+          "#0d0b07",
+          "#26241f",
+          "#423f3b",
+          "#605d58",
+          "#807d78",
+          "#a19e98",
+          "#c7c4be",
+          "#f1eee8"
+        ],
+        "theme": "light",
+        "cssVar": "--bg"
+      },
+      "cream-card": {
+        "role": "neutral",
+        "displayName": "Cream Card",
+        "canonical": "#f3ecdd",
+        "oklch": "oklch(94.5% 0.021 86)",
+        "tonalRamp": [
+          "#0f0a03",
+          "#292318",
+          "#453f33",
+          "#635d50",
+          "#837d6f",
+          "#a49e90",
+          "#cac3b5",
+          "#f5eedf"
+        ],
+        "theme": "light",
+        "cssVar": "--surface"
+      },
+      "cream-card-deep": {
+        "role": "neutral",
+        "displayName": "Deep Cream",
+        "canonical": "#eae1cd",
+        "oklch": "oklch(91.2% 0.028 87)",
+        "tonalRamp": [
+          "#100a01",
+          "#2a2314",
+          "#463f2f",
+          "#655d4c",
+          "#857c6a",
+          "#a69e8b",
+          "#ccc3b0",
+          "#f7eeda"
+        ],
+        "theme": "light",
+        "cssVar": "--surface-2"
+      },
+      "parchment-line": {
+        "role": "neutral",
+        "displayName": "Parchment Line",
+        "canonical": "#e2d8c2",
+        "oklch": "oklch(88.4% 0.031 86)",
+        "tonalRamp": [
+          "#110a00",
+          "#2b2312",
+          "#473f2d",
+          "#655d49",
+          "#857c68",
+          "#a79e89",
+          "#cdc3ae",
+          "#f8eed7"
+        ],
+        "theme": "light",
+        "cssVar": "--line"
+      },
+      "nav-cream": {
+        "role": "neutral",
+        "displayName": "Nav Cream",
+        "canonical": "#f7f2e7",
+        "oklch": "oklch(96.2% 0.016 86)",
+        "tonalRamp": [
+          "#0e0b05",
+          "#27241c",
+          "#433f37",
+          "#615d54",
+          "#817d73",
+          "#a39e94",
+          "#c8c4b9",
+          "#f3eee3"
+        ],
+        "theme": "light",
+        "cssVar": "--nav"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#18160f",
+        "oklch": "oklch(20.0% 0.014 94)",
+        "tonalRamp": [
+          "#0d0b05",
+          "#26241d",
+          "#424038",
+          "#605e55",
+          "#807d74",
+          "#a19e95",
+          "#c7c4ba",
+          "#f1eee4"
+        ],
+        "theme": "light",
+        "cssVar": "--ink"
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "canonical": "#686152",
+        "oklch": "oklch(49.5% 0.025 86)",
+        "tonalRamp": [
+          "#100a02",
+          "#292316",
+          "#463f31",
+          "#645d4e",
+          "#847d6d",
+          "#a59e8d",
+          "#cbc3b2",
+          "#f6eedc"
+        ],
+        "theme": "light",
+        "cssVar": "--ink-soft"
+      },
+      "isha-teal": {
+        "role": "primary",
+        "displayName": "Isha Teal",
+        "canonical": "#2f6b5e",
+        "oklch": "oklch(48.4% 0.066 177)",
+        "tonalRamp": [
+          "#00130b",
+          "#002e23",
+          "#054b3f",
+          "#2e6a5d",
+          "#4f8a7d",
+          "#70ac9e",
+          "#96d3c3",
+          "#bffeee"
+        ],
+        "theme": "light",
+        "cssVar": "--accent"
+      },
+      "saffron": {
+        "role": "secondary",
+        "displayName": "Isha Saffron",
+        "canonical": "#f37021",
+        "oklch": "oklch(69.2% 0.181 46)",
+        "tonalRamp": [
+          "#350000",
+          "#590000",
+          "#7d0800",
+          "#a13400",
+          "#c7570e",
+          "#ed7a3d",
+          "#ffa064",
+          "#ffcb8f"
+        ],
+        "theme": "light",
+        "cssVar": "--saffron"
+      },
+      "good": {
+        "role": "status",
+        "displayName": "Good",
+        "canonical": "#3f7a55",
+        "oklch": "oklch(52.9% 0.086 155)",
+        "tonalRamp": [
+          "#001400",
+          "#002f0f",
+          "#0b4c2a",
+          "#306c48",
+          "#518c66",
+          "#72ae87",
+          "#98d5ac",
+          "#c1ffd5"
+        ],
+        "theme": "light",
+        "cssVar": "--good"
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Danger",
+        "canonical": "#9a3b3b",
+        "oklch": "oklch(48.4% 0.128 23)",
+        "tonalRamp": [
+          "#2f0000",
+          "#520001",
+          "#75171d",
+          "#993a3a",
+          "#bd5b58",
+          "#e37c78",
+          "#ffa29d",
+          "#ffccc6"
+        ],
+        "theme": "light",
+        "cssVar": "--danger"
+      },
+      "night-paper": {
+        "role": "neutral",
+        "displayName": "Night Paper",
+        "canonical": "#13120e",
+        "oklch": "oklch(18.2% 0.008 95)",
+        "tonalRamp": [
+          "#0c0b08",
+          "#252420",
+          "#41403b",
+          "#5f5e59",
+          "#7f7d78",
+          "#a09e99",
+          "#c5c4be",
+          "#f0eee9"
+        ],
+        "theme": "dark",
+        "cssVar": "--bg"
+      },
+      "night-card": {
+        "role": "neutral",
+        "displayName": "Night Card",
+        "canonical": "#1d1b16",
+        "oklch": "oklch(22.3% 0.010 89)",
+        "tonalRamp": [
+          "#0d0b07",
+          "#26241f",
+          "#42403a",
+          "#605d57",
+          "#807d77",
+          "#a19e98",
+          "#c7c4bd",
+          "#f1eee7"
+        ],
+        "theme": "dark",
+        "cssVar": "--surface"
+      },
+      "night-card-deep": {
+        "role": "neutral",
+        "displayName": "Night Deep Card",
+        "canonical": "#27241d",
+        "oklch": "oklch(26.1% 0.013 88)",
+        "tonalRamp": [
+          "#0e0b05",
+          "#27241d",
+          "#433f38",
+          "#615d55",
+          "#817d74",
+          "#a29e95",
+          "#c8c4bb",
+          "#f2eee5"
+        ],
+        "theme": "dark",
+        "cssVar": "--surface-2"
+      },
+      "night-line": {
+        "role": "neutral",
+        "displayName": "Night Line",
+        "canonical": "#36322a",
+        "oklch": "oklch(31.9% 0.015 85)",
+        "tonalRamp": [
+          "#0e0b05",
+          "#27241c",
+          "#433f37",
+          "#615d54",
+          "#817d73",
+          "#a39e94",
+          "#c9c4ba",
+          "#f3eee4"
+        ],
+        "theme": "dark",
+        "cssVar": "--line"
+      },
+      "lamplight-ink": {
+        "role": "neutral",
+        "displayName": "Lamplight Ink",
+        "canonical": "#f1eadb",
+        "oklch": "oklch(93.8% 0.021 86)",
+        "tonalRamp": [
+          "#0f0a03",
+          "#292318",
+          "#453f33",
+          "#635d50",
+          "#837d6f",
+          "#a49e90",
+          "#cac3b5",
+          "#f5eedf"
+        ],
+        "theme": "dark",
+        "cssVar": "--ink"
+      },
+      "lamplight-ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Lamplight Ink",
+        "canonical": "#a69d8b",
+        "oklch": "oklch(69.9% 0.028 85)",
+        "tonalRamp": [
+          "#110a01",
+          "#2a2314",
+          "#473f2f",
+          "#655d4c",
+          "#857c6b",
+          "#a69d8b",
+          "#ccc3b0",
+          "#f7edda"
+        ],
+        "theme": "dark",
+        "cssVar": "--ink-soft"
+      },
+      "night-teal": {
+        "role": "primary",
+        "displayName": "Night Teal",
+        "canonical": "#7dbfae",
+        "oklch": "oklch(75.5% 0.072 176)",
+        "tonalRamp": [
+          "#00130a",
+          "#002e23",
+          "#004c3e",
+          "#286b5c",
+          "#4a8b7c",
+          "#6cad9d",
+          "#91d4c2",
+          "#bbffed"
+        ],
+        "theme": "dark",
+        "cssVar": "--accent"
+      },
+      "night-saffron": {
+        "role": "secondary",
+        "displayName": "Night Saffron",
+        "canonical": "#f58a45",
+        "oklch": "oklch(73.8% 0.154 51)",
+        "tonalRamp": [
+          "#330000",
+          "#560000",
+          "#791400",
+          "#9d3a00",
+          "#c25c00",
+          "#e87e38",
+          "#ffa461",
+          "#ffcf8b"
+        ],
+        "theme": "dark",
+        "cssVar": "--saffron"
+      },
+      "isha-teal-wash": {
+        "role": "primary",
+        "displayName": "Teal Wash",
+        "canonical": "rgba(47, 107, 94, 0.1)",
+        "cssVar": "--accent-soft",
+        "theme": "light"
+      },
+      "night-teal-wash": {
+        "role": "primary",
+        "displayName": "Night Teal Wash",
+        "canonical": "rgba(125, 191, 174, 0.13)",
+        "cssVar": "--accent-soft",
+        "theme": "dark"
+      },
+      "night-nav": {
+        "role": "neutral",
+        "displayName": "Night Nav",
+        "canonical": "#17160f",
+        "cssVar": "--nav",
+        "theme": "dark"
+      },
+      "night-good": {
+        "role": "status",
+        "displayName": "Night Good",
+        "canonical": "#8db88f",
+        "cssVar": "--good",
+        "theme": "dark"
+      },
+      "night-danger": {
+        "role": "status",
+        "displayName": "Night Danger",
+        "canonical": "#e08a7e",
+        "cssVar": "--danger",
+        "theme": "dark"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page title in the top bar; 28px phones, 34px desktop."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Opening sentence of sign-in and onboarding steps (30-36px)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section, chart, moment and sheet titles (18-20px; sheets 24px)."
+      },
+      "quote": {
+        "displayName": "Quote",
+        "purpose": "Fraunces italic; the daily quote, page leads, empty-state invitations (14-17px; Today quote card 20-24px)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Lead paragraphs and descriptions; inputs at 16px."
+      },
+      "body-strong": {
+        "displayName": "Body Strong",
+        "purpose": "Row titles, button and nav labels."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Dates, meta, form labels; tabular figures."
+      },
+      "micro": {
+        "displayName": "Micro",
+        "purpose": "Tab-bar labels, mood-grid weekday letters and week dates, the ⌘K key cap."
+      },
+      "journal": {
+        "displayName": "Journal",
+        "purpose": "Fraunces roman for what the person wrote: moment bodies, the commitment letter, notes (16-19.5px, 1.65-1.8)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-soft",
+        "value": "0 1px 2px rgba(24,22,15,0.04), 0 8px 24px -12px rgba(24,22,15,0.12)",
+        "dark": "0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5)",
+        "purpose": "Primary and Google buttons; raised segmented-control thumb."
+      },
+      {
+        "name": "shadow-lift",
+        "value": "0 2px 4px rgba(24,22,15,0.05), 0 18px 40px -16px rgba(24,22,15,0.22)",
+        "dark": "0 2px 4px rgba(0,0,0,0.35), 0 18px 40px -16px rgba(0,0,0,0.6)",
+        "purpose": "Floating layers on paper over the ink scrim: sheets, search dialog, More sheet, picker dropdowns, overflow menus."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Press, switch thumb and all movement."
+      },
+      {
+        "name": "press",
+        "value": "transform 160ms ease-out-expo; scale(0.97) on :active",
+        "purpose": "Tactile press on anything that acts like a button; off under reduced motion."
+      },
+      {
+        "name": "active-glide",
+        "value": "spring stiffness 500, damping 38-40",
+        "purpose": "Active pill gliding between sidebar items, tabs and admin filters (framer-motion layoutId)."
+      },
+      {
+        "name": "theme-crossfade",
+        "value": "280ms ease on background, color, border, fill",
+        "purpose": "Only while the theme is switching; never on first paint."
+      },
+      {
+        "name": "splash",
+        "value": "snake rotates 2.4s linear infinite; fade out 450ms",
+        "purpose": "Once-per-session saffron splash; rotation stops under reduced motion."
+      },
+      {
+        "name": "sheet-enter",
+        "value": "translateY 40px -> 0 with fade, 360ms ease-out-expo (More sheet 300ms); fade only under reduced motion",
+        "purpose": "Sheets, the More sheet and the search dialog rising into place."
+      },
+      {
+        "name": "breathe",
+        "value": "scale 0.94 -> 1.04, opacity 0.75 -> 1, 2.4s ease-in-out infinite; halo scale 0.7 -> 1 in step",
+        "purpose": "The lotus loader; reduced motion slows it to 3.6s linear."
+      },
+      {
+        "name": "breathing-dots",
+        "value": "translateY -3px, scale 0.75 -> 1, 1.1s ease-out-expo infinite, 160ms stagger",
+        "purpose": "Loading state inside buttons and small controls."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px",
+        "purpose": "Wider gutters (24px), inline admin actions; sheets become centred dialogs."
+      },
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "Onboarding footer goes inline."
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "Sidebar replaces the bottom tab bar; two-column sign-in."
+      }
+    ],
+    "focus": {
+      "value": "2px solid var(--accent); outline-offset 2px; radius 8px (offset 0 on text fields)"
+    },
+    "browserSurface": {
+      "themeColor": {
+        "light": "#fbf8f2",
+        "dark": "#13120e",
+        "splash": "#f37021"
+      },
+      "selection": "accent at 22% over transparent",
+      "caret": "accent",
+      "scrollbar": "thin, line-colored thumb"
+    },
+    "sequentialRamp": {
+      "name": "teal-ramp",
+      "value": "color-mix(in srgb, var(--accent) {20|40|60|80|100}%, var(--surface-2))",
+      "empty": "var(--bg) with a 1px var(--line) outline",
+      "purpose": "The only chart scale (mood grid); always paired with a named legend."
+    },
+    "derivedColors": [
+      {
+        "name": "tinted-tile",
+        "value": "color-mix(in srgb, var(--accent) 16%, var(--surface-2))",
+        "purpose": "Fallback practice tile."
+      },
+      {
+        "name": "scrim",
+        "value": "rgba(24,22,15,0.36)",
+        "purpose": "Veil behind sheets and search (0.30 behind the More sheet)."
+      },
+      {
+        "name": "secondary-hover",
+        "value": "color-mix(in srgb, var(--surface-2) 80%, var(--ink) 8%)",
+        "purpose": "Secondary button hover."
+      }
+    ],
+    "identityTones": {
+      "values": [
+        "#2f6b5e",
+        "#8a5a3c",
+        "#6b5b8a",
+        "#3f6f8a",
+        "#8a6b2f",
+        "#7a4a5a"
+      ],
+      "text": "#ffffff",
+      "purpose": "Initials avatars; chosen by a hash of the person's name; theme-independent."
+    },
+    "ornaments": {
+      "render": "CSS mask of the asset filled with currentColor, aria-hidden",
+      "assets": {
+        "divider": "/decor/divider.svg",
+        "flourish": "/decor/flourish.svg",
+        "leaves": "/decor/leaves.svg",
+        "kolam": "/decor/kolam.png",
+        "vine": "/decor/vine.png"
+      },
+      "opacity": "ink-soft at 10-45% or accent at 50-60%",
+      "purpose": "Divider closes a page; flourish under focused-flow headlines; leaves as a desktop watermark off a hero edge; kolam above empty states; vine heads the commitment letter."
+    },
+    "paperGrain": {
+      "value": "fixed body::before fractal-noise SVG, 240px tile",
+      "light": "opacity 0.07, multiply",
+      "dark": "opacity 0.12, screen, inverted",
+      "purpose": "Makes the cream ground read as paper on every screen."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Teal fill, paper label; the one main action. Loading keeps full colour and width, with breathing dots over an invisible label.",
+      "html": "<div style=\"display:flex;gap:12px\"><button class=\"ds-btn ds-btn-primary ds-press\">Continue</button><button class=\"ds-btn ds-btn-primary ds-press\" aria-busy=\"true\"><span class=\"ds-lbl\">Continue</span><span class=\"ds-dots\"><i></i><i></i><i></i></span></button></div>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:0;border-radius:14px;font-family:'Public Sans',system-ui,sans-serif;font-weight:600;font-size:14px;cursor:pointer;} .ds-btn-primary{background:var(--accent,#2f6b5e);color:var(--bg,#fbf8f2);box-shadow:0 1px 2px rgba(24,22,15,0.04),0 8px 24px -12px rgba(24,22,15,0.12);} .ds-btn-primary:hover{filter:brightness(1.1);} .ds-btn:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;} .ds-press{transition:transform 160ms cubic-bezier(0.16,1,0.3,1),background-color 200ms ease,color 200ms ease,border-color 200ms ease;} .ds-press:active{transform:scale(0.97);} .ds-btn{position:relative;} .ds-btn[aria-busy=true] .ds-lbl{visibility:hidden;} .ds-dots{position:absolute;inset:0;margin:auto;width:fit-content;height:fit-content;display:inline-flex;gap:5px;} .ds-dots i{display:block;width:6px;height:6px;border-radius:9999px;background:currentColor;animation:ds-dot 1.1s cubic-bezier(0.16,1,0.3,1) infinite;} .ds-dots i:nth-child(2){animation-delay:160ms;} .ds-dots i:nth-child(3){animation-delay:320ms;} @keyframes ds-dot{0%,80%,100%{transform:translateY(0) scale(0.75);opacity:.45;}40%{transform:translateY(-3px) scale(1);opacity:1;}}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Deep cream fill, ink label; alternate actions.",
+      "html": "<button class=\"ds-btn2 ds-press\">Bring over my old journal</button>",
+      "css": ".ds-btn2{height:44px;padding:0 20px;border:0;border-radius:14px;background:var(--surface-2,#eae1cd);color:var(--ink,#18160f);font-family:'Public Sans',system-ui,sans-serif;font-weight:600;font-size:14px;cursor:pointer;} .ds-btn2:hover{background:color-mix(in srgb,var(--surface-2,#eae1cd) 80%,var(--ink,#18160f) 8%);} .ds-btn2:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;} .ds-press{transition:transform 160ms cubic-bezier(0.16,1,0.3,1),background-color 200ms ease,color 200ms ease,border-color 200ms ease;} .ds-press:active{transform:scale(0.97);}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Teal label, teal wash on hover; quiet inline actions like Sign out.",
+      "html": "<button class=\"ds-btn3 ds-press\">Sign out</button>",
+      "css": ".ds-btn3{height:36px;padding:0 14px;border:0;border-radius:11px;background:transparent;color:var(--accent,#2f6b5e);font-family:'Public Sans',system-ui,sans-serif;font-weight:600;font-size:13px;cursor:pointer;} .ds-btn3:hover{background:var(--accent-soft,rgba(47,107,94,0.1));} .ds-btn3:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;} .ds-press{transition:transform 160ms cubic-bezier(0.16,1,0.3,1),background-color 200ms ease,color 200ms ease,border-color 200ms ease;} .ds-press:active{transform:scale(0.97);}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Borderless field one step deeper than its ground (cream card on the page, deep cream in sheets); the border turns teal on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Your name\" />",
+      "css": ".ds-input{width:260px;height:48px;padding:0 16px;border-radius:14px;border:1px solid transparent;background:var(--surface,#f3ecdd);color:var(--ink,#18160f);font-family:'Public Sans',system-ui,sans-serif;font-size:16px;outline:none;caret-color:var(--accent,#2f6b5e);transition:border-color 200ms ease;} .ds-input::placeholder{color:var(--ink-soft,#686152);opacity:.8;} .ds-input:focus{border-color:var(--accent,#2f6b5e);}"
+    },
+    {
+      "name": "Stamp Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Pill toggle; hairline when off, teal wash and border when on.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-press\" aria-pressed=\"true\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M223.45,40.07a8,8,0,0,0-7.52-7.52C139.8,28.08,78.82,51,52.82,94a87.09,87.09,0,0,0-12.76,49A101.72,101.72,0,0,0,46.7,175.2a4,4,0,0,0,6.61,1.43l85-86.3a8,8,0,0,1,11.32,11.32L56.74,195.94,42.55,210.13a8.2,8.2,0,0,0-.6,11.1,8,8,0,0,0,11.71.43l16.79-16.79c14.14,6.84,28.41,10.57,42.56,11.07q1.67.06,3.33.06A86.93,86.93,0,0,0,162,203.18C205,177.18,227.93,116.21,223.45,40.07Z\"/></svg>Stillness</button><button class=\"ds-chip ds-press\" aria-pressed=\"false\">Insight</button></div>",
+      "css": ".ds-chips{display:flex;gap:8px;} .ds-chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:9999px;border:1px solid var(--line,#e2d8c2);background:transparent;color:var(--ink-soft,#686152);font-family:'Public Sans',system-ui,sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;} .ds-chip:hover{color:var(--ink,#18160f);} .ds-chip[aria-pressed=true]{background:var(--accent-soft,rgba(47,107,94,0.1));border-color:var(--accent,#2f6b5e);color:var(--accent,#2f6b5e);} .ds-chip:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;} .ds-press{transition:transform 160ms cubic-bezier(0.16,1,0.3,1),background-color 200ms ease,color 200ms ease,border-color 200ms ease;} .ds-press:active{transform:scale(0.97);}"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Nav-cream rail; active item is teal on a teal-wash pill.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link is-active\" href=\"#\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M224,128a8,8,0,0,1-8,8H128a8,8,0,0,1,0-16h88A8,8,0,0,1,224,128ZM128,72h88a8,8,0,0,0,0-16H128a8,8,0,0,0,0,16Zm88,112H128a8,8,0,0,0,0,16h88a8,8,0,0,0,0-16ZM82.34,42.34,56,68.69,45.66,58.34A8,8,0,0,0,34.34,69.66l16,16a8,8,0,0,0,11.32,0l32-32A8,8,0,0,0,82.34,42.34Z\"/></svg>Tracker</a><a class=\"ds-nav-link\" href=\"#\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,176H48V88H208Z\"/></svg>Weekly</a></nav>",
+      "css": ".ds-nav{display:flex;flex-direction:column;gap:4px;width:216px;padding:16px;background:var(--nav,#f7f2e7);border-right:1px solid var(--line,#e2d8c2);} .ds-nav-link{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;color:var(--ink-soft,#686152);font-family:'Public Sans',system-ui,sans-serif;font-size:14.5px;font-weight:500;text-decoration:none;transition:color 200ms ease,background-color 200ms ease;} .ds-nav-link:hover{color:var(--ink,#18160f);background:color-mix(in srgb,var(--surface,#f3ecdd) 70%,transparent);} .ds-nav-link.is-active{color:var(--accent,#2f6b5e);background:var(--accent-soft,rgba(47,107,94,0.1));} .ds-nav-link:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;}"
+    },
+    {
+      "name": "Settings Group",
+      "kind": "card",
+      "refersTo": "card-group",
+      "description": "Borderless cream group with hairline row dividers and a teal switch.",
+      "html": "<div class=\"ds-group\"><label class=\"ds-row\"><span><b>Daily</b><small>A short reflection each day</small></span><button class=\"ds-switch\" role=\"switch\" aria-checked=\"true\"></button></label><label class=\"ds-row\"><span><b>Weekly</b><small>Reflection and seva at week end</small></span><button class=\"ds-switch\" role=\"switch\" aria-checked=\"false\"></button></label></div>",
+      "css": ".ds-group{width:340px;border-radius:18px;background:var(--surface,#f3ecdd);} .ds-row{display:flex;align-items:center;gap:14px;padding:14px 16px;font-family:'Public Sans',system-ui,sans-serif;} .ds-row+.ds-row{border-top:1px solid var(--line,#e2d8c2);} .ds-row span{flex:1;} .ds-row b{display:block;font-size:14.5px;font-weight:600;color:var(--ink,#18160f);} .ds-row small{display:block;font-size:13px;line-height:1.45;color:var(--ink-soft,#686152);margin-top:2px;} .ds-switch{position:relative;width:44px;height:26px;border:0;border-radius:9999px;background:var(--line,#e2d8c2);cursor:pointer;transition:background-color 200ms ease;} .ds-switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:9999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform 300ms cubic-bezier(0.16,1,0.3,1);} .ds-switch[aria-checked=true]{background:var(--accent,#2f6b5e);} .ds-switch[aria-checked=true]::after{transform:translateX(18px);} .ds-switch:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "refersTo": "segmented-track",
+      "description": "Cream pill track; the active segment is a paper pill with the soft shadow.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\"><button class=\"ds-seg-btn ds-press\" aria-checked=\"true\" role=\"radio\">Light</button><button class=\"ds-seg-btn ds-press\" aria-checked=\"false\" role=\"radio\">Dark</button></div>",
+      "css": ".ds-seg{display:inline-flex;padding:4px;border-radius:9999px;background:var(--surface,#f3ecdd);} .ds-seg-btn{height:36px;padding:0 16px;border:0;border-radius:9999px;background:transparent;color:var(--ink-soft,#686152);font-family:'Public Sans',system-ui,sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;} .ds-seg-btn:hover{color:var(--ink,#18160f);} .ds-seg-btn[aria-checked=true]{background:var(--bg,#fbf8f2);color:var(--ink,#18160f);box-shadow:0 1px 2px rgba(24,22,15,0.04),0 8px 24px -12px rgba(24,22,15,0.12);} .ds-seg-btn:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;} .ds-press{transition:transform 160ms cubic-bezier(0.16,1,0.3,1),background-color 200ms ease,color 200ms ease,border-color 200ms ease;} .ds-press:active{transform:scale(0.97);}"
+    },
+    {
+      "name": "Page Title",
+      "kind": "custom",
+      "refersTo": "display",
+      "description": "Fraunces page title with today's date and the saffron arrival dot.",
+      "html": "<header class=\"ds-top\"><h1>Daily</h1><time>Thu, 25 Sep<i></i></time></header>",
+      "css": ".ds-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;width:420px;} .ds-top h1{margin:0;font-family:Fraunces,Georgia,serif;font-size:34px;font-weight:600;line-height:1.1;letter-spacing:-0.015em;color:var(--ink,#18160f);} .ds-top time{display:inline-flex;flex-direction:row-reverse;align-items:center;gap:6px;padding-bottom:6px;font-family:'Public Sans',system-ui,sans-serif;font-size:13px;font-weight:500;color:var(--ink-soft,#686152);font-variant-numeric:tabular-nums;} .ds-top time i{width:6px;height:6px;border-radius:9999px;background:var(--saffron,#f37021);}"
+    },
+    {
+      "name": "Sheet",
+      "kind": "card",
+      "refersTo": "sheet",
+      "description": "Paper sheet over the ink scrim for every add/edit flow; bottom sheet on phones, centred dialog on desktop.",
+      "html": "<div class=\"ds-scrim\"><div class=\"ds-sheet\" role=\"dialog\" aria-label=\"Add a person\"><span class=\"ds-grab\"></span><header class=\"ds-sh-head\"><h2>Add a person</h2><button class=\"ds-close ds-press\" aria-label=\"Close\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z\"/></svg></button></header><div class=\"ds-sh-body\"><label class=\"ds-lab\">Name<input class=\"ds-sh-input\" placeholder=\"Their name\"/></label></div><footer class=\"ds-sh-foot\"><button class=\"ds-sh-save ds-press\">Save</button></footer></div></div>",
+      "css": ".ds-scrim{display:flex;align-items:flex-end;justify-content:center;width:420px;height:340px;padding-top:24px;background:rgba(24,22,15,0.36);} .ds-sheet{width:100%;display:flex;flex-direction:column;background:var(--bg,#fbf8f2);border-radius:24px 24px 0 0;box-shadow:0 2px 4px rgba(24,22,15,0.05),0 18px 40px -16px rgba(24,22,15,0.22);} .ds-grab{display:block;margin:10px auto 0;width:40px;height:4px;border-radius:9999px;background:var(--line,#e2d8c2);} .ds-sh-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0;} .ds-sh-head h2{margin:0;font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:600;letter-spacing:-0.015em;color:var(--ink,#18160f);} .ds-close{display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:9999px;background:var(--surface,#f3ecdd);color:var(--ink-soft,#686152);cursor:pointer;} .ds-close:hover{color:var(--ink,#18160f);} .ds-close:focus-visible,.ds-sh-save:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;} .ds-sh-body{padding:16px 20px 24px;} .ds-lab{display:block;font-family:'Public Sans',system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--ink,#18160f);} .ds-sh-input{display:block;margin-top:8px;width:100%;height:48px;padding:0 16px;border-radius:14px;border:1px solid transparent;background:var(--surface-2,#eae1cd);color:var(--ink,#18160f);font-family:'Public Sans',system-ui,sans-serif;font-size:16px;outline:none;caret-color:var(--accent,#2f6b5e);} .ds-sh-input:focus{border-color:var(--accent,#2f6b5e);} .ds-sh-foot{padding:12px 20px 16px;border-top:1px solid var(--line,#e2d8c2);} .ds-sh-save{width:100%;height:52px;border:0;border-radius:14px;background:var(--accent,#2f6b5e);color:var(--bg,#fbf8f2);font-family:'Public Sans',system-ui,sans-serif;font-weight:600;font-size:15px;cursor:pointer;} .ds-press{transition:transform 160ms cubic-bezier(0.16,1,0.3,1),background-color 200ms ease,color 200ms ease,border-color 200ms ease;} .ds-press:active{transform:scale(0.97);}"
+    },
+    {
+      "name": "Moment Card",
+      "kind": "card",
+      "refersTo": "moment-card",
+      "description": "Borderless cream card: kind well, Fraunces title and body, tabular meta, person and stamp chips.",
+      "html": "<article class=\"ds-moment\"><header class=\"ds-m-head\"><span class=\"ds-m-well\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M221.28,34.75a64,64,0,0,0-90.49,0L60.69,104A15.9,15.9,0,0,0,56,115.31v73.38L26.34,218.34a8,8,0,0,0,11.32,11.32L67.32,200H140.7A15.92,15.92,0,0,0,152,195.32l0,0,69.23-70A64,64,0,0,0,221.28,34.75ZM142.07,46.06A48,48,0,0,1,211.79,112H155.33l34.35-34.34a8,8,0,0,0-11.32-11.32L120,124.69V67.87ZM72,115.35l32-31.67v57l-32,32ZM140.7,184H83.32l56-56h56.1Z\"/></svg></span><div><h3>Walk by the lake</h3><p>7:40 AM · Coimbatore</p></div></header><p class=\"ds-m-body\">The light came off the water in long threads and for a while there was nothing to add.</p><footer class=\"ds-m-foot\"><a class=\"ds-pchip ds-press\" href=\"#\"><span class=\"ds-av\" style=\"background:#8a5a3c\">MR</span>Meera</a><span class=\"ds-stamp\">Stillness</span></footer></article>",
+      "css": ".ds-moment{width:380px;padding:16px;border-radius:18px;background:var(--surface,#f3ecdd);} .ds-m-head{display:flex;gap:12px;align-items:flex-start;} .ds-m-well{display:grid;place-items:center;width:36px;height:36px;flex-shrink:0;border-radius:11px;background:var(--bg,#fbf8f2);color:var(--accent,#2f6b5e);} .ds-m-head h3{margin:0;font-family:Fraunces,Georgia,serif;font-size:18px;font-weight:600;line-height:1.35;color:var(--ink,#18160f);} .ds-m-head p{margin:2px 0 0;font-family:'Public Sans',system-ui,sans-serif;font-size:12.5px;color:var(--ink-soft,#686152);font-variant-numeric:tabular-nums;} .ds-m-body{margin:12px 0 0;font-family:Fraunces,Georgia,serif;font-size:16px;line-height:1.65;color:var(--ink,#18160f);} .ds-m-foot{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;} .ds-pchip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 4px;border-radius:9999px;background:var(--bg,#fbf8f2);font-family:'Public Sans',system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--ink,#18160f);text-decoration:none;} .ds-pchip:hover{background:var(--surface-2,#eae1cd);} .ds-pchip:focus-visible{outline:2px solid var(--accent,#2f6b5e);outline-offset:2px;} .ds-av{display:grid;place-items:center;width:24px;height:24px;border-radius:9999px;color:#fff;font-size:9px;font-weight:600;} .ds-stamp{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:9999px;border:1px solid var(--line,#e2d8c2);font-family:'Public Sans',system-ui,sans-serif;font-size:12.5px;color:var(--ink-soft,#686152);} .ds-press{transition:transform 160ms cubic-bezier(0.16,1,0.3,1),background-color 200ms ease,color 200ms ease,border-color 200ms ease;} .ds-press:active{transform:scale(0.97);}"
+    },
+    {
+      "name": "Mood Grid",
+      "kind": "custom",
+      "refersTo": "chart-panel",
+      "description": "Single-hue teal ramp into deep cream, every level named in the legend.",
+      "html": "<div class=\"ds-chart\"><div class=\"ds-grid\"><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 20%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 60%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 80%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:var(--bg,#fbf8f2);box-shadow:inset 0 0 0 1px var(--line,#e2d8c2)\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 40%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 100%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 60%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 40%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 80%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 100%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 20%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:var(--bg,#fbf8f2);box-shadow:inset 0 0 0 1px var(--line,#e2d8c2)\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 60%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span><span tabindex=\"0\" class=\"ds-cell\" style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 80%,var(--surface-2,#eae1cd))\" aria-label=\"level\"></span></div><div class=\"ds-legend\"><span><i style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 20%,var(--surface-2,#eae1cd))\"></i>Low</span><span><i style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 40%,var(--surface-2,#eae1cd))\"></i>Agitated</span><span><i style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 60%,var(--surface-2,#eae1cd))\"></i>Neutral</span><span><i style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 80%,var(--surface-2,#eae1cd))\"></i>Content</span><span><i style=\"background:color-mix(in srgb,var(--accent,#2f6b5e) 100%,var(--surface-2,#eae1cd))\"></i>Blissful</span><span><i style=\"background:var(--bg,#fbf8f2);box-shadow:inset 0 0 0 1px var(--line,#e2d8c2)\"></i>Not marked</span></div></div>",
+      "css": ".ds-chart{width:300px;padding:16px;border-radius:20px;background:var(--surface,#f3ecdd);} .ds-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;} .ds-cell{aspect-ratio:1;border-radius:6px;outline:none;} .ds-cell:focus-visible{box-shadow:0 0 0 2px var(--accent,#2f6b5e);} .ds-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:16px;font-family:'Public Sans',system-ui,sans-serif;font-size:12.5px;color:var(--ink-soft,#686152);} .ds-legend span{display:inline-flex;align-items:center;gap:6px;} .ds-legend i{width:14px;height:14px;border-radius:4px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Cream Notebook",
+    "overview": "ana is a sadhana journal that should feel like the physical practice notebook it replaces: warm cream paper, ink that reads like a pen rather than a screen, and a single deep Isha teal used the way a practitioner would use a single colored pen. Surfaces are paper on paper. Cards are a slightly deeper cream sitting on a lighter cream ground, with no borders and almost no shadow, so the page reads as one quiet sheet rather than a dashboard of boxes. Saffron, the Isha orange, is kept for moments of arrival: the splash, the small dot beside today's date, a birthday coming up, a waiting admin count. The paper is literally paper: a fixed, very soft fractal-noise grain (7% multiply on cream, 12% inverted screen at night) sits between the ground and the content on every screen.\n\nThe night journal is not a separate theme; it is the same notebook with the lamp off. Every role keeps its meaning: the paper goes to a warm near-black, the ink becomes lamplight cream, the teal lifts to a pale sea-glass so it still reads as the one accent. Theme is set by the person (a cookie read on the server and a `data-theme` attribute), never by the OS, and it cross-fades only while switching, never on first paint.\n\nDensity is low and unhurried. Content sits in one column: a sidebar on desktop, a bottom tab bar on phones, and a page title in Fraunces with today's date beside it. Sadhguru's presence (photo, a traced vector signature, the daily quote in Fraunces italic) and the Isha practice illustrations carry the imagery; the interface itself is code-drawn, with a line lotus as the mark, Phosphor icons for navigation, and a small set of Isha line ornaments (divider, flourish, leaves, kolam, vine) drawn as masks in the current text colour. Waiting is shown by the lotus breathing, never by a spinner. Adding or editing anything happens in a sheet that rises from the bottom on phones and sits centred on desktop. The look was pinned by the user to the Isha reference app (sadhana-pwa-demo-vercel.vercel.app), from which the practice images and splash artwork come.",
+    "keyCharacteristics": [
+      "Cream-on-cream tonal layering; borderless cards; teal as the only accent.",
+      "Fraunces for titles and reflective text, Public Sans for every interface string.",
+      "Saffron appears only at moments of arrival, never as decoration.",
+      "Soft, generous radii (10 to 22px) and full pills for chips and segmented controls.",
+      "Tactile press (scale 0.97) and expo-out springs; nothing bounces, nothing shouts.",
+      "The browser surface (status bar, selection, caret, focus ring, scrollbar) wears the palette too.",
+      "Paper grain under everything; Isha line ornaments in faint current colour; a breathing lotus instead of spinners."
+    ],
+    "rules": [
+      {
+        "name": "The One Pen Rule",
+        "body": "Teal is the only interactive accent. If something is selected, active, focused or on, it is teal (text, fill or wash); nothing else competes for that meaning.",
+        "section": "colors"
+      },
+      {
+        "name": "The Arrival Rule",
+        "body": "Saffron marks arrival or something waiting (splash, today, a pending count). A saffron button, saffron card or saffron heading is off-system.",
+        "section": "colors"
+      },
+      {
+        "name": "The Lamp-Off Rule",
+        "body": "Every color is a role with a light and a night value. Never hard-code a hex in a component; use the role (`bg-surface`, `text-ink-soft`, `bg-accent-soft`) so the night journal follows automatically. The only literal colors allowed are the splash saffron (it runs before the tokens exist), the theme-color values that mirror the paper, the ink-tinted scrim, and the six person tones.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Ramp Rule",
+        "body": "Charts measure with a single hue: the teal ramp mixed into deep cream. Every level is named in a legend beside the grid, and \"not marked\" is paper with a hairline, so colour is never the only key. No rainbow scales, no red-to-green.",
+        "section": "colors"
+      },
+      {
+        "name": "The Pen and Ruler Rule",
+        "body": "Fraunces for anything a person would write by hand (titles, quotes, reflections); Public Sans for anything the app says (labels, buttons, meta). No Fraunces on buttons, no Public Sans page titles.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Every time, count and date uses tabular figures (the `.tabular` utility) so columns and counters do not shimmer.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Eyebrow Rule",
+        "body": "Headings stand alone. No uppercase tracked kickers above titles; hierarchy comes from Fraunces against Public Sans.",
+        "section": "typography"
+      },
+      {
+        "name": "The Paper Stack Rule",
+        "body": "Cards sit on the page by tone alone. Borders are not used to separate a card from the page; hairlines appear only as dividers inside a group, as navigation edges, as the edge of a sheet footer or search field, around small floating menus, and as outlines on unselected chips. A teal-wash card (a selected option, the commitment reminder) may carry a faint teal border (30 to 40%).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use role tokens (`bg-bg`, `bg-surface`, `bg-surface-2`, `text-ink`, `text-ink-soft`, `bg-accent-soft`) so every screen works in both the cream and night journals.",
+      "**Do** mark selection, activity and focus with teal: teal text or fill plus the teal wash, and switch Phosphor icons to the filled weight.",
+      "**Do** add the `.press` utility to anything that acts like a button, and use the expo-out curve (`cubic-bezier(0.16, 1, 0.3, 1)`) for movement.",
+      "**Do** set titles and reflective text in Fraunces and everything the app says in Public Sans; use tabular figures for times, counts and dates.",
+      "**Do** let Sadhguru's photo, signature and the practice illustrations carry the imagery; the signature takes the current text colour (soft ink in the shell, near-white over the photo).",
+      "**Do** use one Isha ornament per place it belongs (a closing divider, a kolam above an empty state, a flourish under a focused-flow headline), faint, in `currentColor`, hidden from assistive tech.",
+      "**Do** open every add or edit flow in the Sheet, with the save action in its sticky footer.",
+      "**Do** show waiting with the breathing lotus, and busy buttons with the breathing dots at full colour and unchanged width.",
+      "**Do** build any chart scale from the teal ramp and name every level in a legend.",
+      "**Do** keep inputs at 16px text and respect safe-area insets on every fixed edge."
+    ],
+    "donts": [
+      "**Don't** use saffron for buttons, cards, headings or decoration; it is for arrival and waiting only.",
+      "**Don't** put borders around cards to separate them from the page; separate by tone.",
+      "**Don't** add streaks, badges, points, scores or celebratory motion; patterns are shown gently or not at all.",
+      "**Don't** hard-code hex colors or Tailwind palette colors (`gray-*`, `stone-*`, `shadow-xl`) in components; white is reserved for text over photographs, avatar initials, the switch thumb and the Google disc.",
+      "**Don't** use spinners or rotating loaders anywhere but the splash snake; waiting breathes.",
+      "**Don't** fade a button that is loading, or swap its label for a loader in a way that changes its width.",
+      "**Don't** add uppercase tracked eyebrows or kickers above headings.",
+      "**Don't** follow the OS color scheme or animate colors on first paint; theme is the person's choice and cross-fades only while switching."
+    ]
+  }
+}

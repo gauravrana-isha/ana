@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { usePersistentState } from "@/lib/persist";
+
+import { useState, useCallback, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { Plus, DotsSixVertical } from "@phosphor-icons/react";
+import { PencilSimple, DotsSixVertical } from "@phosphor-icons/react";
 import {
   DndContext,
   closestCenter,
@@ -21,27 +23,30 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { PracticeRow } from "@/components/tracker/PracticeRow";
+import { PracticeIcon } from "@/components/tracker/PracticeIcon";
 import { WeeklyTable } from "@/components/tracker/WeeklyTable";
 import { WeeklyEntryModal } from "@/components/tracker/WeeklyEntryModal";
 import { AddPracticeDialog } from "@/components/tracker/AddPracticeDialog";
 import { TrackerSkeleton } from "@/components/ui/Skeleton";
 import { ButtonLoader } from "@/components/ui/Loader";
+import { Busy } from "@/components/ui/Busy";
+import { useToast } from "@/components/ui/Toast";
 import { usePractices, useDayLog, useUpdateDayLog } from "@/lib/queries";
-import { today, addDays, weekStart, computeSleepMinutes, formatSleepDuration } from "@/lib/dates";
+import { today, addDays, weekStart } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { DayLogEntry, DayLogEntries, Practice } from "@/lib/types";
 
 export default function TrackerPage() {
   const [date, setDate] = useState(today());
-  const [view, setView] = useState<"daily" | "weekly">("daily");
+  const [view, setView] = usePersistentState("tracker.view", "daily", ["daily", "weekly"] as const);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reordering, setReordering] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
   const [weeklyModal, setWeeklyModal] = useState<{ practice: Practice; date: string } | null>(null);
   const qc = useQueryClient();
+  const { toast } = useToast();
   const { data: practices, isLoading: practicesLoading } = usePractices();
   const { data: dayLogData } = useDayLog(date);
-  const { data: prevDayData } = useDayLog(addDays(date, -1));
   const updateDayLog = useUpdateDayLog(date);
 
   const sensors = useSensors(
@@ -63,17 +68,14 @@ export default function TrackerPage() {
   });
   const weekLogs: Record<string, DayLogEntries> = (weekData ?? {}) as Record<string, DayLogEntries>;
 
-  const entries: DayLogEntries = dayLogData?.entries ?? {};
-  const sleepDisplay = computeSleep(entries, prevDayData?.entries ?? {}, practices ?? []);
+  const entries: DayLogEntries = useMemo(() => dayLogData?.entries ?? {}, [dayLogData]);
 
   const handleChange = useCallback(
     (practiceId: string, entry: Partial<DayLogEntry>) => {
-      const current = entries[practiceId] ?? { values: {} };
+      // The row hands over the practice's whole entry for the day (a tick fills, an untick clears).
+      const current = entries[practiceId];
       const updated: DayLogEntries = {
-        [practiceId]: {
-          done: entry.done ?? current.done,
-          values: { ...(current.values ?? {}), ...(entry.values ?? {}) },
-        },
+        [practiceId]: { done: entry.done ?? current?.done ?? false, values: entry.values ?? current?.values ?? {} },
       };
       updateDayLog.mutate(updated);
     },
@@ -101,16 +103,21 @@ export default function TrackerPage() {
     const newOrder = arrayMove(ids, oldIdx, newIdx);
     setLocalOrder(newOrder);
 
-    // Persist the new order and update UI immediately
+    // Save the new order; the list stays locked until it's stored.
+    setSavingOrder(true);
     fetch("/api/practices", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         reorder: newOrder.map((id, i) => ({ id, order: i })),
       }),
-    }).then(() => {
-      qc.invalidateQueries({ queryKey: ["practices"] });
-    });
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return qc.invalidateQueries({ queryKey: ["practices"] });
+      })
+      .catch(() => toast("Couldn't save the new order. Please try again.", "error"))
+      .finally(() => setSavingOrder(false));
   }
 
   if (practicesLoading) {
@@ -207,16 +214,17 @@ export default function TrackerPage() {
               practice={weeklyModal.practice}
               date={weeklyModal.date}
               entry={weekLogs[weeklyModal.date]?.[weeklyModal.practice.id]}
-              onSave={(practiceId, entry) => {
-                // Save to the specific date
-                fetch(`/api/days/${weeklyModal.date}`, {
+              onSave={async (practiceId, entry) => {
+                const res = await fetch(`/api/days/${weeklyModal.date}`, {
                   method: "PATCH",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ entries: { [practiceId]: entry } }),
-                }).then(() => {
-                  qc.invalidateQueries({ queryKey: ["week", currentWeekStart] });
-                  qc.invalidateQueries({ queryKey: ["day"] });
                 });
+                if (!res.ok) throw new Error("save failed");
+                await Promise.all([
+                  qc.invalidateQueries({ queryKey: ["week", currentWeekStart] }),
+                  qc.invalidateQueries({ queryKey: ["day"] }),
+                ]);
               }}
             />
           )}
@@ -225,16 +233,16 @@ export default function TrackerPage() {
         <>
           {reordering ? (
             /* Reorder mode with drag handles */
+            <Busy busy={savingOrder}>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={orderedPractices.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                <div className="font-ui text-[11px] tracking-[0.12em] uppercase text-ink-soft mt-4 mb-2.5">
-                  Drag to reorder
-                </div>
+                <p className="font-ui text-[13px] text-ink-soft mt-2 mb-2.5">Drag to reorder. Each move is saved.</p>
                 {orderedPractices.filter(p => p.name !== "Mood").map((practice) => (
                   <SortablePracticeItem key={practice.id} practice={practice} />
                 ))}
               </SortableContext>
             </DndContext>
+            </Busy>
           ) : (
             <>
               {fixedPractices.map((practice) => (
@@ -248,9 +256,7 @@ export default function TrackerPage() {
 
               {customPractices.length > 0 && (
                 <>
-                  <div className="font-ui text-[11px] tracking-[0.12em] uppercase text-ink-soft mt-6 mb-2.5">
-                    My own practices
-                  </div>
+                  <h2 className="font-display text-[17px] font-semibold text-ink mt-6 mb-2.5">My own practices</h2>
                   {customPractices.map((practice) => (
                     <PracticeRow
                       key={practice.id}
@@ -268,8 +274,8 @@ export default function TrackerPage() {
             onClick={() => setDialogOpen(true)}
             className="font-ui text-[13px] text-accent mt-3 inline-flex items-center gap-1.5"
           >
-            <Plus size={14} weight="thin" />
-            Add a practice · choose how to track it
+            <PencilSimple size={14} />
+            Edit practices
           </button>
         </>
       )}
@@ -302,34 +308,14 @@ function SortablePracticeItem({ practice }: { practice: Practice }) {
       <button
         {...attributes}
         {...listeners}
-        className="text-ink-soft hover:text-ink cursor-grab active:cursor-grabbing touch-none"
-        aria-label="Drag to reorder"
+        className="grid place-items-center w-9 h-9 -ml-1 rounded-[10px] text-ink-soft hover:text-ink hover:bg-surface-2 cursor-grab active:cursor-grabbing touch-none"
+        aria-label={`Drag ${practice.name} to reorder`}
       >
         <DotsSixVertical size={20} weight="bold" />
       </button>
+      <PracticeIcon name={practice.name} iconName={practice.iconName} catalogId={practice.catalogId} size={32} />
       <span className="font-serif text-base text-ink">{practice.name}</span>
-      <span className="ml-auto font-ui text-[10px] text-ink-soft uppercase">{practice.tier}</span>
     </div>
   );
 }
 
-function computeSleep(
-  todayEntries: DayLogEntries,
-  prevEntries: DayLogEntries,
-  practices: Practice[]
-): string | null {
-  const wakePractice = practices.find((p) => p.name === "Wake up");
-  const bedPractice = practices.find((p) => p.name === "Bedtime");
-  if (!wakePractice || !bedPractice) return null;
-
-  const wakeTime = todayEntries[wakePractice.id]?.values?.time;
-  const bedTime = prevEntries[bedPractice.id]?.values?.time;
-
-  if (typeof wakeTime !== "string" || typeof bedTime !== "string") return null;
-  if (!wakeTime || !bedTime) return null;
-
-  const minutes = computeSleepMinutes(bedTime, wakeTime);
-  if (minutes <= 0 || minutes > 840) return null;
-
-  return formatSleepDuration(minutes);
-}

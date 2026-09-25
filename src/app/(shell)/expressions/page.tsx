@@ -1,239 +1,162 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Flower, Plus } from "@phosphor-icons/react";
-import { TiptapEditor } from "@/components/expressions/TiptapEditor";
-import { ExpressionsListSkeleton } from "@/components/ui/Skeleton";
-import { ButtonLoader } from "@/components/ui/Loader";
-import { today } from "@/lib/dates";
+import { usePersistentState } from "@/lib/persist";
+
+import { Suspense, useDeferredValue, useState, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { Camera, Feather, MagnifyingGlass, Microphone, Plus, VideoCamera, X } from "@phosphor-icons/react";
+import { Ornament } from "@/components/art/Ornament";
+import { Button } from "@/components/ui/Button";
+import { Loader } from "@/components/ui/Loader";
+import { MomentComposer } from "@/components/moments/MomentComposer";
+import { MomentCard, MomentTimeline } from "@/components/moments/MomentCard";
+import { useMoments } from "@/lib/moments-client";
+import type { Moment, MomentKind } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 
-interface ExpressionItem {
-  id: string;
-  title: string;
-  date: string;
-  kind: string;
-  body: string;
-  refDates: string[];
-}
+const FILTERS = [
+  { id: "", label: "All", icon: null },
+  { id: "writing", label: "Writing", icon: Feather },
+  { id: "audio", label: "Voice", icon: Microphone },
+  { id: "video", label: "Video", icon: VideoCamera },
+  { id: "photo", label: "Photo", icon: Camera },
+] as const;
 
 export default function ExpressionsPage() {
-  const qc = useQueryClient();
-  const [editing, setEditing] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    title: "",
-    kind: "moment" as "moment" | "writing",
-    body: "",
-    refDates: [] as string[],
-  });
+  return (
+    <Suspense fallback={<div className="py-20 grid place-items-center"><Loader /></div>}>
+      <ExpressionsContent />
+    </Suspense>
+  );
+}
 
-  const [page, setPage] = useState(1);
-
-  const { data: expressionsData, isLoading } = useQuery({
-    queryKey: ["expressions", page],
-    queryFn: async () => {
-      const res = await fetch(`/api/expressions?page=${page}`);
-      const data = await res.json();
-      // Handle both old array format and new paginated format
-      if (Array.isArray(data)) return { items: data, total: data.length, hasMore: false };
-      return data as { items: ExpressionItem[]; total: number; hasMore: boolean };
+function ExpressionsContent() {
+  // ?open=<id> (from search) pins that moment at the top.
+  const params = useSearchParams();
+  const openId = params.get("open");
+  const { data: pinned } = useQuery({
+    queryKey: ["moments", "one", openId],
+    enabled: !!openId,
+    queryFn: async (): Promise<Moment | null> => {
+      const res = await fetch(`/api/expressions/${openId}`);
+      return res.ok ? res.json() : null;
     },
   });
+  const [kind, setKind] = usePersistentState("moments.filter", "", ["", "writing", "audio", "video", "photo"] as const);
+  const [query, setQuery] = useState("");
+  const q = useDeferredValue(query.trim());
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMoments({ kind, q });
+  const moments = data?.pages.flatMap((p) => p.items) ?? [];
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const url = editingId ? `/api/expressions?id=${editingId}` : "/api/expressions";
-      const method = editingId ? "PATCH" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, date: today() }),
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["expressions"] });
-      setEditing(false);
-      setEditingId(null);
-      setPage(1);
-      setForm({ title: "", kind: "moment", body: "", refDates: [] });
-    },
+  const [composer, setComposer] = useState<{ open: boolean; moment: Moment | null; kind: MomentKind }>({
+    open: false,
+    moment: null,
+    kind: "writing",
   });
+  const openNew = (k: MomentKind = "writing") => setComposer({ open: true, moment: null, kind: k });
+  // ?new=1 (from search) opens the composer once the page is live in the browser, so the
+  // "now" it shows is in your time zone, not the server's.
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const [newDismissed, setNewDismissed] = useState(false);
+  const autoOpen = hydrated && params.get("new") === "1" && !newDismissed;
 
-  if (editing) {
-    return (
-      <div>
-        {/* Title */}
-        <input
-          className="w-full font-hand text-[32px] text-ink bg-transparent outline-none border-none mb-3 placeholder:text-ink-soft"
-          placeholder="Title…"
-          value={form.title}
-          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value.slice(0, 150) }))}
-          maxLength={150}
-        />
-
-        {/* Kind toggle */}
-        <div className="inline-flex gap-0.5 p-[3px] rounded-[30px] bg-surface-2 mb-4">
-          {(["moment", "writing"] as const).map((k) => (
-            <button
-              key={k}
-              className={cn(
-                "font-ui text-[13px] font-medium px-4 py-1.5 rounded-[30px] capitalize transition-all",
-                form.kind === k ? "text-ink bg-surface" : "text-ink-soft"
-              )}
-              onClick={() => setForm((f) => ({ ...f, kind: k }))}
-            >
-              {k}
-            </button>
-          ))}
-        </div>
-
-        {/* Body — Tiptap editor */}
-        <div className="mb-4">
-          <TiptapEditor
-            content={form.body}
-            onChange={(json) => setForm((f) => ({ ...f, body: json }))}
-            placeholder="Write…"
-            minHeight={form.kind === "moment" ? "120px" : "240px"}
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => saveMutation.mutate()}
-            disabled={!form.body.trim() || form.body === "" || saveMutation.isPending}
-            className="flex-1 py-3 rounded-14 bg-accent text-bg font-ui text-sm font-medium disabled:opacity-40 flex items-center justify-center gap-2"
-          >
-            {saveMutation.isPending ? <ButtonLoader /> : (editingId ? "Update" : "Save")}
-          </button>
-          <button
-            onClick={() => setEditing(false)}
-            className="px-6 py-3 rounded-14 border border-line text-ink-soft font-ui text-sm"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // List view
-  const list = Array.isArray(expressionsData?.items) ? expressionsData.items : [];
-  const isEmpty = list.length === 0 && page === 1;
-
-  if (isLoading) return <ExpressionsListSkeleton />;
+  const filtering = !!kind || !!q;
 
   return (
     <div>
-      {isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <Flower size={56} weight="thin" className="text-accent" />
-          <p className="font-serif italic text-base text-ink-soft text-center max-w-[260px]">
-            Nothing here yet. When something touches you, give it a place.
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+        <label className="relative flex-1">
+          <span className="sr-only">Search moments</span>
+          <MagnifyingGlass size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft pointer-events-none" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search moments, places, words"
+            className="w-full h-11 pl-11 pr-10 rounded-[14px] bg-surface text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/80 [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query && (
+            <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface-2">
+              <X size={15} />
+            </button>
+          )}
+        </label>
+        <Button onClick={() => openNew()} className="shrink-0">
+          <Plus size={16} weight="bold" /> New moment
+        </Button>
+      </div>
+
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 mb-6">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            aria-pressed={kind === f.id}
+            onClick={() => setKind(f.id)}
+            className={cn(
+              "press shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full font-ui text-[13.5px] font-semibold border transition-colors",
+              kind === f.id ? "bg-accent text-bg border-accent" : "border-line text-ink-soft hover:text-ink"
+            )}
+          >
+            {f.icon && <f.icon size={15} weight={kind === f.id ? "fill" : "regular"} />}
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {pinned && (
+        <section className="mb-8">
+          <h2 className="font-ui text-[13px] font-semibold text-accent mb-2 px-1">From search</h2>
+          <MomentCard moment={pinned} onEdit={(m) => setComposer({ open: true, moment: m, kind: m.kind })} />
+        </section>
+      )}
+
+      {isLoading ? (
+        <div className="py-20 grid place-items-center">
+          <Loader />
+        </div>
+      ) : moments.length === 0 ? (
+        <div className="flex flex-col items-center text-center py-16 gap-4">
+          <Ornament name="kolam" width={180} className="text-accent/60" />
+          <p className="font-serif italic text-[17px] text-ink-soft max-w-[320px]">
+            {filtering ? "Nothing matches yet." : "Nothing here yet. When something touches you, give it a place."}
           </p>
+          {!filtering && (
+            <div className="flex flex-wrap justify-center gap-2 mt-2">
+              <Button variant="secondary" onClick={() => openNew("writing")}><Feather size={16} /> Write</Button>
+              <Button variant="secondary" onClick={() => openNew("audio")}><Microphone size={16} /> Voice</Button>
+              <Button variant="secondary" onClick={() => openNew("video")}><VideoCamera size={16} /> Video</Button>
+              <Button variant="secondary" onClick={() => openNew("photo")}><Camera size={16} /> Photo</Button>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="space-y-2">
-          {list.map((expr) => (
-            <div key={expr.id} className="rounded-14 p-4 bg-surface relative group">
-              {/* Edit/Delete — always visible on mobile, hover on desktop */}
-              <div className="absolute top-3 right-3 flex gap-1 lg:opacity-0 lg:group-hover:opacity-100 lg:transition-opacity">
-                <button
-                  onClick={() => {
-                    setForm({ title: expr.title, kind: expr.kind as "moment" | "writing", body: expr.body, refDates: expr.refDates });
-                    setEditingId(expr.id);
-                    setEditing(true);
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-surface-2 border border-line text-ink-soft hover:text-accent font-ui text-[10px]"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={async () => {
-                    if (confirm("Delete this entry?")) {
-                      await fetch("/api/expressions", {
-                        method: "DELETE",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ id: expr.id }),
-                      });
-                      qc.invalidateQueries({ queryKey: ["expressions"] });
-                    }
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-surface-2 border border-line text-ink-soft hover:text-accent font-ui text-[10px]"
-                >
-                  Delete
-                </button>
-              </div>
-              <div className="font-hand text-lg text-ink">
-                {expr.title || "Untitled"}
-              </div>
-              <div className="font-ui text-[11px] tracking-[0.12em] uppercase text-ink-soft mt-0.5">
-                {new Date(expr.date).toLocaleDateString()}
-              </div>
-              <p className="font-serif text-sm text-ink-soft mt-2 line-clamp-2">
-                {extractTextFromBody(expr.body)}
-              </p>
+        <>
+          <MomentTimeline moments={moments} onEdit={(m) => setComposer({ open: true, moment: m, kind: m.kind })} />
+          {hasNextPage && (
+            <div className="flex justify-center mt-6">
+              <Button variant="ghost" onClick={() => fetchNextPage()} loading={isFetchingNextPage}>
+                Show older moments
+              </Button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
-      {/* Pagination */}
-      {expressionsData && (expressionsData.hasMore || page > 1) && (
-        <div className="flex justify-center gap-3 mt-4">
-          {page > 1 && (
-            <button
-              onClick={() => setPage(p => p - 1)}
-              className="px-4 py-2 rounded-14 border border-line text-ink-soft font-ui text-xs hover:text-accent"
-            >
-              ← Newer
-            </button>
-          )}
-          {expressionsData.hasMore && (
-            <button
-              onClick={() => setPage(p => p + 1)}
-              className="px-4 py-2 rounded-14 border border-line text-ink-soft font-ui text-xs hover:text-accent"
-            >
-              Older →
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* New entry button */}
-      <button
-        onClick={() => setEditing(true)}
-        className="fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8
-                   w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
-                   shadow-[0_6px_16px_var(--accent-soft)]"
-        aria-label="New expression"
-      >
-        <Plus size={22} weight="thin" />
-      </button>
+      <MomentComposer
+        open={composer.open || autoOpen}
+        moment={composer.open ? composer.moment : null}
+        defaultKind={composer.open ? composer.kind : "writing"}
+        onClose={() => {
+          setNewDismissed(true);
+          setComposer((c) => ({ ...c, open: false }));
+        }}
+      />
     </div>
   );
 }
 
-function extractTextFromBody(body: string): string {
-  try {
-    const parsed = JSON.parse(body);
-    // Extract text from Tiptap JSON
-    if (parsed?.content) {
-      const texts: string[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function walk(node: any) {
-        if (node.text) texts.push(node.text);
-        if (Array.isArray(node.content)) node.content.forEach(walk);
-      }
-      walk(parsed);
-      return texts.join(" ").slice(0, 200) || "Empty";
-    }
-    return body.slice(0, 200);
-  } catch {
-    // Plain text fallback
-    return body.slice(0, 200);
-  }
+function noopSubscribe() {
+  return () => {};
 }

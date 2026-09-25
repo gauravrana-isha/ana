@@ -6,6 +6,14 @@ export interface PracticeField {
   label?: string;
   min?: number;
   max?: number;
+  /** Value used when nothing is logged for the day (rhythm practices). */
+  default?: string | number;
+  /** Value filled in when the practice is ticked and this field is empty. */
+  fill?: number;
+  /** One-line explanation shown in the editor. */
+  hint?: string;
+  /** Names for the three levels of a 3-level scale. */
+  labels?: [string, string, string];
 }
 
 export interface DayLogEntry {
@@ -28,6 +36,7 @@ export interface Practice {
   userId: string;
   name: string;
   iconName: string;
+  catalogId?: string | null;
   tier: "FIXED" | "CUSTOM";
   hasDoneToggle: boolean;
   order: number;

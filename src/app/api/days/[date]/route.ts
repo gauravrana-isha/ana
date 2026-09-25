@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { resolveUser, getOrCreateDeviceUser } from "@/lib/session";
+import { resolveUser } from "@/lib/session";
 import { Prisma } from "@prisma/client";
 
 const PatchSchema = z.object({
@@ -18,7 +18,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ date: string }> }
 ) {
-  const user = await resolveUser();
+  const user = await resolveUser("tracker");
   const { date } = await params;
   if (!user) return NextResponse.json({ date, entries: {} });
 
@@ -33,13 +33,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ date: string }> }
 ) {
-  // Always ensure we have a user
-  let user = await resolveUser();
-  if (!user) {
-    const { userId } = await getOrCreateDeviceUser();
-    user = await db.user.findUnique({ where: { id: userId } });
-    if (!user) return NextResponse.json({ error: "Failed to resolve user" }, { status: 500 });
-  }
+  const user = await resolveUser("tracker");
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { date } = await params;
   const body = await req.json();

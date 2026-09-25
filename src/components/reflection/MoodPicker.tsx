@@ -1,21 +1,15 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import {
-  SmileyMelting,
-  Smiley,
-  SmileyMeh,
-  SmileyNervous,
-  SmileySad,
-} from "@phosphor-icons/react";
+import { MoodBadge, MoodFace, type MoodKey } from "@/components/art/MoodFace";
 import { cn } from "@/lib/utils";
 
 const MOODS = [
-  { key: "low", icon: SmileySad, label: "Low" },
-  { key: "agitated", icon: SmileyNervous, label: "Agitated" },
-  { key: "neutral", icon: SmileyMeh, label: "Neutral" },
-  { key: "content", icon: Smiley, label: "Content" },
-  { key: "blissful", icon: SmileyMelting, label: "Blissful" },
+  { key: "low", label: "Low" },
+  { key: "agitated", label: "Agitated" },
+  { key: "neutral", label: "Neutral" },
+  { key: "content", label: "Content" },
+  { key: "blissful", label: "Blissful" },
 ];
 
 interface MoodPickerProps {
@@ -35,7 +29,7 @@ export function MoodPicker({ value, onChange }: MoodPickerProps) {
   const liveIdx = liveProgress !== null
     ? Math.round((liveProgress / 100) * (MOODS.length - 1))
     : currentIdx;
-  const SelectedIcon = liveIdx >= 0 ? MOODS[liveIdx].icon : null;
+  const selectedKey: MoodKey | null = liveIdx >= 0 ? (MOODS[liveIdx].key as MoodKey) : null;
   const selectedLabel = liveIdx >= 0 ? MOODS[liveIdx].label : null;
 
   const getProgressFromX = useCallback((clientX: number) => {
@@ -102,15 +96,13 @@ export function MoodPicker({ value, onChange }: MoodPickerProps) {
 
   return (
     <div className="rounded-16 p-6 bg-surface">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Header: fixed height so choosing a mood never moves anything */}
+      <div className="flex items-center justify-between gap-3 h-10 mb-5">
         <p className="font-serif text-lg text-ink">How are you feeling?</p>
-        {SelectedIcon && (
-          <div className="flex items-center gap-2.5">
-            <SelectedIcon size={34} weight="thin" className="text-accent" />
-            <span className="font-serif text-base text-accent">{selectedLabel}</span>
-          </div>
-        )}
+        <div className={cn("flex items-center gap-2 transition-opacity duration-200", selectedKey ? "opacity-100" : "opacity-0")} aria-live="polite">
+          {selectedKey && <MoodBadge k={selectedKey} size={34} />}
+          <span className="font-serif text-base text-accent min-w-[4.5rem] text-right">{selectedLabel ?? ""}</span>
+        </div>
       </div>
 
       {/* Slider track */}
@@ -169,26 +161,21 @@ export function MoodPicker({ value, onChange }: MoodPickerProps) {
       </div>
 
       {/* Mood icons row */}
-      <div className="flex justify-between mt-5 px-1">
+      <div className="flex justify-between mt-5 -mx-2">
         {MOODS.map((m) => {
-          const Icon = m.icon;
           const isActive = value === m.key && !dragging;
           return (
             <button
               key={m.key}
               onClick={() => onChange(m.key)}
               className={cn(
-                "flex flex-col items-center gap-2 transition-all duration-200 rounded-14 px-2 py-2",
-                isActive
-                  ? "scale-110 opacity-100 bg-accent-soft"
-                  : "opacity-40 hover:opacity-70"
+                "press flex flex-col items-center gap-2 w-[64px] rounded-14 py-2 transition-colors duration-200",
+                isActive ? "" : "hover:bg-surface-2"
               )}
             >
-              <Icon
-                size={26}
-                weight="thin"
-                className={isActive ? "text-accent" : "text-ink-soft"}
-              />
+              <span className="grid place-items-center w-[38px] h-[38px]">
+                {isActive ? <MoodBadge k={m.key as MoodKey} size={38} /> : <MoodFace k={m.key as MoodKey} size={30} className="text-ink-soft" />}
+              </span>
               <span className={cn(
                 "font-ui text-[11px] leading-none",
                 isActive ? "text-accent font-medium" : "text-ink-soft"

@@ -10,7 +10,6 @@ export const keys = {
   weekly: (weekStart: string) => ["weekly", weekStart] as const,
   expressions: () => ["expressions"] as const,
   practices: () => ["practices"] as const,
-  seva: () => ["seva"] as const,
   quote: (date: string) => ["quote", date] as const,
 };
 
@@ -82,7 +81,7 @@ export function useUpdateDayLog(date: string) {
       qc.invalidateQueries({ queryKey: keys.day(date) });
       // Also invalidate week view so it picks up changes
       qc.invalidateQueries({ queryKey: ["week"] });
-      qc.invalidateQueries({ queryKey: ["digest"] });
+      qc.invalidateQueries({ queryKey: ["week-review"] });
     },
   });
 }

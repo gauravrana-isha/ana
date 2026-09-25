@@ -45,3 +45,9 @@ ana-app/
 .next/
 .vscode/
 .idea/
+
+# design review captures
+.impeccable/review/
+/.next-test/
+/.uploads/
+/.next-build/

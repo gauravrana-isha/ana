@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><defs>
+<filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .09 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<radialGradient id="v" cx="50%" cy="42%" r="70%"><stop offset="0" stop-color="#f1d9a6"/><stop offset="1" stop-color="#c99a57"/></radialGradient>
+<clipPath id="t"><rect width="240" height="240" rx="52"/></clipPath></defs>
+<g clip-path="url(#t)"><rect width="240" height="240" fill="url(#v)"/>
+<circle cx="120" cy="70" r="20" fill="#8a5a3a"/><path d="M104 60c4-14 28-14 32 0" fill="#2d2420"/>
+<path d="M92 72c-8 12-6 30 10 36M148 72c8 12 6 30-10 36" stroke="#8a5a3a" stroke-width="9" fill="none" stroke-linecap="round"/>
+<path d="M92 104c0-8 12-14 28-14s28 6 28 14l6 52H86z" fill="#e7743d"/>
+<path d="M86 156c-10 10-20 24-24 38M154 156c10 10 20 24 24 38" stroke="#f3e2c7" stroke-width="16" fill="none" stroke-linecap="round"/>
+<rect y="196" width="240" height="44" fill="#9b7443"/><rect width="240" height="240" filter="url(#g)"/></g></svg>

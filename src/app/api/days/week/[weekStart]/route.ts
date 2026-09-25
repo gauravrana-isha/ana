@@ -7,7 +7,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ weekStart: string }> }
 ) {
-  const user = await resolveUser();
+  const user = await resolveUser("tracker");
   const { weekStart } = await params;
 
   if (!user) return NextResponse.json({});

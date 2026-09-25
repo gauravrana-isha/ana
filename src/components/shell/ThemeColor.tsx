@@ -2,26 +2,28 @@
 
 import { useEffect } from "react";
 
+const COLORS = { light: "#fbf8f2", dark: "#13120e" };
+
+/** Keeps the browser/status bar colour in step with the chosen theme. */
 export function ThemeColor() {
   useEffect(() => {
-    function updateThemeColor() {
-      const theme = document.documentElement.getAttribute("data-theme");
-      const color = theme === "light" ? "#faf6f0" : "#0f0f0f";
-      let meta = document.querySelector('meta[name="theme-color"]');
-      if (!meta) {
-        meta = document.createElement("meta");
-        meta.setAttribute("name", "theme-color");
-        document.head.appendChild(meta);
+    const html = document.documentElement;
+
+    function update() {
+      const theme = html.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      // The app's own theme wins over the device setting: set every theme-color tag.
+      const metas = document.querySelectorAll('meta[name="theme-color"]');
+      if (metas.length === 0) {
+        const m = document.createElement("meta");
+        m.setAttribute("name", "theme-color");
+        document.head.appendChild(m);
       }
-      meta.setAttribute("content", color);
+      document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", COLORS[theme]));
     }
 
-    updateThemeColor();
-
-    // Watch for theme changes
-    const observer = new MutationObserver(updateThemeColor);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(html, { attributes: true, attributeFilter: ["data-theme"] });
     return () => observer.disconnect();
   }, []);
 

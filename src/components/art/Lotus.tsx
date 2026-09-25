@@ -1,20 +1,23 @@
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface LotusProps {
   size?: number;
   className?: string;
 }
 
-export function Lotus({ size = 54, className = "" }: LotusProps) {
+/** The ana lotus mark. */
+export function Lotus({ size = 32, className = "" }: LotusProps) {
   return (
     <Image
-      src="/icons/logo.png"
-      alt="ana"
+      src="/brand/lotus-256.webp"
+      alt=""
+      aria-hidden="true"
       width={size}
       height={size}
-      style={{ width: size, height: size, minWidth: size, minHeight: size }}
-      className={`rounded-lg object-contain ${className}`}
       priority
+      className={cn("shrink-0 select-none object-contain", className)}
+      style={{ width: size, height: size }}
     />
   );
 }

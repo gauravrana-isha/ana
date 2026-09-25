@@ -90,3 +90,40 @@ export function formatDateHand(date: string): string {
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${dayNames[d.getDay()]} · ${monthNames[d.getMonth()]} ${d.getDate()}`;
 }
+
+const rtf = typeof Intl !== "undefined" ? new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }) : null;
+
+/** "today", "yesterday", "3 weeks ago", "2 months ago". */
+export function timeAgo(iso: string | Date, now = new Date()): string {
+  const then = typeof iso === "string" ? new Date(iso) : iso;
+  const days = Math.round((startOfDay(now).getTime() - startOfDay(then).getTime()) / 86_400_000);
+  if (!rtf) return then.toLocaleDateString();
+  if (days < 7) return rtf.format(-days, "day");
+  if (days < 30) return rtf.format(-Math.round(days / 7), "week");
+  if (days < 365) return rtf.format(-Math.round(days / 30), "month");
+  return rtf.format(-Math.round(days / 365), "year");
+}
+
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** Heading for a day in a timeline: Today, Yesterday, or "Tue 14 Sep" (with year if not this year). */
+export function dayHeading(iso: string, now = new Date()): string {
+  const d = new Date(iso);
+  const diff = Math.round((startOfDay(now).getTime() - startOfDay(d).getTime()) / 86_400_000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    ...(d.getFullYear() !== now.getFullYear() ? { year: "numeric" } : {}),
+  });
+}
+
+/** Value for <input type="datetime-local"> in local time. */
+export function toLocalInput(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

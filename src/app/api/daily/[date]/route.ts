@@ -13,7 +13,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ date: string }> }
 ) {
-  const user = await resolveUser();
+  const user = await resolveUser("daily");
   const { date } = await params;
   if (!user) return NextResponse.json({ date, answers: {}, stamps: {}, moodKey: null });
 
@@ -28,7 +28,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ date: string }> }
 ) {
-  const user = await resolveUser();
+  const user = await resolveUser("daily");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { date } = await params;

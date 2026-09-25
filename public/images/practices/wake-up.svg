@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><defs>
+<filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="1"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .09 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<radialGradient id="v" cx="50%" cy="42%" r="70%"><stop offset="0" stop-color="#fbd9ae"/><stop offset="1" stop-color="#e9a877"/></radialGradient>
+<clipPath id="t"><rect width="240" height="240" rx="52"/></clipPath></defs>
+<g clip-path="url(#t)"><rect width="240" height="240" fill="url(#v)"/>
+<circle cx="120" cy="128" r="42" fill="#f7c46a"/><circle cx="120" cy="128" r="60" fill="#f7c46a" opacity=".28"/>
+<g stroke="#fbe6b8" stroke-width="6" stroke-linecap="round" opacity=".9"><path d="M120 56v16M66 80l12 12M174 80l-12 12M44 128h16M180 128h16"/></g>
+<path d="M0 168c40-22 78-26 120-14s80 8 120-10v96H0z" fill="#8a9a6e"/><path d="M0 196c50-16 96-14 140-2s72 6 100-4v50H0z" fill="#6c7d56"/><rect width="240" height="240" filter="url(#g)"/></g></svg>

@@ -6,13 +6,14 @@ A personal Sadhana journal for Sadhanapada participants. A digital companion to 
 
 ## Features
 
-- **Tracker** — log daily practices with custom inputs (time, count, minutes, done toggle, icon scale)
-- **Daily Reflection** — 7 contemplative prompts with voice input, symbol stamps, and mood slider
-- **Weekly Reflection + Digest** — 9 prompts (including seva) + data-driven weekly summary with sparklines
-- **Expressions** — freeform rich-text writing with Tiptap editor
-- **Themes** — Contemplative Dark and Digital Parchment (light)
-- **PWA** — installable, works offline with IndexedDB mutation queue
-- **Custom time/number pickers** — no native browser UI, fully themed
+- **Google sign-in + approval** — anyone with a Google account can sign in and finish onboarding; an admin approves them before they can use the app
+- **Per-user sections** — admins set what each person may use; each person turns sections on/off within that. Navigation and APIs follow the result
+- **Tracker** — log daily practices with custom inputs (time, count, minutes, done toggle, icon scale), with Isha practice illustrations
+- **Daily Reflection** — contemplative prompts with symbol stamps and a mood slider
+- **Weekly Reflection + Digest** — 9 prompts (including seva) and a data-driven weekly summary
+- **Expressions** — freeform rich-text writing (audio, video and people are next)
+- **Themes** — cream journal (light, default) and night journal (dark), switchable in Settings
+- **PWA** — installable, works offline with an IndexedDB mutation queue, Isha splash on launch
 
 ## Tech Stack
 
@@ -48,14 +49,16 @@ npx prisma generate
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — you'll land on onboarding.
+Open [http://localhost:3000](http://localhost:3000) — sign in with Google, then onboarding.
 
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string (Neon recommended) |
-| `AUTH_SECRET` | Secret for session cookies |
+| `AUTH_SECRET` | Auth.js secret (`npx auth secret`) |
+| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Google OAuth client. Redirect URI: `<app-url>/api/auth/callback/google` |
+| `ADMIN_EMAILS` | Comma-separated emails that become approved admins on first sign-in |
 
 ## Build & Deploy
 
@@ -104,3 +107,4 @@ src/
 - Template-based digest — no AI-generated text
 - Offline-first — mutations queue in IndexedDB
 - Every icon is Phosphor (thin weight) — no emojis
+

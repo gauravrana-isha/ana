@@ -1,5 +1,6 @@
 "use client";
 
+import { Lotus } from "@/components/art/Lotus";
 import { cn } from "@/lib/utils";
 
 interface LoaderProps {
@@ -9,62 +10,49 @@ interface LoaderProps {
   fullScreen?: boolean;
 }
 
-export function Loader({ size = "md", className, label, fullScreen = false }: LoaderProps) {
-  const sizes = {
-    sm: "w-5 h-5",
-    md: "w-8 h-8",
-    lg: "w-12 h-12",
-  };
+const LOTUS = { sm: 22, md: 32, lg: 44 };
 
-  const spinner = (
-    <div className={cn("flex flex-col items-center gap-3", className)}>
-      <div className={cn("relative", sizes[size])}>
-        {/* Outer ring */}
-        <div className={cn(
-          "absolute inset-0 rounded-full border-2 border-line opacity-30",
-          sizes[size]
-        )} />
-        {/* Spinning arc */}
-        <div className={cn(
-          "absolute inset-0 rounded-full border-2 border-transparent border-t-accent animate-spin",
-          sizes[size]
-        )} />
-        {/* Inner dot */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className={cn(
-            "rounded-full bg-accent/40 animate-pulse",
-            size === "sm" ? "w-1.5 h-1.5" : size === "md" ? "w-2 h-2" : "w-3 h-3"
-          )} />
-        </div>
-      </div>
-      {label && (
-        <span className="font-ui text-xs text-ink-soft animate-pulse">{label}</span>
+/** The lotus, breathing. Used wherever a section or page is waiting on data. */
+export function Loader({ size = "md", className, label, fullScreen = false }: LoaderProps) {
+  const body = (
+    <div role="status" aria-live="polite" className={cn("flex flex-col items-center gap-3 text-accent", className)}>
+      <span className="relative grid place-items-center">
+        <span className="absolute inset-[-40%] rounded-full bg-accent-soft ana-breathe-halo" aria-hidden="true" />
+        <Lotus size={LOTUS[size]} className="relative ana-breathe" />
+      </span>
+      {label ? (
+        <span className="font-ui text-[13px] text-ink-soft">{label}</span>
+      ) : (
+        <span className="sr-only">Loading</span>
       )}
     </div>
   );
 
   if (fullScreen) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm">
-        {spinner}
-      </div>
-    );
+    return <div className="fixed inset-0 z-50 grid place-items-center bg-bg/80 backdrop-blur-sm">{body}</div>;
   }
-
-  return spinner;
+  return body;
 }
 
-/** Inline loader for buttons */
-export function ButtonLoader() {
+/** Three breathing dots in the button's own colour. */
+export function ButtonLoader({ className }: { className?: string }) {
   return (
-    <div className="w-4 h-4 rounded-full border-2 border-transparent border-t-current animate-spin" />
+    <span role="status" aria-label="Working" className={cn("inline-flex items-center gap-[5px]", className)}>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="block w-[6px] h-[6px] rounded-full bg-current ana-dot"
+          style={{ animationDelay: `${i * 160}ms` }}
+        />
+      ))}
+    </span>
   );
 }
 
-/** Overlay loader — covers a container */
+/** Covers a container while it reloads. */
 export function OverlayLoader({ label }: { label?: string }) {
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg/60 backdrop-blur-[2px] rounded-14">
+    <div className="absolute inset-0 z-10 grid place-items-center bg-bg/60 backdrop-blur-[2px] rounded-14">
       <Loader size="md" label={label} />
     </div>
   );

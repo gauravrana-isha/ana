@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "@phosphor-icons/react";
+import { PickerPanel } from "@/components/ui/pickers";
 import { PracticeRow } from "./PracticeRow";
+import { Busy } from "@/components/ui/Busy";
+import { ButtonLoader } from "@/components/ui/Loader";
 import type { Practice, DayLogEntry } from "@/lib/types";
 
 interface WeeklyEntryModalProps {
@@ -11,59 +13,48 @@ interface WeeklyEntryModalProps {
   practice: Practice;
   date: string;
   entry: DayLogEntry | undefined;
-  onSave: (practiceId: string, entry: Partial<DayLogEntry>) => void;
+  onSave: (practiceId: string, entry: Partial<DayLogEntry>) => Promise<void> | void;
 }
 
+/** Edit one practice on one day from the week view. */
 export function WeeklyEntryModal({ open, onClose, practice, date, entry, onSave }: WeeklyEntryModalProps) {
-  const [localEntry, setLocalEntry] = useState<DayLogEntry>(entry ?? { done: false, values: {} });
+  const [local, setLocal] = useState<DayLogEntry>(entry ?? { done: false, values: {} });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(false);
 
-  if (!open) return null;
-
-  function handleChange(_practiceId: string, update: Partial<DayLogEntry>) {
-    setLocalEntry(prev => ({
-      done: update.done ?? prev.done,
-      values: { ...prev.values, ...(update.values ?? {}) },
-    }));
+  async function save() {
+    setSaving(true);
+    setError(false);
+    try {
+      await onSave(practice.id, local);
+      onClose();
+    } catch {
+      setError(true);
+    } finally {
+      setSaving(false);
+    }
   }
-
-  function handleSave() {
-    onSave(practice.id, localEntry);
-    onClose();
-  }
-
-  const dayLabel = new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  const dayLabel = new Date(date + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-surface rounded-20 p-5 w-full max-w-[380px] shadow-xl">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-ink-soft hover:text-ink"
-          aria-label="Close"
-        >
-          <X size={18} weight="thin" />
-        </button>
-
-        <div className="font-hand text-lg text-accent mb-1">{dayLabel}</div>
-        <div className="font-serif text-base text-ink mb-4">{practice.name}</div>
-
-        {/* Render the practice row inline */}
-        <div className="bg-surface-2 rounded-14 -mx-1">
-          <PracticeRow
-            practice={practice}
-            entry={localEntry}
-            onChange={handleChange}
-          />
-        </div>
-
-        <button
-          onClick={handleSave}
-          className="w-full mt-4 py-2.5 rounded-14 bg-accent text-bg font-ui text-sm font-medium"
-        >
-          Save
-        </button>
-      </div>
-    </div>
+    <PickerPanel
+      open={open}
+      onClose={onClose}
+      title={dayLabel}
+      footer={
+        <>
+          <button type="button" onClick={onClose} disabled={saving} className="press flex-1 h-11 rounded-[14px] bg-surface-2 text-ink font-ui text-[14px] font-semibold disabled:opacity-50">Cancel</button>
+          <button type="button" onClick={save} disabled={saving} aria-busy={saving || undefined} className="press relative flex-1 h-11 rounded-[14px] bg-accent text-bg font-ui text-[14px] font-semibold">
+            <span className={saving ? "invisible" : ""}>Save</span>
+            {saving && <ButtonLoader className="absolute inset-0 m-auto w-fit h-fit" />}
+          </button>
+        </>
+      }
+    >
+      <Busy busy={saving} className="-mx-1">
+        <PracticeRow editable={false} practice={practice} entry={local} onChange={(_, e) => setLocal({ done: !!e.done, values: e.values ?? {} })} />
+      </Busy>
+      {error && <p role="alert" className="mt-2 font-ui text-[13px] text-danger">Couldn&rsquo;t save. Please try again.</p>}
+    </PickerPanel>
   );
 }
