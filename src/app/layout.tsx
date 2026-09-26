@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Fraunces, Public_Sans } from "next/font/google";
 import { Providers } from "./providers";
 import { SplashController } from "@/components/shell/SplashController";
+import { WebAnalytics } from "@/components/shell/WebAnalytics";
 import "./globals.css";
 
 /*
@@ -104,6 +105,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <div className="ana-splash" aria-hidden="true" />
         <SplashController />
         <Providers>{children}</Providers>
+        <WebAnalytics />
       </body>
     </html>
   );
