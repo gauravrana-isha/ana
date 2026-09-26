@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { resolveNotifications } from "@/lib/notify";
 import { resolveAdmin } from "@/lib/session";
 import { isFeatureKey } from "@/lib/features";
 
@@ -54,5 +55,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     );
   }
   await db.$transaction(ops);
+  // Decided (let in or turned away): the "waiting for approval" note goes for every admin.
+  if (status && status !== "PENDING" && target.status === "PENDING") await resolveNotifications(`approval:${id}`);
   return NextResponse.json({ ok: true });
 }

@@ -122,22 +122,31 @@ export function time12(hhmm: unknown, short = false) {
 }
 
 /** A compact summary for a table cell: "2×", "12m", "1× · 108", "4:30a", "Balanced", "✓". */
-export function cellSummary(spec: PracticeSpec, entry: Partial<DayLogEntry> | undefined): { text: string; muted: boolean } | null {
+export function cellSummary(spec: PracticeSpec, entry: Partial<DayLogEntry> | undefined): { text: string; full: string; muted: boolean } | null {
   const logged = entry?.values ?? {};
   const values = spec.rhythm ? valuesWithDefaults(spec, logged) : logged;
   const parts: string[] = [];
+  const full: string[] = [];
   let usedDefault = false;
   for (const f of spec.fields) {
     const v = values[f.key];
     if (!filled(v)) continue;
     if (spec.rhythm && !filled(logged[f.key])) usedDefault = true;
-    if (f.kind === "TIME") parts.push(time12(v, true));
-    else if (f.kind === "ICONSCALE") parts.push(scaleLabel(f, v));
-    else if (f.kind === "MINUTES") parts.push(`${v}m`);
-    else if (f.taps) parts.push(`${v}×`);
-    else parts.push(String(v));
+    let text: string;
+    let long: string | null = null;
+    if (f.kind === "TIME") text = time12(v, true);
+    else if (f.kind === "ICONSCALE") {
+      // Levels are shown by their first letter in narrow cells (B for Balanced); the full word
+      // stays in the tooltip and for screen readers.
+      long = scaleLabel(f, v);
+      text = long.charAt(0).toUpperCase();
+    } else if (f.kind === "MINUTES") text = `${v}m`;
+    else if (f.taps) text = `${v}×`;
+    else text = String(v);
+    parts.push(text);
+    full.push(long ?? text);
   }
-  if (parts.length) return { text: parts.join(" · "), muted: usedDefault };
-  if (entry?.done) return { text: "✓", muted: false };
+  if (parts.length) return { text: parts.join(" · "), full: full.join(" · "), muted: usedDefault };
+  if (entry?.done) return { text: "✓", full: "done", muted: false };
   return null;
 }

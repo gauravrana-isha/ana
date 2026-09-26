@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { resolveNotifications } from "@/lib/notify";
 import { resolveUser } from "@/lib/session";
 import { commitmentDue } from "@/lib/commitment";
 
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
     db.commitment.updateMany({ where: { userId: user.id, supersededAt: null }, data: { supersededAt: now } }),
     db.commitment.create({ data: { userId: user.id, body: parsed.data.body, revisit: parsed.data.revisit, revisitedAt: now } }),
   ]);
+  // A fresh letter: any "read it again" note about the old one is done with.
+  await resolveNotifications("commitment:", user.id);
   return NextResponse.json(dto(created), { status: 201 });
 }
 
@@ -48,5 +51,7 @@ export async function PATCH(req: NextRequest) {
     where: { userId: user.id, supersededAt: null },
     data: { ...(parsed.data.revisit ? { revisit: parsed.data.revisit } : {}), ...(parsed.data.revisited ? { revisitedAt: new Date() } : {}) },
   });
+  // Read again (or told not to come back): the reminder in the bell is done with.
+  if (parsed.data.revisited || parsed.data.revisit === "never") await resolveNotifications("commitment:", user.id);
   return NextResponse.json({ ok: true });
 }

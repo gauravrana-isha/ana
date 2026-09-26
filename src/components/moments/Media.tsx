@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Camera, CameraRotate, Images, Microphone, Pause, Play, Stop, UploadSimple, VideoCamera, X, ArrowCounterClockwise } from "@phosphor-icons/react";
+import { CameraRotate, Images, Pause, Play, Stop, UploadSimple, X, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatDuration, mediaUrl, type AttachmentDTO } from "@/lib/media-client";
 import { useRecorder } from "./useRecorder";
 import { prefersNativeCapture, useCamera } from "./useCamera";
+import { MomentBadge, MomentGlyph } from "@/components/art/MomentIcon";
 import type { UploadState } from "./useEagerUploads";
 
 // ---------------------------------------------------------------- playback
@@ -182,7 +183,7 @@ export function AudioCapture({ value, onChange }: { value: CapturedMedia | null;
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3 rounded-[20px] bg-surface py-7 px-4 text-center">
-          {recording ? <LiveWave level={rec.level} active /> : <div className="h-14 grid place-items-center"><Microphone size={28} className="text-accent/70" /></div>}
+          {recording && <LiveWave level={rec.level} active />}
           <button
             type="button"
             onClick={recording ? rec.stop : () => rec.start()}
@@ -191,7 +192,7 @@ export function AudioCapture({ value, onChange }: { value: CapturedMedia | null;
             style={{ background: recording ? "var(--danger)" : "var(--accent)" }}
           >
             {recording && <span className="absolute inset-0 rounded-full animate-ping bg-[var(--danger)] opacity-25" aria-hidden="true" />}
-            <span className="relative">{recording ? <Stop size={26} weight="fill" /> : <Microphone size={30} weight="fill" />}</span>
+            <span className="relative">{recording ? <Stop size={26} weight="fill" /> : <MomentGlyph kind="audio" size={34} strokeWidth={2.8} />}</span>
           </button>
           <div className="font-display text-[22px] font-semibold text-ink tabular" aria-live="polite">
             {recording ? formatDuration(rec.elapsed) : rec.state === "asking" ? "Allow the microphone…" : "Tap to record"}
@@ -273,7 +274,7 @@ export function VideoCapture({ value, onChange }: { value: CapturedMedia | null;
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 rounded-[20px] bg-surface py-8 px-4 text-center">
-            <span className="grid place-items-center w-14 h-14 rounded-full bg-accent-soft text-accent"><VideoCamera size={26} /></span>
+            <MomentBadge kind="video" size={56} />
             <div className="font-display text-[20px] font-semibold text-ink">{rec.state === "asking" ? "Allow the camera…" : "Record a short video"}</div>
             {rec.state === "denied" ? (
               <Hint tone="warn">The camera is blocked. Allow it in site settings, or choose a video you already have.</Hint>
@@ -284,7 +285,7 @@ export function VideoCapture({ value, onChange }: { value: CapturedMedia | null;
             )}
             <div className="mt-1 flex flex-wrap justify-center gap-2">
               <ActionButton primary onClick={() => (native ? nativeRef.current?.click() : rec.prepare())}>
-                <Camera size={18} /> {native ? "Record video" : "Open camera"}
+                <MomentGlyph kind="video" size={18} /> {native ? "Record video" : "Open camera"}
               </ActionButton>
               <ActionButton onClick={() => fileRef.current?.click()}>
                 <UploadSimple size={18} /> Choose a video
@@ -373,7 +374,7 @@ export function PhotoCapture({ value, onChange, statusOf, onRetry }: { value: Ca
           </div>
         ) : value.length === 0 ? (
           <div className={cn("flex flex-col items-center gap-3 rounded-[20px] border-[1.5px] border-dashed py-8 px-4 text-center transition-colors", dragging ? "border-accent bg-accent-soft" : "border-line bg-surface")}>
-            <span className="grid place-items-center w-14 h-14 rounded-full bg-accent-soft text-accent"><Camera size={26} /></span>
+            <MomentBadge kind="photo" size={56} />
             <div className="font-display text-[20px] font-semibold text-ink">{dragging ? "Drop to add" : "Add photos"}</div>
             {cam.state === "denied" ? (
               <Hint tone="warn">The camera is blocked. Allow it in site settings, or choose photos instead.</Hint>
@@ -381,7 +382,7 @@ export function PhotoCapture({ value, onChange, statusOf, onRetry }: { value: Ca
               <Hint>Take one now, or choose up to 9 from your {native ? "gallery" : "computer"}{native ? "" : ". You can also drop them here"}.</Hint>
             )}
             <div className="mt-1 flex flex-wrap justify-center gap-2">
-              <ActionButton primary onClick={takePhoto}><Camera size={18} /> Take a photo</ActionButton>
+              <ActionButton primary onClick={takePhoto}><MomentGlyph kind="photo" size={18} /> Take a photo</ActionButton>
               <ActionButton onClick={() => fileRef.current?.click()}><Images size={18} /> Choose photos</ActionButton>
             </div>
           </div>
@@ -410,7 +411,7 @@ export function PhotoCapture({ value, onChange, statusOf, onRetry }: { value: Ca
             {room > 0 && (
               <motion.div layout className={cn("aspect-square rounded-[14px] border-[1.5px] border-dashed grid grid-rows-2 overflow-hidden transition-colors", dragging ? "border-accent bg-accent-soft" : "border-line")}>
                 <button type="button" onClick={takePhoto} className="press flex items-center justify-center gap-1.5 font-ui text-[12.5px] font-semibold text-accent hover:bg-accent-soft border-b border-dashed border-line">
-                  <Camera size={17} /> Take
+                  <MomentGlyph kind="photo" size={17} /> Take
                 </button>
                 <button type="button" onClick={() => fileRef.current?.click()} className="press flex items-center justify-center gap-1.5 font-ui text-[12.5px] font-semibold text-ink-soft hover:text-ink hover:bg-surface">
                   <Images size={17} /> Choose

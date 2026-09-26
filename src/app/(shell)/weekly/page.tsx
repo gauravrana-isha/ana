@@ -2,7 +2,7 @@
 
 import { usePersistentState } from "@/lib/persist";
 
-import { useState, useCallback, useEffect, Suspense } from "react";
+import { useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FloppyDisk, PencilSimple } from "@phosphor-icons/react";
@@ -71,21 +71,21 @@ function WeeklyContent() {
   });
 
   const answers: Record<string, string> = reflection?.answers ?? {};
-  const stamps: Record<string, string[]> = reflection?.stamps ?? {};
 
   // Local state for instant feedback
   const [localAnswers, setLocalAnswers] = useState<Record<string, string>>({});
   const [localStamps, setLocalStamps] = useState<Record<string, string[]>>({});
   const [dirty, setDirty] = useState(false);
 
-  // Sync from server on load
-  useEffect(() => {
-    if (reflection) {
-      setLocalAnswers(reflection.answers ?? {});
-      setLocalStamps(reflection.stamps ?? {});
-      setDirty(false);
-    }
-  }, [reflection]);
+  // Take the saved answers into the form whenever a fresh copy arrives from the server
+  // (during render, keyed on the data, rather than in an effect).
+  const [syncedFrom, setSyncedFrom] = useState<unknown>(null);
+  if (reflection && reflection !== syncedFrom) {
+    setSyncedFrom(reflection);
+    setLocalAnswers(reflection.answers ?? {});
+    setLocalStamps(reflection.stamps ?? {});
+    setDirty(false);
+  }
 
   const handleAnswerChange = useCallback(
     (key: string, val: string) => {

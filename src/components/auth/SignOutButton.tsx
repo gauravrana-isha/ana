@@ -4,12 +4,14 @@ import { useState } from "react";
 import { SignOut } from "@phosphor-icons/react";
 import { clear } from "idb-keyval";
 import { signOutAction } from "@/app/actions";
+import { dropPushSubscription } from "@/lib/push-client";
 import { ButtonLoader } from "@/components/ui/Loader";
 import { cn } from "@/lib/utils";
 
 /**
  * Signs out and leaves nothing behind on the device: offline page and API caches, the
- * pending offline queue and session state are cleared first (phones and laptops are shared).
+ * pending offline queue and session state are cleared first, and this device stops getting
+ * the person's notifications (phones and laptops are shared).
  */
 export function SignOutButton({ className, withIcon = true, labelClassName }: { className?: string; withIcon?: boolean; labelClassName?: string }) {
   const [busy, setBusy] = useState(false);
@@ -17,6 +19,7 @@ export function SignOutButton({ className, withIcon = true, labelClassName }: { 
   async function signOut() {
     setBusy(true);
     try {
+      await dropPushSubscription();
       if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
       await clear().catch(() => {});
       sessionStorage.clear();

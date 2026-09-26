@@ -11,6 +11,7 @@ export interface Moment {
   place: string | null;
   stamps: string[];
   lookBackOn: string | null;
+  lookBackAt: string | null;
   occurredAt: string;
   hasTime: boolean;
   people: { id: string; name: string; photoId: string | null }[];

@@ -9,22 +9,34 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  name          String?
-  email         String?    @unique
-  emailVerified DateTime?
-  image         String?
+  id                  String      @id @default(cuid())
+  name                String?
+  email               String?     @unique
+  emailVerified       DateTime?
+  image               String?
   /// Legacy (pre-Google) accounts only. Cleared once the account is claimed.
-  deviceId      String?    @unique
-  role          Role       @default(MEMBER)
-  status        UserStatus @default(PENDING)
-  intention     String?
-  theme         Theme      @default(LIGHT)
-  onboardedAt   DateTime?
-  approvedAt    DateTime?
-  approvedById  String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @default(now()) @updatedAt
+  deviceId            String?     @unique
+  role                Role        @default(MEMBER)
+  status              UserStatus  @default(PENDING)
+  intention           String?
+  theme               Theme       @default(LIGHT)
+  onboardedAt         DateTime?
+  approvedAt          DateTime?
+  approvedById        String?
+  /// What ana calls you in greetings (defaults to the first name).
+  preferredName       String?
+  /// Your own photo (private, served like any other media). Falls back to the Google picture.
+  photoId             String?     @unique
+  photo               Attachment? @relation("UserPhoto", fields: [photoId], references: [id], onDelete: SetNull)
+  birthday            DateTime?   @db.Date
+  /// City or centre, in your words.
+  place               String?
+  /// "Who am I?" comes back every this many months (0 = never).
+  portraitEveryMonths Int         @default(3)
+  /// IANA time zone from the browser (e.g. "Asia/Kolkata"), so reminders arrive at a sensible hour.
+  timeZone            String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @default(now()) @updatedAt
 
   accounts          Account[]
   sessions          Session[]
@@ -38,6 +50,9 @@ model User {
   Person            Person[]
   Attachment        Attachment[]
   Commitment        Commitment[]
+  pushSubscriptions PushSubscription[]
+  notifications     Notification[]
+  portraits         Portrait[]
 
   @@index([status])
 }
@@ -179,24 +194,29 @@ model SevaEntry {
 /// A moment (formerly "expression"): writing, audio, video or photo, at a date and time,
 /// optionally with people. `date` is kept for older entries; `occurredAt` is the real time.
 model Expression {
-  id          String             @id @default(cuid())
-  userId      String
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String
-  date        DateTime           @db.Date
-  occurredAt  DateTime?
-  kind        String
-  body        String
-  place       String?
-  stamps      Json?
-  lookBackOn  DateTime?          @db.Date
-  refDates    Json
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @default(now()) @updatedAt
-  people      ExpressionPerson[]
-  attachments Attachment[]
+  id             String             @id @default(cuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  date           DateTime           @db.Date
+  occurredAt     DateTime?
+  kind           String
+  body           String
+  place          String?
+  stamps         Json?
+  lookBackOn     DateTime?          @db.Date
+  /// The exact moment to bring it back (newer entries). `lookBackOn` is kept as its local date.
+  lookBackAt     DateTime?
+  /// When the "coming back" notification went out, so it goes out once.
+  lookBackSentAt DateTime?
+  refDates       Json
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @default(now()) @updatedAt
+  people         ExpressionPerson[]
+  attachments    Attachment[]
 
   @@index([userId, occurredAt])
+  @@index([lookBackAt, lookBackSentAt])
 }
 
 model Person {
@@ -242,6 +262,7 @@ model Attachment {
   durationSec  Float?
   createdAt    DateTime    @default(now())
   personPhoto  Person?     @relation("PersonPhoto")
+  userPhoto    User?       @relation("UserPhoto")
 
   @@index([userId])
   @@index([expressionId])
@@ -256,8 +277,67 @@ model Commitment {
   /// "monthly" | "quarterly" | "never"
   revisit      String    @default("monthly")
   revisitedAt  DateTime?
+  /// Last time a "read it again" notification was sent.
+  remindedAt   DateTime?
   createdAt    DateTime  @default(now())
   supersededAt DateTime?
+
+  @@index([userId, createdAt])
+}
+
+/// A browser/device that asked for notifications (Web Push). One person can have several.
+model PushSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastSentAt DateTime?
+
+  @@index([userId])
+}
+
+/// The bell: things that came up for someone (a moment back, the letter, a birthday, an
+/// approval waiting). Each ends on its own: `expiresAt`, or once read for a week, or when
+/// what it was about is resolved.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "moment" | "commitment" | "birthday" | "approval" | "portrait"
+  kind      String
+  title     String
+  body      String
+  url       String
+  /// One notification per thing (e.g. "moment:<id>:<time>"), so repeats are ignored.
+  key       String
+  readAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, key])
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+/// "Who am I?": a slow self-portrait in three rings (body, mind, emotion). Each time it is
+/// looked at again a new one is kept, so earlier portraits can be set beside today's.
+model Portrait {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bodyWords    String[]
+  bodyNote     String?
+  mindWords    String[]
+  mindNote     String?
+  emotionWords String[]
+  emotionNote  String?
+  /// Weights (-1 heavy … 1 light) for words the person added themselves, e.g. {"homesick": -0.6}.
+  weights      Json?
+  createdAt    DateTime @default(now())
 
   @@index([userId, createdAt])
 }

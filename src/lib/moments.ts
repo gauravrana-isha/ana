@@ -23,6 +23,7 @@ export function serializeMoment(m: Row) {
     place: m.place,
     stamps: (m.stamps as string[] | null) ?? [],
     lookBackOn: m.lookBackOn?.toISOString().slice(0, 10) ?? null,
+    lookBackAt: m.lookBackAt?.toISOString() ?? null,
     // Older entries only had a date; show them at noon so they sort sensibly.
     occurredAt: (m.occurredAt ?? new Date(m.date.toISOString().slice(0, 10) + "T12:00:00")).toISOString(),
     hasTime: !!m.occurredAt,
@@ -42,6 +43,8 @@ export const MomentSchema = z.object({
   place: z.string().trim().max(120).optional().nullable(),
   stamps: z.array(z.string().max(30)).max(9).default([]),
   lookBackOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  /** The exact time to bring it back; `lookBackOn` is its date where the person is. */
+  lookBackAt: z.string().datetime({ offset: true }).optional().nullable(),
   personIds: z.array(z.string()).max(30).default([]),
   attachmentIds: z.array(z.string()).max(12).default([]),
 });
@@ -55,3 +58,11 @@ export async function ownedIds(userId: string, personIds: string[], attachmentId
   return { people: people.map((p) => p.id), attachments: attachments.map((a) => a.id) };
 }
 
+
+/** Look-back fields to store. A new time clears "sent", so a moved reminder goes out again. */
+export function lookBackData(d: { lookBackOn?: string | null; lookBackAt?: string | null }, previous?: { lookBackAt: Date | null } | null) {
+  const at = d.lookBackAt ? new Date(d.lookBackAt) : null;
+  const on = d.lookBackOn ? new Date(d.lookBackOn) : at ? new Date(at.toISOString().slice(0, 10)) : null;
+  const moved = (previous?.lookBackAt?.getTime() ?? null) !== (at?.getTime() ?? null);
+  return { lookBackOn: on, lookBackAt: at, ...(moved || !previous ? { lookBackSentAt: null } : {}) };
+}

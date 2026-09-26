@@ -28,9 +28,17 @@ export async function GET(req: NextRequest) {
   const [lookBack, onThisDayRaw, people, daily, commitment] = await Promise.all([
     has("expressions")
       ? db.expression.findMany({
-          where: { userId: user.id, lookBackOn: { gte: addDays(today, -7), lte: today } },
+          // Back once its time has come (exact time for newer moments, the day for older ones),
+          // and kept here for a week.
+          where: {
+            userId: user.id,
+            OR: [
+              { lookBackAt: { gte: addDays(new Date(), -7), lte: new Date() } },
+              { lookBackAt: null, lookBackOn: { gte: addDays(today, -7), lte: today } },
+            ],
+          },
           include: momentInclude,
-          orderBy: { lookBackOn: "desc" },
+          orderBy: [{ lookBackOn: "desc" }, { lookBackAt: "desc" }],
           take: 5,
         })
       : [],

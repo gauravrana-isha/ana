@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowCounterClockwise, Cake, Camera, Feather, Microphone, Scroll, VideoCamera } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, Cake, Scroll } from "@phosphor-icons/react";
+import { MomentBadge } from "@/components/art/MomentIcon";
 import { Arrow } from "@/components/ui/Arrows";
 import { Ornament } from "@/components/art/Ornament";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
@@ -13,7 +14,7 @@ import { PersonAvatar } from "@/components/people/People";
 import { MomentComposer } from "@/components/moments/MomentComposer";
 import { MomentCard } from "@/components/moments/MomentCard";
 import { useDayLog, usePractices, useQuote, useUpdateDayLog } from "@/lib/queries";
-import { useMe } from "@/lib/me";
+import { callName, useMe } from "@/lib/me";
 import type { Moment, MomentKind } from "@/lib/moment-types";
 import type { DayLogEntries, DayLogEntry } from "@/lib/types";
 import { today as todayStr } from "@/lib/dates";
@@ -29,10 +30,9 @@ interface TodayData {
   commitmentMissing?: boolean;
 }
 
-function greeting(name: string | null | undefined) {
+function greeting(first: string | null | undefined) {
   const h = new Date().getHours();
   const part = h < 5 ? "Still night" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-  const first = name?.split(" ")[0];
   return first ? `${part}, ${first}` : part;
 }
 
@@ -58,7 +58,7 @@ export default function TodayPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <p className="-mt-3 font-serif italic text-[17px] text-ink-soft">{greeting(me?.name)}.</p>
+      <p className="-mt-3 font-serif italic text-[17px] text-ink-soft">{greeting(callName(me))}.</p>
 
       {/* The day's quote */}
       {quoteData?.quote && (
@@ -78,13 +78,6 @@ export default function TodayPage() {
           <span className="mt-3 inline-flex items-center gap-1.5 font-ui text-[13.5px] font-semibold text-accent">Read it again <Arrow size={15} className="transition-transform group-hover:translate-x-0.5" /></span>
         </Link>
       )}
-      {data?.commitmentMissing && (
-        <Link href="/commitment" className="press flex items-center gap-3 rounded-[18px] bg-surface p-4 hover:bg-surface-2">
-          <FeatureBadge k="commitment" size={40} />
-          <span className="flex-1 font-ui text-[14px] text-ink-soft"><strong className="font-semibold text-ink">Write your commitment.</strong> A letter to yourself that comes back when you choose.</span>
-          <Arrow size={16} className="text-ink-soft" />
-        </Link>
-      )}
 
       {/* Keep a moment */}
       {has("expressions") && (
@@ -92,13 +85,13 @@ export default function TodayPage() {
           <SectionHead title="Keep a moment" />
           <div className="grid grid-cols-4 gap-2">
             {([
-              ["writing", "Write", Feather],
-              ["audio", "Voice", Microphone],
-              ["video", "Video", VideoCamera],
-              ["photo", "Photo", Camera],
-            ] as const).map(([k, label, Icon]) => (
-              <button key={k} type="button" onClick={() => openNew(k)} className="press flex flex-col items-center justify-center gap-2 h-[88px] rounded-[18px] bg-surface hover:bg-surface-2 text-ink">
-                <span className="grid place-items-center w-10 h-10 rounded-full bg-accent-soft text-accent"><Icon size={20} /></span>
+              ["writing", "Write"],
+              ["audio", "Voice"],
+              ["video", "Video"],
+              ["photo", "Photo"],
+            ] as const).map(([k, label]) => (
+              <button key={k} type="button" onClick={() => openNew(k)} className="press group flex flex-col items-center justify-center gap-2 h-[96px] rounded-[18px] bg-surface hover:bg-surface-2 text-ink transition-colors">
+                <MomentBadge kind={k} size={44} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
                 <span className="font-ui text-[13px] font-semibold">{label}</span>
               </button>
             ))}
@@ -127,6 +120,18 @@ export default function TodayPage() {
                 <span key={i} className={cn("h-1 flex-1 rounded-full", i < data.daily!.answered ? "bg-accent" : "bg-line")} />
               ))}
             </span>
+          </span>
+          <Arrow size={18} className="text-ink-soft group-hover:text-ink transition-colors" />
+        </Link>
+      )}
+
+      {/* Until the letter is written, a quiet nudge after the day's own things */}
+      {data?.commitmentMissing && (
+        <Link href="/commitment" className="press group flex items-center gap-4 rounded-[20px] bg-surface p-4 sm:p-5 hover:bg-surface-2 transition-colors">
+          <FeatureBadge k="commitment" size={48} />
+          <span className="flex-1 min-w-0">
+            <span className="block font-display text-[18px] font-semibold text-ink">Write your commitment</span>
+            <span className="block font-ui text-[13.5px] text-ink-soft mt-0.5">A letter to yourself that comes back when you choose.</span>
           </span>
           <Arrow size={18} className="text-ink-soft group-hover:text-ink transition-colors" />
         </Link>

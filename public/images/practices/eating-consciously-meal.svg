@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240"><defs>
+<filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .08 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8e7c9"/><stop offset="1" stop-color="#ecc998"/></linearGradient>
+<linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#86ad5f"/><stop offset="1" stop-color="#4f7a3c"/></linearGradient>
+<linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2ae4f"/><stop offset=".55" stop-color="#c58a2e"/><stop offset="1" stop-color="#9c6620"/></linearGradient>
+<radialGradient id="rice" cx="45%" cy="30%" r="75%"><stop offset="0" stop-color="#fffdf6"/><stop offset="1" stop-color="#efe6cf"/></radialGradient>
+<clipPath id="t"><rect width="240" height="240" rx="52"/></clipPath>
+<clipPath id="dome"><path d="M58 138c4-34 30-56 62-56s58 22 62 56z"/></clipPath></defs>
+<g clip-path="url(#t)">
+<rect width="240" height="240" fill="url(#bg)"/>
+<!-- banana leaf behind the bowl -->
+<path d="M8 176C30 98 108 42 226 30c4 70-60 150-176 170-20 3-34-6-42-24z" fill="url(#leaf)"/>
+<path d="M22 188C74 132 144 78 222 36" stroke="#a9c983" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+<g stroke="#a9c983" stroke-width="1.6" stroke-linecap="round" opacity=".55" fill="none">
+<path d="M58 158c-6-18-4-34 4-48M84 138c-4-20 0-38 10-52M112 118c-2-20 4-36 16-48M140 100c0-18 8-32 20-42M170 80c2-14 10-26 22-32"/>
+<path d="M58 158c20 4 38 2 54-6M86 138c20 2 38-2 52-10M114 118c20 0 36-6 48-14M142 100c18-2 32-8 44-18"/>
+</g>
+<!-- shadow -->
+<ellipse cx="122" cy="206" rx="70" ry="10" fill="#6b4a1e" opacity=".18"/>
+<!-- rice -->
+<path d="M58 138c4-34 30-56 62-56s58 22 62 56z" fill="url(#rice)"/>
+<g clip-path="url(#dome)" fill="#e6dbbf">
+<ellipse cx="92" cy="112" rx="4" ry="1.8" transform="rotate(-20 92 112)"/><ellipse cx="108" cy="98" rx="4" ry="1.8" transform="rotate(15 108 98)"/>
+<ellipse cx="132" cy="96" rx="4" ry="1.8" transform="rotate(-10 132 96)"/><ellipse cx="150" cy="110" rx="4" ry="1.8" transform="rotate(25 150 110)"/>
+<ellipse cx="120" cy="116" rx="4" ry="1.8" transform="rotate(5 120 116)"/><ellipse cx="80" cy="128" rx="4" ry="1.8" transform="rotate(-30 80 128)"/>
+<ellipse cx="160" cy="128" rx="4" ry="1.8" transform="rotate(20 160 128)"/><ellipse cx="102" cy="126" rx="4" ry="1.8" transform="rotate(-8 102 126)"/>
+<ellipse cx="140" cy="124" rx="4" ry="1.8" transform="rotate(12 140 124)"/>
+</g>
+<!-- ghee and a curry leaf -->
+<ellipse cx="124" cy="88" rx="9" ry="4.5" fill="#f2c24e"/><ellipse cx="121" cy="86.5" rx="3.5" ry="1.6" fill="#fff4c9"/>
+<path d="M134 84c8-10 20-12 28-8-6 8-18 12-28 8z" fill="#5d8a3f"/><path d="M134 84c9-4 18-6 26-8" stroke="#8cb567" stroke-width="1.2" fill="none"/>
+<!-- bowl -->
+<path d="M44 136h152c-2 36-34 64-76 64s-74-28-76-64z" fill="url(#bowl)"/>
+<ellipse cx="120" cy="137" rx="76" ry="8" fill="#e9bb62"/>
+<path d="M58 152c10 20 34 34 62 34" stroke="#f3cf82" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+<!-- steam -->
+<g stroke="#fffaf0" stroke-width="5" fill="none" stroke-linecap="round" opacity=".85">
+<path d="M96 70c-8-8 8-14 0-24"/><path d="M122 62c-8-9 9-16 0-28"/><path d="M148 70c-8-8 8-14 0-24"/>
+</g>
+<rect width="240" height="240" filter="url(#g)"/></g></svg>

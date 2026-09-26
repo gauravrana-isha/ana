@@ -111,7 +111,7 @@ export const CATALOG: CatalogPractice[] = [
   p("dhyanalinga", "Dhyanalinga", undefined, "self", { image: "dhyanalinga.svg", icon: "Triangle" }),
   p("linga-bhairavi", "Linga Bhairavi", undefined, "self", { image: "linga-bhairavi.svg", icon: "Star", aliases: ["Lingabhairavi"] }),
   p("eating-consciously", "Eating consciously", undefined, "rhythm", {
-    image: "eating-consciously.svg",
+    image: "eating-consciously-meal.svg",
     icon: "BowlFood",
     hasDoneToggle: false,
     fields: [{ key: "level", kind: "ICONSCALE", default: "steady", labels: ["Under", "Balanced", "Over"] }],

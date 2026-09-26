@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import { Camera, Feather, Microphone, VideoCamera, X } from "@phosphor-icons/react";
+import { X } from "@phosphor-icons/react";
+import { MomentGlyph } from "@/components/art/MomentIcon";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -15,16 +16,17 @@ import { type AttachmentDTO, type MediaKind } from "@/lib/media-client";
 import type { Moment, MomentKind } from "@/lib/moment-types";
 import { toLocalInput } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { DateField, DateTimeField } from "@/components/ui/pickers";
+import { DateField, DateTimeField, TimeField } from "@/components/ui/pickers";
+import { NotifyNudge } from "@/components/push/Notifications";
 import { AudioCapture, MediaView, PhotoCapture, UploadStrip, VideoCapture, type CapturedMedia } from "./Media";
 import { useEagerUploads } from "./useEagerUploads";
 import { plainText } from "./RichText";
 
-const KINDS: { id: MomentKind; label: string; icon: typeof Feather }[] = [
-  { id: "writing", label: "Write", icon: Feather },
-  { id: "audio", label: "Voice", icon: Microphone },
-  { id: "video", label: "Video", icon: VideoCamera },
-  { id: "photo", label: "Photo", icon: Camera },
+const KINDS: { id: MomentKind; label: string }[] = [
+  { id: "writing", label: "Write" },
+  { id: "audio", label: "Voice" },
+  { id: "video", label: "Video" },
+  { id: "photo", label: "Photo" },
 ];
 
 const LOOK_BACK = [
@@ -35,10 +37,28 @@ const LOOK_BACK = [
   { id: "date", label: "Pick a date" },
 ] as const;
 
+/** Now plus some months, at the same time of day (worked out when saving, not when opened). */
 function addMonths(months: number) {
   const d = new Date();
   d.setMonth(d.getMonth() + months);
-  return d.toISOString().slice(0, 10);
+  return d;
+}
+
+function localDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function localTime(d: Date) {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+// The current minute, re-read every 30 seconds (so "that time has passed" stays true to the clock).
+function subscribeMinute(cb: () => void) {
+  const id = window.setInterval(cb, 30_000);
+  return () => window.clearInterval(id);
+}
+function currentMinute() {
+  return Math.floor(Date.now() / 60_000);
 }
 
 interface Props {
@@ -65,6 +85,7 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
   const [stamps, setStamps] = useState<string[]>([]);
   const [lookBack, setLookBack] = useState<(typeof LOOK_BACK)[number]["id"]>("none");
   const [lookBackDate, setLookBackDate] = useState("");
+  const [lookBackTime, setLookBackTime] = useState("09:00");
   const [kept, setKept] = useState<AttachmentDTO[]>([]);
   const [audio, setAudio] = useState<CapturedMedia | null>(null);
   const [video, setVideo] = useState<CapturedMedia | null>(null);
@@ -90,7 +111,8 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
       setPersonIds(m ? m.people.map((p) => p.id) : defaultPersonIds);
       setStamps(m?.stamps ?? []);
       setLookBack(m?.lookBackOn ? "date" : "none");
-      setLookBackDate(m?.lookBackOn ?? "");
+      setLookBackDate(m?.lookBackAt ? localDate(new Date(m.lookBackAt)) : (m?.lookBackOn ?? ""));
+      setLookBackTime(m?.lookBackAt ? localTime(new Date(m.lookBackAt)) : "09:00");
       setKept(m?.attachments ?? []);
       setAudio(null);
       setVideo(null);
@@ -115,16 +137,25 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
     onClose();
   }
 
-  function lookBackOn() {
+  /** When to bring it back, measured against the clock at the moment of saving. */
+  function lookBackAt(): Date | null {
     if (lookBack === "1m") return addMonths(1);
     if (lookBack === "6m") return addMonths(6);
     if (lookBack === "1y") return addMonths(12);
-    if (lookBack === "date" && lookBackDate) return lookBackDate;
+    if (lookBack === "date" && lookBackDate) return new Date(`${lookBackDate}T${lookBackTime || "09:00"}`);
     return null;
   }
+  // A picked day and time that has already gone by (checked live, and again on save).
+  const minute = useSyncExternalStore(subscribeMinute, currentMinute, () => 0);
+  const pickedPast = lookBack === "date" && !!lookBackDate && minute > 0 && new Date(`${lookBackDate}T${lookBackTime || "09:00"}`).getTime() <= minute * 60_000;
 
   async function save() {
     if (!me || !hasContent) return;
+    const back = lookBackAt();
+    if (lookBack === "date" && (!back || back.getTime() <= Date.now())) {
+      toast(back ? "Pick a time after now to bring it back." : "Choose the day to bring it back.", "error");
+      return;
+    }
     try {
       // Most files are already up by now; wait only for what's still going.
       if (uploads.uploadingCount) setSaving(`Finishing ${uploads.uploadingCount} upload${uploads.uploadingCount > 1 ? "s" : ""}…`);
@@ -137,7 +168,8 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
         occurredAt: new Date(when).toISOString(),
         place: place.trim() || null,
         stamps,
-        lookBackOn: lookBackOn(),
+        lookBackOn: back ? localDate(back) : null,
+        lookBackAt: back ? back.toISOString() : null,
         personIds,
         attachmentIds: [...kept, ...uploaded].map((a) => a.id),
       };
@@ -186,7 +218,7 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
                 <motion.span layoutId="composer-kind" className="absolute inset-0 rounded-full bg-bg shadow-[var(--shadow-soft)]" transition={{ type: "spring", stiffness: 500, damping: 40 }} />
               )}
               <span className="relative inline-flex items-center gap-1.5">
-                <k.icon size={16} weight={kind === k.id ? "fill" : "regular"} />
+                <MomentGlyph kind={k.id} size={17} strokeWidth={kind === k.id ? 3 : 2.5} />
                 <span className="hidden min-[380px]:inline">{k.label}</span>
               </span>
             </button>
@@ -272,7 +304,7 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
           </div>
         </label>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-4">
           <div>
             <span className="font-ui text-[13px] font-semibold text-ink">When</span>
             <div className="mt-2"><DateTimeField label="When" value={when} max={maxWhen.slice(0, 10)} onChange={setWhen} /></div>
@@ -282,7 +314,7 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
             <input
               value={place}
               onChange={(e) => setPlace(e.target.value.slice(0, 120))}
-              placeholder="e.g. Dhyanalinga, home, the Ashram kitchen"
+              placeholder="e.g. Dhyanalinga, home"
               className="mt-2 w-full h-12 px-4 rounded-[14px] bg-surface-2 text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/80"
             />
           </label>
@@ -312,8 +344,15 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
             ))}
           </div>
           {lookBack === "date" && (
-            <DateField label="Bring it back on" value={lookBackDate} min={maxWhen.slice(0, 10)} onChange={setLookBackDate} className="mt-2 sm:max-w-[280px]" />
+            <>
+              <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-[380px]">
+                <DateField compact label="Bring it back on" value={lookBackDate} min={localDate(new Date())} onChange={setLookBackDate} />
+                <TimeField label="Bring it back at" value={lookBackTime} onChange={setLookBackTime} />
+              </div>
+              {pickedPast && <p className="mt-1.5 font-ui text-[12.5px] text-danger">That time has passed. Pick a time after now.</p>}
+            </>
           )}
+          <NotifyNudge show={lookBack !== "none"} />
         </div>
       </div>
     </Sheet>

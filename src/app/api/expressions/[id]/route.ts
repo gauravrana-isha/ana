@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
-import { MomentSchema, momentInclude, ownedIds, serializeMoment } from "@/lib/moments";
+import { MomentSchema, lookBackData, momentInclude, ownedIds, serializeMoment } from "@/lib/moments";
 import { removeStored } from "@/lib/storage";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const user = await resolveUser("expressions");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const existing = await db.expression.findFirst({ where: { id, userId: user.id }, select: { id: true } });
+  const existing = await db.expression.findFirst({ where: { id, userId: user.id }, select: { id: true, lookBackAt: true } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const parsed = MomentSchema.safeParse(await req.json().catch(() => null));
@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
         occurredAt,
         place: d.place || null,
         stamps: d.stamps,
-        lookBackOn: d.lookBackOn ? new Date(d.lookBackOn) : null,
+        ...lookBackData(d, existing),
         people: { create: owned.people.map((personId) => ({ personId })) },
       },
     }),

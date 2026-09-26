@@ -1,5 +1,11 @@
 "use client";
 
+import { Switch } from "@/components/ui/Switch";
+import { ProfileEditor } from "@/components/profile/ProfileEditor";
+import { WhoAmICard } from "@/components/profile/WhoAmI";
+import { mediaUrl } from "@/lib/media-client";
+import { useMe, type Me } from "@/lib/me";
+import { NotificationSettings } from "@/components/push/Notifications";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,14 +31,6 @@ import { FEATURES, type FeatureKey } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import type { Practice } from "@/lib/types";
 
-interface Me {
-  name: string | null;
-  email: string | null;
-  image: string | null;
-  features: FeatureKey[];
-  allowedFeatures: FeatureKey[];
-}
-
 export default function ProfilePage() {
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as ThemeName);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -43,10 +41,7 @@ export default function ProfilePage() {
   const { toast, update } = useToast();
   const qc = useQueryClient();
   const router = useRouter();
-  const { data: me } = useQuery({
-    queryKey: ["me"],
-    queryFn: async (): Promise<Me> => (await fetch("/api/me")).json(),
-  });
+  const { data: me } = useMe();
 
   function handleThemeChange(next: ThemeName) {
     applyTheme(next);
@@ -128,6 +123,9 @@ export default function ProfilePage() {
       {/* Profile */}
       <ProfileHeader me={me} />
 
+      {/* Who am I? */}
+      <WhoAmICard />
+
       {/* Appearance */}
       <section>
         <SectionTitle>Appearance</SectionTitle>
@@ -152,6 +150,9 @@ export default function ProfilePage() {
           ))}
         </div>
       </section>
+
+      {/* Notifications */}
+      <NotificationSettings />
 
       {/* Sections */}
       <section>
@@ -245,46 +246,6 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="font-display text-[19px] font-semibold text-ink mb-3">{children}</h2>;
 }
 
-function Switch({
-  checked,
-  disabled,
-  busy,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  disabled?: boolean;
-  busy?: boolean;
-  onChange: (v: boolean) => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      aria-busy={busy || undefined}
-      onClick={() => onChange(!checked)}
-      className={cn(
-        "relative w-11 h-[26px] rounded-full shrink-0 transition-colors duration-200 disabled:cursor-not-allowed",
-        disabled && !busy && "opacity-60",
-        checked ? "bg-accent" : "bg-line"
-      )}
-    >
-      <span
-        className={cn(
-          "absolute top-[3px] left-[3px] w-5 h-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          checked && "translate-x-[18px]"
-        )}
-      >
-        {busy && <span className="absolute inset-[5px] rounded-full border-2 border-accent/30 border-t-accent animate-spin" aria-hidden="true" />}
-      </span>
-    </button>
-  );
-}
-
 function ManagePractices({ practices }: { practices: Practice[] }) {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -353,24 +314,12 @@ function practiceSummary(p: Practice) {
 }
 
 function ProfileHeader({ me }: { me: Me | undefined }) {
-  const qc = useQueryClient();
-  const { toast } = useToast();
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState("");
   const { data: stats } = useQuery({
     queryKey: ["profile-stats", today()],
     queryFn: async (): Promise<{ memberSince: string; month: Record<"daily" | "weekly" | "expressions" | "tracker", number> }> =>
       (await fetch(`/api/profile?date=${today()}`)).json(),
   });
-
-  async function saveName() {
-    const next = name.trim();
-    setEditing(false);
-    if (!next || next === me?.name) return;
-    const res = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: next }) });
-    if (!res.ok) return toast("Couldn't save your name.", "error");
-    qc.invalidateQueries({ queryKey: ["me"] });
-  }
 
   const cells = [
     { k: "daily", label: "Daily", value: stats?.month.daily },
@@ -381,28 +330,34 @@ function ProfileHeader({ me }: { me: Me | undefined }) {
 
   return (
     <section className="rounded-[22px] bg-surface overflow-hidden">
-      {/* Who */}
-      <div className="relative flex items-center gap-4 p-5 sm:p-6 pr-14">
-        <Avatar name={me?.name ?? me?.email ?? "You"} image={me?.image ?? null} size={56} />
-        <div className="flex-1 min-w-0">
-          {editing ? (
-            <form onSubmit={(e) => { e.preventDefault(); saveName(); }}>
-              <input autoFocus value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} onBlur={saveName} aria-label="Your name" className="w-full h-10 px-3 rounded-[10px] bg-bg text-ink font-display text-[20px] font-semibold outline-none border border-accent" />
-            </form>
-          ) : (
-            <button type="button" onClick={() => { setName(me?.name ?? ""); setEditing(true); }} className="group flex items-center gap-2 text-left max-w-full" aria-label="Edit your name">
-              <span className="font-display text-[21px] sm:text-[24px] font-semibold text-ink leading-tight truncate">{me?.name ?? "\u00a0"}</span>
-              <PencilSimple size={15} className="text-ink-soft opacity-60 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-            </button>
-          )}
-          <p className="font-ui text-[13px] text-ink-soft truncate mt-0.5">{me?.email ?? "\u00a0"}</p>
-          {stats?.memberSince && (
-            <p className="font-ui text-[12px] text-ink-soft/80 mt-0.5">
-              With ana since {new Date(stats.memberSince).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-            </p>
-          )}
+      {/* Who: photo and name side by side; the intention and edit button get the full width below */}
+      <div className="relative p-5 sm:p-6">
+        <div className="flex items-center gap-4 pr-10">
+          <Avatar name={me?.name ?? me?.email ?? "You"} image={me?.photoId ? mediaUrl(me.photoId) : (me?.image ?? null)} size={64} />
+          <div className="flex-1 min-w-0">
+            <h2 className="font-display text-[21px] sm:text-[24px] font-semibold text-ink leading-tight truncate">{me?.name ?? "\u00a0"}</h2>
+            <p className="font-ui text-[13px] text-ink-soft truncate mt-0.5">{me?.email ?? "\u00a0"}</p>
+            {(me?.place || me?.birthday || stats?.memberSince) && (
+              <p className="font-ui text-[12px] text-ink-soft/80 mt-0.5">
+                {[
+                  me?.place,
+                  me?.birthday ? `Born ${new Date(me.birthday + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long" })}` : null,
+                  stats?.memberSince ? `With ana since ${new Date(stats.memberSince).toLocaleDateString(undefined, { month: "long", year: "numeric" })}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 sm:pl-[80px] flex flex-col items-start gap-3">
+          {me?.intention && <p className="font-serif italic text-[16.5px] leading-[1.55] text-ink max-w-[52ch] text-pretty">&ldquo;{me.intention}&rdquo;</p>}
+          <button type="button" onClick={() => setEditing(true)} disabled={!me} className="press inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-line font-ui text-[13px] font-semibold text-ink hover:bg-bg disabled:opacity-50">
+            <PencilSimple size={14} /> Edit profile
+          </button>
         </div>
         <SignOutButton className="absolute top-4 right-3 sm:top-5 sm:right-4" labelClassName="hidden sm:inline" />
+        {me && <ProfileEditor me={me} open={editing} onClose={() => setEditing(false)} />}
       </div>
 
       {/* This month: equal tiles, badge on top, number, then label */}
@@ -411,11 +366,11 @@ function ProfileHeader({ me }: { me: Me | undefined }) {
           <p className="mb-3 font-ui text-[13px] font-semibold text-ink-soft">This month</p>
           <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {cells.map((c) => (
-              <li key={c.k} className="flex items-center gap-3 rounded-[16px] bg-bg/70 px-3 py-3">
-                <FeatureBadge k={c.k} size={38} />
+              <li key={c.k} className="flex items-center gap-2.5 rounded-[16px] bg-bg/70 px-3 py-3">
+                <FeatureBadge k={c.k} size={36} />
                 <span className="min-w-0">
                   <span className="block font-display text-[22px] font-semibold text-ink tabular leading-none">{c.value ?? "–"}</span>
-                  <span className="block font-ui text-[12.5px] text-ink-soft mt-1 truncate">{c.label}</span>
+                  <span className="block font-ui text-[12.5px] leading-tight text-ink-soft mt-1 text-balance">{c.label}</span>
                 </span>
               </li>
             ))}

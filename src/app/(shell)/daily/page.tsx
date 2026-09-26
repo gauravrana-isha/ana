@@ -2,7 +2,7 @@
 
 import { Ornament } from "@/components/art/Ornament";
 
-import { useState, useCallback, useEffect, Suspense } from "react";
+import { useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FloppyDisk, PencilSimple } from "@phosphor-icons/react";
@@ -58,15 +58,16 @@ function DailyContent() {
   const serverMood: string | null = reflection?.moodKey ?? null;
   const hasSavedData = Object.values(serverAnswers).some(v => v.trim().length > 0);
 
-  // Initialize local state from server
-  useEffect(() => {
-    if (reflection) {
-      setLocalAnswers(reflection.answers ?? {});
-      setLocalStamps(reflection.stamps ?? {});
-      setLocalMood(reflection.moodKey ?? null);
-      setDirty(false);
-    }
-  }, [reflection]);
+  // Take the saved answers into the form whenever a fresh copy arrives from the server.
+  // (Adjusting state during render, keyed on the data, instead of in an effect: no extra pass.)
+  const [syncedFrom, setSyncedFrom] = useState<unknown>(null);
+  if (reflection && reflection !== syncedFrom) {
+    setSyncedFrom(reflection);
+    setLocalAnswers(reflection.answers ?? {});
+    setLocalStamps(reflection.stamps ?? {});
+    setLocalMood(reflection.moodKey ?? null);
+    setDirty(false);
+  }
 
   const mutation = useMutation({
     mutationFn: async () => {

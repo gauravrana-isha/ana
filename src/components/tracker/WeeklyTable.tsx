@@ -23,15 +23,15 @@ export function WeeklyTable({ practices, weekDays, dayLogs, onCellTap }: WeeklyT
 
   return (
     <div className="overflow-x-auto -mx-2 px-2">
-      <table className="w-full min-w-[560px] border-separate border-spacing-0">
+      <table className="w-full min-w-[340px] border-separate border-spacing-0">
         <thead>
           <tr>
-            <th className="sticky left-0 z-[2] bg-bg text-left font-ui text-[12px] font-semibold text-ink-soft py-2 pr-3 min-w-[150px]">Practice</th>
+            <th className="sticky left-0 z-[2] bg-bg py-2 pr-3 w-[48px]"><span className="sr-only">Practice</span></th>
             {weekDays.map((d) => {
               const date = new Date(d + "T12:00:00");
               const isToday = d === todayStr;
               return (
-                <th key={d} className="text-center py-2 w-[60px]">
+                <th key={d} className="text-center py-2 min-w-[40px]">
                   <span className={cn("block font-ui text-[12px] font-semibold", isToday ? "text-accent" : "text-ink-soft")}>{DAY_LABELS[date.getDay()]}</span>
                   <span className={cn("block font-ui text-[11px] tabular", isToday ? "text-accent" : "text-ink-soft/70")}>{date.getDate()}</span>
                 </th>
@@ -42,24 +42,24 @@ export function WeeklyTable({ practices, weekDays, dayLogs, onCellTap }: WeeklyT
         <tbody>
           {rows.map(({ p, spec }) => (
             <tr key={p.id}>
-              <td className="sticky left-0 z-[1] bg-bg border-t border-line py-2.5 pr-3">
-                <span className="flex items-center gap-2 min-w-0">
-                  <PracticeIcon name={p.name} iconName={p.iconName} catalogId={p.catalogId} size={24} />
-                  <span className="font-serif text-[14px] text-ink truncate max-w-[150px]">{p.name}</span>
-                </span>
-              </td>
+              {/* Just the practice's picture; its name is the tooltip and what screen readers hear. */}
+              <th scope="row" className="sticky left-0 z-[1] bg-bg border-t border-line py-2 pr-3 font-normal shadow-[6px_0_8px_-8px_rgba(24,22,15,0.25)]" title={p.name}>
+                <PracticeIcon name={p.name} iconName={p.iconName} catalogId={p.catalogId} size={30} />
+                <span className="sr-only">{p.name}</span>
+              </th>
               {weekDays.map((day) => {
                 const future = day > todayStr;
                 const summary = future ? null : cellSummary(spec, dayLogs[day]?.[p.id]);
                 return (
-                  <td key={day} className="border-t border-line p-1 text-center">
+                  <td key={day} className="border-t border-line p-0.5 min-[400px]:p-1 text-center">
                     <button
                       type="button"
                       disabled={future}
                       onClick={() => onCellTap?.(p, day)}
-                      aria-label={`${p.name}, ${new Date(day + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })}: ${summary?.text ?? "nothing logged"}`}
+                      aria-label={`${p.name}, ${new Date(day + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })}: ${summary ? `${summary.full}${summary.muted ? " (usual)" : ""}` : "nothing logged"}`}
+                      title={summary && summary.full !== summary.text ? summary.full : undefined}
                       className={cn(
-                        "press w-full h-10 rounded-[10px] font-ui text-[12.5px] tabular transition-colors",
+                        "press w-full h-10 rounded-[10px] font-ui text-[11.5px] min-[400px]:text-[12.5px] tabular tracking-[-0.01em] transition-colors",
                         future ? "cursor-default" : "hover:bg-surface",
                         day === todayStr && "bg-accent-soft/50"
                       )}
@@ -77,9 +77,6 @@ export function WeeklyTable({ practices, weekDays, dayLogs, onCellTap }: WeeklyT
           ))}
         </tbody>
       </table>
-      <p className="mt-3 font-ui text-[12px] text-ink-soft">
-        Faded values are defaults, used on days you didn&rsquo;t change them. Tap a day to edit.
-      </p>
     </div>
   );
 }

@@ -75,6 +75,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Pinch zoom stays available; inputs are 16px so iOS never auto-zooms.
   viewportFit: "cover",
+  // The on-screen keyboard overlays the page instead of shrinking it, so fixed bars stay put.
+  interactiveWidget: "resizes-visual",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fbf8f2" },
     { media: "(prefers-color-scheme: dark)", color: "#13120e" },

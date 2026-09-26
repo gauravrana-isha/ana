@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { notifyAdminsOfPending } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/session";
 import { catalogById } from "@/lib/practiceCatalog";
 import { FEATURE_KEYS, isFeatureKey } from "@/lib/features";
@@ -60,5 +61,9 @@ export async function POST(req: NextRequest) {
     }),
   ]);
 
+  // Waiting to be let in: every admin hears about it (in the bell, and as a push).
+  if (user.status === "PENDING") {
+    await notifyAdminsOfPending({ id: user.id, name: parsed.data.name, email: user.email ?? null }).catch((e) => console.error("notify admins", e));
+  }
   return NextResponse.json({ ok: true, status: user.status });
 }

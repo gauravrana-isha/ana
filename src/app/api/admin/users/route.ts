@@ -17,14 +17,16 @@ export async function GET() {
       image: true,
       role: true,
       status: true,
-      intention: true,
       onboardedAt: true,
       approvedAt: true,
       createdAt: true,
       features: { select: { feature: true, allowed: true, enabled: true } },
-      _count: { select: { dayLogs: true, dailyReflections: true, expressions: true } },
     },
   });
 
-  return NextResponse.json({ users, me: admin.id });
+  // Admins see what they need to let people in and look after storage, nothing of what
+  // people write or track.
+  const storage = await db.attachment.groupBy({ by: ["userId"], _sum: { size: true } });
+  const used = new Map(storage.map((s) => [s.userId, s._sum.size ?? 0]));
+  return NextResponse.json({ users: users.map((u) => ({ ...u, storageBytes: used.get(u.id) ?? 0 })), me: admin.id });
 }

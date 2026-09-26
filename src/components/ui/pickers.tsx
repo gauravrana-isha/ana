@@ -295,7 +295,7 @@ interface DateFieldProps {
   clearable?: boolean;
   label: string;
   className?: string;
-  /** Leave out the weekday (for tight spots, e.g. beside a time). */
+  /** Leave out the weekday, and the year when it is this year (for tight spots, e.g. beside a time). */
   compact?: boolean;
 }
 
@@ -306,7 +306,7 @@ export function DateField({ value, onChange, placeholder = "Choose a date", min,
       <div className={cn("relative", className)}>
         <button type="button" onClick={() => setOpen(true)} aria-label={`${label}: ${value ? prettyDate(value) : "not set"}`} className={fieldClass}>
           <CalendarBlank size={18} className="text-ink-soft shrink-0" />
-          <span className={cn("flex-1 truncate", value ? "text-ink" : "text-ink-soft/80")}>{value ? prettyDate(value, true, !compact) : placeholder}</span>
+          <span className={cn("flex-1 truncate", value ? "text-ink" : "text-ink-soft/80")}>{value ? (compact ? prettyDate(value, value.slice(0, 4) !== String(new Date().getFullYear()), false) : prettyDate(value)) : placeholder}</span>
         </button>
         {clearable && value && (
           <button type="button" aria-label={`Clear ${label}`} onClick={() => onChange("")} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface">

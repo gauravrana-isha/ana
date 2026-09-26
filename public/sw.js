@@ -4,8 +4,11 @@
  *  - /_next/static: cache first (file names change every build)
  *  - images, fonts, icons: cache first
  *  - /api and auth: never cached here (private data; the app keeps its own cache, cleared on sign-out)
+ *  - push: shows reminders (moments coming back, the commitment letter); a tap opens the page
+ * On localhost it only handles push, so development builds are never served from cache.
  */
-const VERSION = "ana-v3";
+const VERSION = "ana-v4";
+const DEV = self.location.hostname === "localhost" || self.location.hostname === "127.0.0.1";
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
 const MEDIA = `${VERSION}-media`;
@@ -45,7 +48,7 @@ async function networkFirstPage(request) {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  if (request.method !== "GET") return;
+  if (DEV || request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
@@ -61,4 +64,46 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data === "clear") event.waitUntil(caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))));
+});
+
+self.addEventListener("push", (event) => {
+  let msg = {};
+  try {
+    msg = event.data ? event.data.json() : {};
+  } catch {
+    msg = { body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(msg.title || "ana", {
+      body: msg.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/badge-96.png",
+      tag: msg.tag,
+      renotify: !!msg.tag,
+      data: { url: msg.url || "/today", id: msg.id },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "/today", self.location.origin).href;
+  const id = event.notification.data?.id;
+  event.waitUntil(
+    (async () => {
+      // Opened from the phone's tray: it's read in the bell too.
+      if (id) {
+        fetch("/api/notifications", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [id] }) }).catch(() => {});
+      }
+      const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const w of wins) {
+        if (new URL(w.url).origin === self.location.origin) {
+          await w.focus();
+          if ("navigate" in w) return w.navigate(target);
+          return;
+        }
+      }
+      return self.clients.openWindow(target);
+    })()
+  );
 });

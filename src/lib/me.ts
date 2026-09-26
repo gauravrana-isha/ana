@@ -13,6 +13,18 @@ export interface Me {
   features: FeatureKey[];
   allowedFeatures: FeatureKey[];
   storage: "blob" | "local";
+  intention: string | null;
+  preferredName: string | null;
+  photoId: string | null;
+  birthday: string | null;
+  place: string | null;
+  portraitEveryMonths: number;
+  createdAt?: string;
+}
+
+/** What ana calls you: your chosen name, else your first name. */
+export function callName(me: Pick<Me, "name" | "preferredName"> | undefined | null) {
+  return me?.preferredName || me?.name?.split(" ")[0] || null;
 }
 
 export function useMe() {

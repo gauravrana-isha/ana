@@ -43,6 +43,11 @@
   --ink: #18160f;
   --ink-soft: #686152;
   --accent: #2f6b5e;
+  /* "Who am I?" word weights: lighter, either, heavier */
+  --w-light: #b98115;
+  --w-light-glow: #f2cf7e;
+  --w-mid: #948570;
+  --w-heavy: #4a5170;
   --accent-soft: rgba(47, 107, 94, 0.1);
   --saffron: #f37021;
   --nav: #f7f2e7;
@@ -63,6 +68,10 @@
   --ink: #f1eadb;
   --ink-soft: #a69d8b;
   --accent: #7dbfae;
+  --w-light: #e7be6a;
+  --w-light-glow: #7a5d22;
+  --w-mid: #9a8f7c;
+  --w-heavy: #a3aac8;
   --accent-soft: rgba(125, 191, 174, 0.13);
   --saffron: #f58a45;
   --nav: #17160f;
@@ -338,3 +347,36 @@ html.kb-open .ana-tabbar {
 html.kb-open .ana-fab {
   bottom: calc(16px + env(safe-area-inset-bottom)) !important;
 }
+
+/* "Who am I?" as still water: the surface travels, lighter words rise and let go of a
+   bubble now and then, heavier words rest. Slow on purpose. */
+@keyframes ana-pond-wave { to { transform: translateX(100px); } }
+@keyframes ana-pond-rise { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes ana-pond-drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2px, -1.5px); } }
+@keyframes ana-pond-rest { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(1px); } }
+@keyframes ana-pond-bubble { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 0.9; } 70% { opacity: 0.5; } 100% { transform: translateY(-15px); opacity: 0; } }
+@keyframes ana-pond-glow { 0%, 100% { opacity: 0.55; } 50% { opacity: 0.95; } }
+.ana-pond-wave { animation: ana-pond-wave 9s linear infinite; }
+.ana-pond-rise { animation: ana-pond-rise 6.5s ease-in-out infinite; }
+.ana-pond-drift { animation: ana-pond-drift 8s ease-in-out infinite; }
+.ana-pond-rest { animation: ana-pond-rest 10s ease-in-out infinite; }
+.ana-pond-bubble { animation: ana-pond-bubble 5.5s ease-out infinite; }
+.ana-pond-glow { animation: ana-pond-glow 9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ana-pond-wave, .ana-pond-rise, .ana-pond-drift, .ana-pond-rest, .ana-pond-bubble, .ana-pond-glow { animation: none; }
+}
+
+/* Word tones ("Who am I?"): each word sets --c/--t (light) and --cd/--td (dark) inline. */
+.tone-fill { fill: var(--c); }
+.tone-ink { fill: var(--t); }
+.tone-text { color: var(--t); }
+.tone-dot { background: var(--c); }
+.tone-chip { border-color: var(--c) !important; background: color-mix(in srgb, var(--c) 16%, var(--surface)); }
+[data-theme="dark"] .tone-fill { fill: var(--cd); }
+[data-theme="dark"] .tone-ink { fill: var(--td); }
+[data-theme="dark"] .tone-text { color: var(--td); }
+[data-theme="dark"] .tone-dot { background: var(--cd); }
+[data-theme="dark"] .tone-chip { border-color: var(--cd) !important; background: color-mix(in srgb, var(--cd) 18%, var(--surface)); }
+@keyframes ana-pond-twinkle { 0%, 100% { opacity: 0.75; transform: scale(0.85) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(20deg); } }
+.ana-pond-twinkle { animation: ana-pond-twinkle 4.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .ana-pond-twinkle { animation: none; } }

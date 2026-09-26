@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePersistentState } from "@/lib/persist";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { DotsThreeCircle } from "@phosphor-icons/react";
@@ -22,8 +23,21 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
   const ranked = [...items].sort((a, b) => PRIORITY.indexOf(a.key) - PRIORITY.indexOf(b.key));
   const all = [...ranked, ...extras];
   const fits = all.length <= MAX_TABS;
-  const tabs = fits ? all : all.slice(0, MAX_TABS - 1);
-  const overflow = fits ? [] : all.slice(MAX_TABS - 1);
+  const primary = fits ? all : all.slice(0, MAX_TABS - 1);
+  const rest = fits ? [] : all.slice(MAX_TABS - 1);
+
+  // A section opened from "More" takes the first slot and stays there (the first section,
+  // usually Today, moves under "More") until another is chosen, or that one is opened again.
+  const [savedPin, setSavedPin] = usePersistentState<string>("tabbar.pinned", "");
+  const here = rest.find((i) => pathname.startsWith(i.href));
+  const backToFirst = !!primary[0] && pathname.startsWith(primary[0].href);
+  const pinKey = here ? here.key : backToFirst ? "" : savedPin;
+  useEffect(() => {
+    if (pinKey !== savedPin) setSavedPin(pinKey);
+  }, [pinKey, savedPin, setSavedPin]);
+  const pinned = rest.find((i) => i.key === pinKey);
+  const tabs = pinned ? [pinned, ...primary.slice(1)] : primary;
+  const overflow = pinned ? [primary[0], ...rest.filter((i) => i.key !== pinned.key)] : rest;
   const moreActive = overflow.some((i) => pathname.startsWith(i.href));
 
   return (
@@ -106,18 +120,32 @@ function useKeyboardAware() {
     const vv = window.visualViewport;
     const isField = (el: Element | null) =>
       !!el && (el.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select") || (el as HTMLElement).isContentEditable);
+    // The bar only exists below the desktop breakpoint, so any focused text field there means
+    // a keyboard is (or is about to be) up. Pointer type isn't reliable across Android/emulators.
     const update = () => {
+      const narrow = window.innerWidth < 1024;
       const shrunk = vv ? window.innerHeight - vv.height > 120 : false;
-      const typing = isField(document.activeElement) && window.matchMedia("(pointer: coarse)").matches;
-      html.classList.toggle("kb-open", shrunk || typing);
+      const typing = narrow && isField(document.activeElement);
+      html.classList.toggle("kb-open", typing || (narrow && shrunk));
     };
-    const later = () => setTimeout(update, 50);
+    // Leaving a field: wait a moment before the bar returns, so a tap that caused the blur
+    // (e.g. on a floating Save button) lands before anything moves under the finger.
+    const later = () => setTimeout(update, 320);
+    // Pressing a floating button (Save, Edit) keeps the text field focused, so the keyboard
+    // and layout don't shift mid-tap and the press lands where the finger is.
+    const keepFocus = (e: Event) => {
+      if ((e.target as Element | null)?.closest?.(".ana-fab") && isField(document.activeElement)) e.preventDefault();
+    };
+    document.addEventListener("mousedown", keepFocus, true);
     vv?.addEventListener("resize", update);
+    window.addEventListener("resize", update);
     document.addEventListener("focusin", update);
     document.addEventListener("focusout", later);
     update();
     return () => {
+      document.removeEventListener("mousedown", keepFocus, true);
       vv?.removeEventListener("resize", update);
+      window.removeEventListener("resize", update);
       document.removeEventListener("focusin", update);
       document.removeEventListener("focusout", later);
       html.classList.remove("kb-open");

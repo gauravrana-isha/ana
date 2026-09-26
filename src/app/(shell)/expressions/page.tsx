@@ -5,7 +5,12 @@ import { usePersistentState } from "@/lib/persist";
 import { Suspense, useDeferredValue, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, Feather, MagnifyingGlass, Microphone, Plus, VideoCamera, X } from "@phosphor-icons/react";
+import { Check, MagnifyingGlass, Plus, Cards, List, SlidersHorizontal, X } from "@phosphor-icons/react";
+import { MomentGlyph } from "@/components/art/MomentIcon";
+import { StampIcon, type StampKey } from "@/components/art/StampIcon";
+import { STAMP_GUIDE } from "@/components/reflection/StampRow";
+import { PersonAvatar, usePeople } from "@/components/people/People";
+import { PickerPanel } from "@/components/ui/pickers";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/ui/Loader";
@@ -16,11 +21,11 @@ import type { Moment, MomentKind } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 
 const FILTERS = [
-  { id: "", label: "All", icon: null },
-  { id: "writing", label: "Writing", icon: Feather },
-  { id: "audio", label: "Voice", icon: Microphone },
-  { id: "video", label: "Video", icon: VideoCamera },
-  { id: "photo", label: "Photo", icon: Camera },
+  { id: "", label: "All" },
+  { id: "writing", label: "Writing" },
+  { id: "audio", label: "Voice" },
+  { id: "video", label: "Video" },
+  { id: "photo", label: "Photo" },
 ] as const;
 
 export default function ExpressionsPage() {
@@ -44,9 +49,17 @@ function ExpressionsContent() {
     },
   });
   const [kind, setKind] = usePersistentState("moments.filter", "", ["", "writing", "audio", "video", "photo"] as const);
+  const [sort, setSort] = usePersistentState("moments.sort", "newest", ["newest", "oldest"] as const);
+  const [view, setView] = usePersistentState("moments.view", "full", ["full", "folded"] as const);
+  const [group, setGroup] = usePersistentState("moments.group", "month", ["month", "year", "none"] as const);
+  const [person, setPerson] = useState("");
+  const [stamp, setStamp] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const { data: people = [] } = usePeople();
+  const personName = people.find((p) => p.id === person)?.name;
   const [query, setQuery] = useState("");
   const q = useDeferredValue(query.trim());
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMoments({ kind, q });
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMoments({ kind, q, person, stamp, sort });
   const moments = data?.pages.flatMap((p) => p.items) ?? [];
 
   const [composer, setComposer] = useState<{ open: boolean; moment: Moment | null; kind: MomentKind }>({
@@ -61,7 +74,8 @@ function ExpressionsContent() {
   const [newDismissed, setNewDismissed] = useState(false);
   const autoOpen = hydrated && params.get("new") === "1" && !newDismissed;
 
-  const filtering = !!kind || !!q;
+  const filtering = !!kind || !!q || !!person || !!stamp;
+  const extraFilters = (person ? 1 : 0) + (stamp ? 1 : 0) + (sort === "oldest" ? 1 : 0);
 
   return (
     <div>
@@ -87,23 +101,54 @@ function ExpressionsContent() {
         </Button>
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 mb-6">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            aria-pressed={kind === f.id}
-            onClick={() => setKind(f.id)}
-            className={cn(
-              "press shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full font-ui text-[13.5px] font-semibold border transition-colors",
-              kind === f.id ? "bg-accent text-bg border-accent" : "border-line text-ink-soft hover:text-ink"
-            )}
-          >
-            {f.icon && <f.icon size={15} weight={kind === f.id ? "fill" : "regular"} />}
-            {f.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-2 mb-3">
+        {/* Phones: one segmented row, icons only, so every kind is in view. Wider: labelled chips. */}
+        <div role="group" aria-label="Kind of moment" className="flex-1 min-w-0 flex max-sm:justify-between max-sm:p-1 max-sm:rounded-full max-sm:bg-surface sm:gap-1.5">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              aria-pressed={kind === f.id}
+              aria-label={f.id ? f.label : "All moments"}
+              title={f.label}
+              onClick={() => setKind(f.id)}
+              className={cn(
+                "press shrink-0 inline-flex items-center justify-center gap-1.5 h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors",
+                "max-sm:flex-1 max-sm:max-w-[64px] sm:px-3.5 sm:border",
+                kind === f.id ? "bg-accent text-bg sm:border-accent" : "text-ink-soft hover:text-ink sm:border-line"
+              )}
+            >
+              {f.id && <MomentGlyph kind={f.id} size={f.id ? 17 : 15} strokeWidth={kind === f.id ? 3 : 2.6} className="sm:w-[15px] sm:h-[15px]" />}
+              <span className={cn(f.id && "max-sm:sr-only")}>{f.label}</span>
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setFiltersOpen(true)}
+          aria-label={`Filter and sort${extraFilters ? `, ${extraFilters} on` : ""}`}
+          className={cn("press relative shrink-0 grid place-items-center w-9 h-9 rounded-full border transition-colors", extraFilters ? "border-accent text-accent bg-accent-soft" : "border-line text-ink-soft hover:text-ink")}
+        >
+          <SlidersHorizontal size={17} />
+          {extraFilters > 0 && <span className="absolute -top-1 -right-1 grid place-items-center min-w-[17px] h-[17px] px-1 rounded-full bg-accent text-bg font-ui text-[10.5px] font-bold tabular">{extraFilters}</span>}
+        </button>
+        <div role="radiogroup" aria-label="View" className="shrink-0 hidden sm:flex p-0.5 rounded-full border border-line">
+          {([["full", "Full moments", Cards], ["folded", "One line each", List]] as const).map(([id, label, Icon]) => (
+            <button key={id} type="button" role="radio" aria-checked={view === id} aria-label={label} title={label} onClick={() => setView(id)} className={cn("press grid place-items-center w-8 h-8 rounded-full transition-colors", view === id ? "bg-accent text-bg" : "text-ink-soft hover:text-ink")}>
+              <Icon size={16} />
+            </button>
+          ))}
+        </div>
       </div>
+
+      {extraFilters > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {person && <ActiveChip label={`With ${personName ?? "someone"}`} onClear={() => setPerson("")} />}
+          {stamp && <ActiveChip label={STAMP_GUIDE.find((s) => s.key === stamp)?.label ?? stamp} onClear={() => setStamp("")} />}
+          {sort === "oldest" && <ActiveChip label="Oldest first" onClear={() => setSort("newest")} />}
+        </div>
+      )}
+      <div className="mb-5" />
 
       {pinned && (
         <section className="mb-8">
@@ -124,16 +169,16 @@ function ExpressionsContent() {
           </p>
           {!filtering && (
             <div className="flex flex-wrap justify-center gap-2 mt-2">
-              <Button variant="secondary" onClick={() => openNew("writing")}><Feather size={16} /> Write</Button>
-              <Button variant="secondary" onClick={() => openNew("audio")}><Microphone size={16} /> Voice</Button>
-              <Button variant="secondary" onClick={() => openNew("video")}><VideoCamera size={16} /> Video</Button>
-              <Button variant="secondary" onClick={() => openNew("photo")}><Camera size={16} /> Photo</Button>
+              <Button variant="secondary" onClick={() => openNew("writing")}><MomentGlyph kind="writing" size={16} /> Write</Button>
+              <Button variant="secondary" onClick={() => openNew("audio")}><MomentGlyph kind="audio" size={16} /> Voice</Button>
+              <Button variant="secondary" onClick={() => openNew("video")}><MomentGlyph kind="video" size={16} /> Video</Button>
+              <Button variant="secondary" onClick={() => openNew("photo")}><MomentGlyph kind="photo" size={16} /> Photo</Button>
             </div>
           )}
         </div>
       ) : (
         <>
-          <MomentTimeline moments={moments} onEdit={(m) => setComposer({ open: true, moment: m, kind: m.kind })} />
+          <MomentTimeline moments={moments} folded={view === "folded"} group={group} onEdit={(m) => setComposer({ open: true, moment: m, kind: m.kind })} />
           {hasNextPage && (
             <div className="flex justify-center mt-6">
               <Button variant="ghost" onClick={() => fetchNextPage()} loading={isFetchingNextPage}>
@@ -143,6 +188,73 @@ function ExpressionsContent() {
           )}
         </>
       )}
+
+      <PickerPanel
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        title="Filter and sort"
+        footer={
+          <>
+            <button type="button" onClick={() => { setPerson(""); setStamp(""); setSort("newest"); setGroup("month"); setView("full"); }} className="press flex-1 h-11 rounded-[14px] bg-surface-2 text-ink font-ui text-[14px] font-semibold">Clear</button>
+            <button type="button" onClick={() => setFiltersOpen(false)} className="press flex-1 h-11 rounded-[14px] bg-accent text-bg font-ui text-[14px] font-semibold">Show moments</button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-5">
+          <div className="sm:hidden">
+            <p className="font-ui text-[13px] font-semibold text-ink mb-2">View</p>
+            <div className="grid grid-cols-2 p-1 rounded-full bg-surface-2">
+              {([["full", "Full moments", Cards], ["folded", "One line each", List]] as const).map(([id, label, Icon]) => (
+                <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)} className={cn("press inline-flex items-center justify-center gap-1.5 h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors", view === id ? "bg-bg text-ink shadow-[var(--shadow-soft)]" : "text-ink-soft")}>
+                  <Icon size={15} /> {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="font-ui text-[13px] font-semibold text-ink mb-2">Group by</p>
+            <div className="grid grid-cols-3 p-1 rounded-full bg-surface-2">
+              {([["month", "Month"], ["year", "Year"], ["none", "None"]] as const).map(([id, label]) => (
+                <button key={id} type="button" aria-pressed={group === id} onClick={() => setGroup(id)} className={cn("press h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors", group === id ? "bg-bg text-ink shadow-[var(--shadow-soft)]" : "text-ink-soft")}>{label}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="font-ui text-[13px] font-semibold text-ink mb-2">Order</p>
+            <div className="grid grid-cols-2 p-1 rounded-full bg-surface-2">
+              {([["newest", "Newest first"], ["oldest", "Oldest first"]] as const).map(([id, label]) => (
+                <button key={id} type="button" aria-pressed={sort === id} onClick={() => setSort(id)} className={cn("press h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors", sort === id ? "bg-bg text-ink shadow-[var(--shadow-soft)]" : "text-ink-soft")}>{label}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="font-ui text-[13px] font-semibold text-ink mb-2">What it carries</p>
+            <div className="flex flex-wrap gap-1.5">
+              {STAMP_GUIDE.map((st) => (
+                <button key={st.key} type="button" aria-pressed={stamp === st.key} onClick={() => setStamp(stamp === st.key ? "" : st.key)} className={cn("press inline-flex items-center gap-1.5 h-9 px-3 rounded-full border font-ui text-[13px] font-semibold transition-colors", stamp === st.key ? "bg-accent text-bg border-accent" : "border-line text-ink-soft hover:text-ink")}>
+                  <StampIcon k={st.key as StampKey} size={15} /> {st.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {people.length > 0 && (
+            <div>
+              <p className="font-ui text-[13px] font-semibold text-ink mb-2">With</p>
+              <ul className="flex flex-col gap-1 max-h-[240px] overflow-y-auto -mx-1 px-1">
+                {people.map((p) => (
+                  <li key={p.id}>
+                    <button type="button" aria-pressed={person === p.id} onClick={() => setPerson(person === p.id ? "" : p.id)} className={cn("press w-full flex items-center gap-3 h-11 px-2 rounded-[12px] text-left transition-colors", person === p.id ? "bg-accent-soft" : "hover:bg-surface")}>
+                      <PersonAvatar person={p} size={30} />
+                      <span className="flex-1 truncate font-ui text-[14.5px] font-semibold text-ink">{p.name}</span>
+                      {person === p.id && <Check size={16} weight="bold" className="text-accent" />}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </PickerPanel>
 
       <MomentComposer
         open={composer.open || autoOpen}
@@ -154,6 +266,14 @@ function ExpressionsContent() {
         }}
       />
     </div>
+  );
+}
+
+function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <button type="button" onClick={onClear} aria-label={`Remove filter: ${label}`} className="press inline-flex items-center gap-1.5 h-8 pl-3 pr-2 rounded-full bg-accent-soft text-accent font-ui text-[12.5px] font-semibold">
+      {label} <X size={12} weight="bold" />
+    </button>
   );
 }
 

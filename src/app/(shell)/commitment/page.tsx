@@ -2,9 +2,14 @@
 
 import { Busy, BusyBar } from "@/components/ui/Busy";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { HELP_EVENT } from "@/components/shell/Topbar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CaretDown, PencilSimple } from "@phosphor-icons/react";
+import { Sheet } from "@/components/ui/Sheet";
+import { FeatureBadge } from "@/components/art/FeatureBadge";
+import { usePersistentState } from "@/lib/persist";
+import { NotifyNudge } from "@/components/push/Notifications";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/ui/Loader";
@@ -51,10 +56,22 @@ export default function CommitmentPage() {
   const [saving, setSaving] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [patching, setPatching] = useState(false);
+  // What a commitment letter is, explained once (the first visit before any letter exists),
+  // then only when asked for.
+  const [introSeen, setIntroSeen] = usePersistentState("commitment.intro", "no", ["no", "yes"] as const);
+  const [introAsked, setIntroAsked] = useState(false);
+  // The ⓘ beside the date in the header opens it again.
+  useEffect(() => {
+    const open = () => setIntroAsked(true);
+    window.addEventListener(HELP_EVENT, open);
+    return () => window.removeEventListener(HELP_EVENT, open);
+  }, []);
 
   if (isLoading || !data) return <div className="py-20 grid place-items-center"><Loader /></div>;
   const current = data.current;
   const editing = writing || !current;
+  const introOpen = introAsked || (!current && introSeen === "no");
+  const closeIntro = () => { setIntroSeen("yes"); setIntroAsked(false); };
 
   async function save() {
     if (!draft.trim()) return;
@@ -86,23 +103,22 @@ export default function CommitmentPage() {
       {editing ? (
         <Busy busy={saving} bar={false}>
         <section className="flex flex-col gap-5">
-          <p className="-mt-3 font-serif italic text-[17px] text-ink-soft max-w-[56ch]">
-            {current
-              ? "Write it again as it is now. The earlier letter is kept below."
-              : "A letter to yourself about what you are committing to. Not for any program, not for anyone else. It will come back to you when you choose."}
-          </p>
-          <ul className="flex flex-col gap-1.5 font-ui text-[14px] text-ink-soft">
-            {PROMPTS.map((p) => (
-              <li key={p} className="flex gap-2"><span className="text-accent">·</span>{p}</li>
-            ))}
-          </ul>
+          {current && (
+            <p className="-mt-3 font-serif italic text-[17px] text-ink-soft max-w-[56ch]">Write it again as it is now. The earlier letter is kept below.</p>
+          )}
           <div className="relative rounded-[22px] bg-surface px-5 py-5 sm:px-8 sm:py-7 overflow-hidden">
             <BusyBar show={saving} className="absolute top-0 inset-x-6" />
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value.slice(0, 8000))}
               rows={12}
-              autoFocus
+              // Desktop starts ready to type; phones wait for a tap (no keyboard popping up unasked).
+              ref={(el) => {
+                if (el && !el.dataset.focused && window.matchMedia("(min-width: 1024px)").matches) {
+                  el.dataset.focused = "1";
+                  el.focus();
+                }
+              }}
               placeholder="Dear me,"
               aria-label="Your commitment"
               className="w-full bg-transparent resize-none outline-none focus-visible:outline-none font-serif text-[18px] leading-[1.75] text-ink placeholder:text-ink-soft/60 placeholder:italic"
@@ -117,6 +133,7 @@ export default function CommitmentPage() {
                 </button>
               ))}
             </div>
+            <NotifyNudge show={revisit !== "never"} what="it's time to read it again" />
           </div>
           <div className="flex gap-3">
             <Button onClick={save} loading={saving} disabled={!draft.trim()}>Keep this letter</Button>
@@ -143,6 +160,7 @@ export default function CommitmentPage() {
                   </button>
                 ))}
               </div>
+              <NotifyNudge show={current.revisit !== "never"} what="it's time to read it again" />
             </div>
             <div className="flex gap-2">
               {data.due && <Button variant="secondary" onClick={() => patch({ revisited: true })}>I&rsquo;ve read it again</Button>}
@@ -172,6 +190,31 @@ export default function CommitmentPage() {
           )}
         </section>
       )}
+
+      <Sheet
+        open={introOpen}
+        onClose={closeIntro}
+        title="Your commitment"
+        footer={<div className="flex justify-end"><Button onClick={closeIntro}>Begin the letter</Button></div>}
+      >
+        <div className="flex flex-col gap-5">
+          <FeatureBadge k="commitment" size={56} />
+          <p className="font-serif text-[18px] leading-[1.65] text-ink">
+            A letter to yourself about what you are committing to. Not for any program, not for anyone else.
+          </p>
+          <p className="font-ui text-[14.5px] leading-[1.6] text-ink-soft">
+            It comes back to you when you choose: every month, every three months, or only when you open it. Rewriting keeps the earlier letters, so you can see how it changes.
+          </p>
+          <div>
+            <p className="font-ui text-[13px] font-semibold text-ink mb-2">If you don&rsquo;t know where to start</p>
+            <ul className="flex flex-col gap-1.5 font-ui text-[14px] text-ink-soft">
+              {PROMPTS.map((p) => (
+                <li key={p} className="flex gap-2"><span className="text-accent">·</span>{p}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Sheet>
     </div>
   );
 }

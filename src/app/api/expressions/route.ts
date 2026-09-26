@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
-import { MomentSchema, momentInclude, ownedIds, serializeMoment } from "@/lib/moments";
+import { MomentSchema, lookBackData, momentInclude, ownedIds, serializeMoment } from "@/lib/moments";
 
 export async function GET(req: NextRequest) {
   const user = await resolveUser("expressions");
@@ -13,11 +13,14 @@ export async function GET(req: NextRequest) {
   const personId = sp.get("person");
   const kind = sp.get("kind");
   const q = sp.get("q")?.trim();
+  const stamp = sp.get("stamp");
+  const dir = sp.get("sort") === "oldest" ? "asc" : "desc";
 
   const where = {
     userId: user.id,
     ...(personId ? { people: { some: { personId } } } : {}),
     ...(kind ? { kind: kind === "writing" ? { in: ["writing", "moment"] } : kind } : {}),
+    ...(stamp ? { stamps: { array_contains: [stamp] } } : {}),
     ...(q
       ? {
           OR: [
@@ -32,7 +35,7 @@ export async function GET(req: NextRequest) {
   const rows = await db.expression.findMany({
     where,
     include: momentInclude,
-    orderBy: [{ occurredAt: { sort: "desc", nulls: "last" } }, { date: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ occurredAt: { sort: dir, nulls: "last" } }, { date: dir }, { createdAt: dir }],
     take: limit + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
@@ -66,7 +69,7 @@ export async function POST(req: NextRequest) {
       occurredAt,
       place: d.place || null,
       stamps: d.stamps,
-      lookBackOn: d.lookBackOn ? new Date(d.lookBackOn) : null,
+      ...lookBackData(d),
       refDates: [],
       people: { create: owned.people.map((personId) => ({ personId })) },
     },

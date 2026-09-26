@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * stays calm at night.
  */
 type Key = "today" | "tracker" | "daily" | "weekly" | "expressions" | "people" | "commitment" | "insights";
-type GlyphKey = Key | "profile" | "admin" | "search";
+type GlyphKey = Key | "profile" | "admin" | "search" | "bell";
 
 const TONES: Record<Key, { tile: string; ink: string }> = {
   today: { tile: "#FBE3CC", ink: "#C8672F" },
@@ -102,6 +102,14 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
           <path d="m18.5 24 4 4 7.5-8" />
         </>
       );
+    case "bell":
+      return (
+        <>
+          <path d="M24 12c-5.4 0-9.2 4.1-9.2 9.4v5.2c0 1.7-.7 3.3-1.9 4.5L11.5 32.5h25l-1.4-1.4a6.4 6.4 0 0 1-1.9-4.5v-5.2c0-5.3-3.8-9.4-9.2-9.4z" />
+          <path d="M20.4 36.5a3.8 3.8 0 0 0 7.2 0" />
+          <path d="M24 8.8V12" />
+        </>
+      );
     case "search":
       return (
         <>
@@ -158,4 +166,9 @@ export function FeatureGlyph({ k, size = 22, className }: { k: string; size?: nu
 
 export function hasBadge(k: string) {
   return k in TONES;
+}
+
+/** The bell on its own (for badges built elsewhere, e.g. the notifications badge). */
+export function BellDrawing() {
+  return <Drawing k="bell" ink="currentColor" />;
 }

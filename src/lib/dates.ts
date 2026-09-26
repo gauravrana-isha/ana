@@ -114,6 +114,7 @@ export function dayHeading(iso: string, now = new Date()): string {
   const diff = Math.round((startOfDay(now).getTime() - startOfDay(d).getTime()) / 86_400_000);
   if (diff === 0) return "Today";
   if (diff === 1) return "Yesterday";
+  if (diff === -1) return "Tomorrow";
   return d.toLocaleDateString(undefined, {
     weekday: "short",
     day: "numeric",

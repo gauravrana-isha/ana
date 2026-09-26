@@ -24,11 +24,10 @@ interface AdminUser {
   image: string | null;
   role: "MEMBER" | "ADMIN";
   status: Status;
-  intention: string | null;
   onboardedAt: string | null;
   createdAt: string;
   features: { feature: string; allowed: boolean; enabled: boolean }[];
-  _count: { dayLogs: number; dailyReflections: number; expressions: number };
+  storageBytes: number;
 }
 
 const TABS: { key: Status | "ALL"; label: string }[] = [
@@ -165,11 +164,6 @@ export default function AdminPage() {
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   >
                     <div className="px-4 pb-4 space-y-4">
-                      {u.intention && (
-                        <p className="font-serif italic text-[15px] leading-[1.55] text-ink border-t border-line pt-4">
-                          &ldquo;{u.intention}&rdquo;
-                        </p>
-                      )}
                       <div className="flex sm:hidden gap-1.5 flex-wrap border-t border-line pt-4">
                         <StatusActions u={u} isMe={isMe} busy={rowBusy(u.id)} onChange={(body) => change.mutate({ id: u.id, body })} />
                       </div>
@@ -203,7 +197,7 @@ export default function AdminPage() {
 
                       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                         <span className="font-ui text-[12.5px] text-ink-soft tabular">
-                          {u._count.dayLogs} days logged · {u._count.dailyReflections} reflections · {u._count.expressions} expressions
+                          Storage used: {formatBytes(u.storageBytes)} of 2 GB
                         </span>
                         {!isMe && (
                           <Button
@@ -264,4 +258,10 @@ function StatusActions({ u, isMe, busy, onChange }: { u: AdminUser; isMe: boolea
       Restore
     </Button>
   );
+}
+
+function formatBytes(n: number) {
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
