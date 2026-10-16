@@ -116,7 +116,7 @@ export function SearchDialog() {
     return [
       ...pageItems,
       ...data.people.map((p) => ({ key: "p" + p.id, href: `/people/${p.id}` })),
-      ...data.moments.map((m) => ({ key: "m" + m.id, href: `/expressions?open=${m.id}` })),
+      ...data.moments.map((m) => ({ key: "m" + m.id, href: `/expressions/${m.id}` })),
       ...data.reflections.map((r) => ({ key: "r" + r.kind + r.date, href: r.href })),
     ];
   }, [data, pages, debounced]);
@@ -207,7 +207,7 @@ export function SearchDialog() {
                     const i = ++idx;
                     const Icon = KIND_ICON[m.kind] ?? Feather;
                     return (
-                      <button key={m.id} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(`/expressions?open=${m.id}`)} className={itemClass(i)}>
+                      <button key={m.id} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(`/expressions/${m.id}`)} className={itemClass(i)}>
                         <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-surface-2 text-accent shrink-0"><Icon size={16} /></span>
                         <span className="min-w-0 flex-1">
                           <span className="block font-ui text-[14.5px] font-semibold text-ink truncate">{m.title}</span>

@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     const when = (m.occurredAt ?? m.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const words = m.title || plainText(m.body).slice(0, 120) || (m.kind === "audio" ? "A voice note" : m.kind === "video" ? "A video" : m.kind === "photo" ? "Photos" : "A moment");
     try {
-      const made = await notify({ userId: m.userId, kind: "moment", key: `moment:${m.id}`, title: "A moment is back", body: `${words} · from ${when}`, url: `/expressions?open=${m.id}` });
+      const made = await notify({ userId: m.userId, kind: "moment", key: `moment:${m.id}`, title: "A moment is back", body: `${words} · from ${when}`, url: `/expressions/${m.id}` });
       if (made) sent.moments++;
     } catch (e) {
       // Give the claim back so the next run tries again.

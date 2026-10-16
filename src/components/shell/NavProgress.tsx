@@ -25,7 +25,9 @@ export function NavProgress() {
   useEffect(() => {
     const begin = () => {
       setPhase("start");
-      requestAnimationFrame(() => requestAnimationFrame(() => setPhase("crawl")));
+      // Only creep if the page hasn't already arrived: pages reused from the cache can land
+      // before the next frame, and a late "crawl" would leave the line stuck part-way.
+      requestAnimationFrame(() => requestAnimationFrame(() => setPhase((p) => (p === "start" ? "crawl" : p))));
       window.clearTimeout(safety.current);
       safety.current = window.setTimeout(() => setPhase("done"), 10_000);
     };

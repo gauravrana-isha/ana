@@ -12,6 +12,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/tracker": "Tracker",
   "/daily": "Daily reflection",
   "/weekly": "Weekly",
+  "/expressions/": "Moment",
   "/expressions": "Expressions",
   "/people": "People",
   "/insights": "Insights",

@@ -182,12 +182,16 @@ body::before {
 
 /* Tactile press on anything that acts like a button. */
 .press {
-  transition: transform 160ms var(--ease-out-expo), background-color 200ms ease, color 200ms ease,
+  transition: transform 220ms var(--ease-out-expo), filter 220ms ease, background-color 200ms ease, color 200ms ease,
     border-color 200ms ease, opacity 200ms ease;
 }
-.press:active:not(:disabled) {
+.press:active:not(:disabled),
+.press.is-pressed {
   transform: scale(0.97);
+  filter: brightness(0.96);
+  transition-duration: 60ms;
 }
+[data-theme="dark"] .press.is-pressed { filter: brightness(1.12); }
 
 /* Smooth colours only while the theme is switching, never on first paint. */
 html.theme-switching,
@@ -270,7 +274,8 @@ html.splash body {
   html.splash .ana-splash::after {
     animation: none;
   }
-  .press:active:not(:disabled) {
+  .press:active:not(:disabled),
+  .press.is-pressed {
     transform: none;
   }
 }

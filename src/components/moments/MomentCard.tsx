@@ -3,29 +3,29 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowCounterClockwise, CaretDown, DotsThree, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, CaretDown, CaretRight, DotsThree, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { useToast } from "@/components/ui/Toast";
 import type { Moment } from "@/lib/moment-types";
 import { dayHeading } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { MediaView } from "./Media";
+import { MediaPreview } from "./Media";
 import { StampIcon, type StampKey } from "@/components/art/StampIcon";
 import { BusyBar } from "@/components/ui/Busy";
-import { RichText, plainText } from "./RichText";
+import { plainText } from "./RichText";
 
-const STAMP_LABEL: Record<string, string> = {
+export const STAMP_LABEL: Record<string, string> = {
   growth: "Growth", struggle: "Struggle", insight: "Insight", stillness: "Stillness", devotion: "Devotion",
 };
 
-function lookBackLabel(m: Moment) {
+export function lookBackLabel(m: Moment) {
   if (!m.lookBackAt) return dayHeading(m.lookBackOn + "T12:00:00");
   const at = new Date(m.lookBackAt);
   return `${dayHeading(m.lookBackAt)}, ${at.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
 }
 
-function timeOf(m: Moment) {
+export function timeOf(m: Moment) {
   return m.hasTime ? new Date(m.occurredAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : null;
 }
 
@@ -38,37 +38,54 @@ function headline(m: Moment, text: string) {
   return first ? (first.length > 90 ? first.slice(0, 88) + "…" : first) : KIND_NAME[m.kind] ?? "Moment";
 }
 
-export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { moment: Moment; onEdit: (m: Moment) => void; hidePersonId?: string; folded?: boolean }) {
+/** Deleting a moment, shared by the card and the moment's own page. */
+export function useDeleteMoment() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [menu, setMenu] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [open, setOpen] = useState(!folded);
-  const people = moment.people.filter((p) => p.id !== hidePersonId);
-  const text = plainText(moment.body);
-
-  async function remove() {
-    setMenu(false);
-    if (!confirm("Delete this moment? Its recordings and photos are deleted too.")) return;
-    setDeleting(true);
+  return async (moment: Moment) => {
+    if (!confirm("Delete this moment? Its recordings and photos are deleted too.")) return false;
     const res = await fetch(`/api/expressions/${moment.id}`, { method: "DELETE" });
     if (!res.ok) {
-      setDeleting(false);
-      return toast("Couldn't delete. Please try again.", "error");
+      toast("Couldn't delete. Please try again.", "error");
+      return false;
     }
     toast("Moment deleted", "success", 1800);
     qc.invalidateQueries({ queryKey: ["moments"] });
     qc.invalidateQueries({ queryKey: ["people"] });
     qc.invalidateQueries({ queryKey: ["person"] });
+    return true;
+  };
+}
+
+export const momentHref = (m: Moment) => `/expressions/${m.id}`;
+
+/**
+ * A moment in a list: a steady preview (title, time, a few lines, one media thumbnail) that
+ * never changes shape. Tapping anywhere on it opens the moment's own page; the menu and the
+ * people links still work on their own. `folded` shows it as one line instead.
+ */
+export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { moment: Moment; onEdit: (m: Moment) => void; hidePersonId?: string; folded?: boolean }) {
+  const qc = useQueryClient();
+  const del = useDeleteMoment();
+  const [menu, setMenu] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const people = moment.people.filter((p) => p.id !== hidePersonId);
+  const text = plainText(moment.body);
+  // The page opens with this copy straight away while it checks for a fresher one.
+  const seed = () => qc.setQueryData(["moments", "one", moment.id], (old: Moment | undefined) => old ?? moment);
+
+  async function remove() {
+    setMenu(false);
+    setDeleting(true);
+    if (!(await del(moment))) setDeleting(false);
   }
 
-  if (!open) {
+  if (folded) {
     const media = moment.attachments.length;
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-expanded={false}
+      <Link
+        href={momentHref(moment)}
+        onPointerDown={seed}
         className="press group w-full flex items-center gap-3 rounded-[16px] bg-surface hover:bg-surface-2 px-3.5 py-3 text-left transition-colors"
       >
         <MomentBadge kind={moment.kind} size={34} />
@@ -78,18 +95,19 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
             {[timeOf(moment), moment.place, people.map((p) => p.name).join(", "), media > 1 ? `${media} files` : null].filter(Boolean).join(" · ")}
           </span>
         </span>
-        <CaretDown size={16} className="shrink-0 text-ink-soft group-hover:text-ink" />
-      </button>
+        <CaretRight size={16} className="shrink-0 text-ink-soft group-hover:text-ink" />
+      </Link>
     );
   }
 
   return (
-    <article inert={deleting} aria-busy={deleting || undefined} className={cn("relative rounded-[18px] bg-surface p-4 sm:p-5 transition-opacity", deleting && "opacity-50")}>
+    <article inert={deleting} aria-busy={deleting || undefined} className={cn("press relative rounded-[18px] bg-surface hover:bg-surface-2 p-4 sm:p-5 transition-[opacity,background-color]", deleting && "opacity-50")}>
+      <Link href={momentHref(moment)} onPointerDown={seed} aria-label={`Open ${moment.title || headline(moment, text)}`} className="absolute inset-0 rounded-[18px] z-0" />
       <BusyBar show={deleting} className="absolute top-0 inset-x-5" />
       <header className="flex items-start gap-3">
         <MomentBadge kind={moment.kind} size={38} className="mt-0.5" />
         <div className="flex-1 min-w-0">
-          {moment.title && <h3 className="font-display text-[18px] font-semibold text-ink leading-snug">{moment.title}</h3>}
+          <h3 className={cn("font-display text-[18px] font-semibold leading-snug truncate", moment.title ? "text-ink" : "text-ink-soft")}>{moment.title || KIND_NAME[moment.kind] || "Moment"}</h3>
           <p className="font-ui text-[12.5px] text-ink-soft mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 tabular">
             {timeOf(moment) && <span>{timeOf(moment)}</span>}
             {moment.place && (
@@ -104,13 +122,8 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
             )}
           </p>
         </div>
-        {folded && (
-          <button type="button" aria-label="Fold moment" aria-expanded onClick={() => setOpen(false)} className="press grid place-items-center w-9 h-9 -mt-1 rounded-full text-ink-soft hover:text-ink hover:bg-surface-2">
-            <CaretDown size={16} className="rotate-180" />
-          </button>
-        )}
-        <div className="relative">
-          <button type="button" aria-label="Moment options" aria-expanded={menu} onClick={() => setMenu((m) => !m)} className="press grid place-items-center w-9 h-9 -mr-1.5 -mt-1 rounded-full text-ink-soft hover:text-ink hover:bg-surface-2">
+        <div className="relative z-10">
+          <button type="button" aria-label="Moment options" aria-expanded={menu} onClick={() => setMenu((m) => !m)} className="press grid place-items-center w-9 h-9 -mr-1.5 -mt-1 rounded-full text-ink-soft hover:text-ink hover:bg-bg">
             <DotsThree size={22} weight="bold" />
           </button>
           {menu && (
@@ -130,17 +143,17 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
       </header>
 
       {moment.attachments.length > 0 && (
-        <div className="mt-3">
-          <MediaView attachments={moment.attachments} compact />
+        <div className="mt-3 pointer-events-none">
+          <MediaPreview attachments={moment.attachments} />
         </div>
       )}
 
-      {text && <RichText body={moment.body} className="mt-3 font-serif text-[16px] leading-[1.65] text-ink space-y-2" />}
+      {text && <p className="mt-3 font-serif text-[16px] leading-[1.65] text-ink line-clamp-3 whitespace-pre-line">{text}</p>}
 
       {(people.length > 0 || moment.stamps.length > 0) && (
         <footer className="mt-3 flex flex-wrap items-center gap-1.5">
           {people.map((p) => (
-            <Link key={p.id} href={`/people/${p.id}`} className="press inline-flex items-center gap-1.5 h-8 pl-1 pr-3 rounded-full bg-bg hover:bg-surface-2">
+            <Link key={p.id} href={`/people/${p.id}`} className="press relative z-10 inline-flex items-center gap-1.5 h-8 pl-1 pr-3 rounded-full bg-bg hover:bg-surface-2">
               <PersonAvatar person={p} size={24} />
               <span className="font-ui text-[13px] font-semibold text-ink">{p.name}</span>
             </Link>

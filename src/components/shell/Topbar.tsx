@@ -16,7 +16,11 @@ export const HELP_EVENT = "ana:page-help";
 
 export function Topbar() {
   const pathname = usePathname();
-  const title = Object.entries(PAGE_TITLES).find(([href]) => pathname.startsWith(href))?.[1] ?? "";
+  // The most specific match wins (e.g. "/expressions/…" is a moment, "/expressions" the list).
+  const title =
+    Object.entries(PAGE_TITLES)
+      .filter(([href]) => pathname.startsWith(href))
+      .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ?? "";
   const helpPage = HELP_PAGES.some((h) => pathname.startsWith(h));
   const headerRef = useRef<HTMLElement>(null);
 

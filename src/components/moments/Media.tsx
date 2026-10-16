@@ -98,6 +98,48 @@ export function MediaView({ attachments, compact = false }: { attachments: Attac
   );
 }
 
+/**
+ * A small, fixed-height preview of a moment's media for list cards: the first photo or
+ * video frame as a thumbnail ("+N" when there are more), or a quiet bar for a voice note.
+ * Nothing plays here; the moment's own page has the players.
+ */
+export function MediaPreview({ attachments }: { attachments: AttachmentDTO[] }) {
+  const visual = attachments.find((a) => a.kind === "photo") ?? attachments.find((a) => a.kind === "video");
+  const audio = attachments.filter((a) => a.kind === "audio");
+  const more = attachments.filter((a) => a.kind !== "audio").length - 1;
+  return (
+    <div className="flex flex-col gap-2">
+      {visual && (
+        <div className="relative h-[150px] sm:h-[180px] overflow-hidden rounded-[14px] bg-surface-2">
+          {visual.kind === "photo" ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={mediaUrl(visual.id)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          ) : (
+            <>
+              <video src={`${mediaUrl(visual.id)}#t=0.1`} preload="metadata" muted playsInline className="w-full h-full object-cover bg-black" />
+              <span className="absolute inset-0 grid place-items-center">
+                <span className="grid place-items-center w-11 h-11 rounded-full bg-black/45 text-white"><Play size={18} weight="fill" /></span>
+              </span>
+            </>
+          )}
+          {more > 0 && <span className="absolute bottom-2 right-2 h-7 px-2.5 grid place-items-center rounded-full bg-black/55 text-white font-ui text-[12.5px] font-semibold tabular">+{more}</span>}
+        </div>
+      )}
+      {audio.map((a) => (
+        <div key={a.id} className="flex items-center gap-3 h-11 px-3 rounded-[12px] bg-bg/70">
+          <span className="grid place-items-center w-7 h-7 rounded-full bg-accent text-bg"><Play size={12} weight="fill" /></span>
+          <span aria-hidden="true" className="flex-1 flex items-center gap-[3px] h-5 overflow-hidden">
+            {Array.from({ length: 28 }).map((_, i) => (
+              <span key={i} className="w-[3px] rounded-full bg-accent/45" style={{ height: `${30 + ((i * 37) % 70)}%` }} />
+            ))}
+          </span>
+          {a.durationSec ? <span className="font-ui text-[12px] text-ink-soft tabular">{formatDuration(a.durationSec)}</span> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- capture
 
 export interface CapturedMedia {

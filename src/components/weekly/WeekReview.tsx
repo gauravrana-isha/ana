@@ -172,7 +172,7 @@ export function WeekReview({ weekStart, weekRange }: { weekStart: string; weekRa
                 const Icon = KIND_ICON[m.kind] ?? Feather;
                 return (
                   <li key={m.id}>
-                    <Link href={`/expressions?open=${m.id}`} className="flex items-center gap-3 p-2 -mx-2 rounded-[12px] hover:bg-bg">
+                    <Link href={`/expressions/${m.id}`} className="flex items-center gap-3 p-2 -mx-2 rounded-[12px] hover:bg-bg">
                       <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-bg text-accent shrink-0"><Icon size={16} /></span>
                       <span className="flex-1 font-ui text-[14px] text-ink truncate">{m.title || "Untitled moment"}</span>
                       <span className="font-ui text-[12px] text-ink-soft tabular">{new Date(m.at).toLocaleDateString(undefined, { weekday: "short" })}</span>

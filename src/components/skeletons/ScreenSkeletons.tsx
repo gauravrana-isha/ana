@@ -390,3 +390,25 @@ export function ListSkeleton({ kind, count = 3 }: { kind: "practice" | "moment" 
     </Skeleton>
   );
 }
+
+export function MomentPageSkeleton() {
+  return (
+    <Skeleton>
+      <div className="flex items-center justify-between -mt-2 mb-5">
+        <Bone className="w-[118px] h-10 rounded-full" />
+        <Bone className="w-[86px] h-10 rounded-full" />
+      </div>
+      <div className="flex items-start gap-3.5">
+        <Bone className="w-11 h-11 rounded-[13px] shrink-0 mt-1" />
+        <div className="flex-1 flex flex-col gap-2.5">
+          <TextBone w="70%" h={26} />
+          <TextBone w={220} h={13} />
+        </div>
+      </div>
+      <Bone className="mt-6 w-full aspect-[4/3] max-h-[60vh] rounded-[18px]" />
+      <div className="mt-6 flex flex-col gap-2.5">
+        {["96%", "90%", "94%", "62%"].map((w, i) => <TextBone key={i} w={w} h={15} />)}
+      </div>
+    </Skeleton>
+  );
+}
