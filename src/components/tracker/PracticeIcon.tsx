@@ -2,18 +2,13 @@
 
 import { createElement } from "react";
 import Image from "next/image";
-import * as Icons from "@phosphor-icons/react";
+import { practiceIcon } from "./practiceIcons";
 import type { IconProps } from "@phosphor-icons/react";
 import { catalogFor, catalogImage } from "@/lib/practiceCatalog";
 import { cn } from "@/lib/utils";
 
 // Older practices saved icon names that aren't Phosphor exports.
-const ALIASES: Record<string, string> = { Pyramid: "Triangle", Bowl: "BowlFood" };
-
-function iconFor(name: string): React.ComponentType<IconProps> {
-  const found = (Icons as unknown as Record<string, React.ComponentType<IconProps> | undefined>)[ALIASES[name] ?? name];
-  return found && typeof found === "object" ? found : Icons.Leaf;
-}
+const iconFor = practiceIcon;
 
 const TONES: [string, string][] = [
   ["#8fae8a", "#5b7a58"],

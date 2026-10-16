@@ -5,7 +5,8 @@ import { Busy } from "@/components/ui/Busy";
 import { createElement, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import * as Icons from "@phosphor-icons/react";
+import { Plus, Trash, X } from "@phosphor-icons/react";
+import { practiceIcon } from "./practiceIcons";
 import type { IconProps } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -38,7 +39,7 @@ const TRACK_OPTIONS: { id: string; label: string; hint: string; icon: string; ha
 ];
 
 function Icon({ name, ...props }: { name: string } & IconProps) {
-  const C = (Icons as unknown as Record<string, React.ComponentType<IconProps> | undefined>)[name] ?? Icons.Leaf;
+  const C = practiceIcon(name);
   return createElement(C, props);
 }
 
@@ -90,7 +91,7 @@ export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
                 aria-label="Close"
                 className="press grid place-items-center w-9 h-9 rounded-full bg-surface text-ink-soft hover:text-ink"
               >
-                <Icons.X size={16} />
+                <X size={16} />
               </button>
             </header>
 
@@ -340,14 +341,14 @@ function YoursTab({ onAdd }: { onAdd: () => void }) {
                 </span>
               </button>
               <button type="button" aria-label={`Remove ${p.name}`} onClick={() => remove(p)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10">
-                <Icons.Trash size={17} />
+                <Trash size={17} />
               </button>
             </li>
           );
         })}
       </ul>
       <button type="button" onClick={onAdd} className="press mt-4 inline-flex items-center gap-1.5 font-ui text-[14px] font-semibold text-accent">
-        <Icons.Plus size={15} weight="bold" /> Add from the library
+        <Plus size={15} weight="bold" /> Add from the library
       </button>
       <PracticeEditor practice={editing} open={!!editing} onClose={() => setEditing(null)} />
     </>
