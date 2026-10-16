@@ -5,7 +5,7 @@ import { usePersistentState } from "@/lib/persist";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { CaretDown, Check, Crown } from "@phosphor-icons/react";
+import { BellSimple, CalendarBlank, CaretDown, Check, Clock, Crown, DeviceMobile, HardDrives, HourglassMedium, SealCheck } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Avatar } from "@/components/shell/Sidebar";
 import { NavIcon } from "@/components/shell/NavIcon";
@@ -28,6 +28,23 @@ interface AdminUser {
   createdAt: string;
   features: { feature: string; allowed: boolean; enabled: boolean }[];
   storageBytes: number;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  lastActiveAt: string | null;
+  devices: number;
+  notifyDevices: number;
+}
+
+const QUOTA = 2 * 1024 * 1024 * 1024;
+
+/** "Today", "Yesterday", "3 days ago", or a date: sign-in activity is known to the day. */
+function activeLabel(iso: string | null) {
+  if (!iso) return "Not signed in";
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days} days ago`;
+  return dateFmt.format(new Date(iso));
 }
 
 const TABS: { key: Status | "ALL"; label: string }[] = [
@@ -140,6 +157,11 @@ export default function AdminPage() {
                   <span className="block font-ui text-[13px] text-ink-soft truncate">
                     {u.email} · <span className="tabular">{dateFmt.format(new Date(u.createdAt))}</span>
                   </span>
+                  {u.status === "PENDING" && !u.onboardedAt && (
+                    <span className="sm:hidden mt-1 inline-flex items-center gap-1 font-ui text-[12px] font-semibold text-saffron">
+                      <HourglassMedium size={13} weight="fill" /> Finishing onboarding
+                    </span>
+                  )}
                 </button>
 
                 <div className="hidden sm:flex items-center gap-1.5">
@@ -170,7 +192,7 @@ export default function AdminPage() {
 
                       <div>
                         <h3 className="font-ui text-[13px] font-semibold text-ink mb-2">Can use</h3>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1 sm:gap-1.5">
                           {FEATURES.map((f) => {
                             const on = allowed(f.key);
                             return (
@@ -180,25 +202,44 @@ export default function AdminPage() {
                                 aria-pressed={on}
                                 disabled={rowBusy(u.id)}
                                 onClick={() => change.mutate({ id: u.id, body: { features: { [f.key]: !on } } })}
+                                aria-label={`${f.label}: ${on ? (chose(f.key) ? "allowed" : "allowed, turned off by them") : "not allowed"}`}
+                                title={`${f.label}${on && !chose(f.key) ? " (allowed, but they turned it off)" : on ? "" : " (not allowed)"}`}
                                 className={cn(
-                                  "press inline-flex items-center gap-1.5 h-9 pl-2.5 pr-3 rounded-full font-ui text-[13px] font-semibold border transition-colors",
-                                  on ? "bg-accent-soft border-accent/30 text-accent" : "bg-bg border-line text-ink-soft line-through decoration-1"
+                                  "press relative inline-flex items-center justify-center gap-1.5 h-9 w-9 sm:w-auto sm:h-9 sm:pl-2.5 sm:pr-3 rounded-full font-ui text-[13px] font-semibold border transition-colors",
+                                  on ? "bg-accent-soft border-accent/30 text-accent" : "bg-bg border-line text-ink-soft/60 sm:line-through decoration-1"
                                 )}
-                                title={on && !chose(f.key) ? "Allowed, but they turned it off" : undefined}
                               >
-                                <NavIcon k={f.key} size={15} weight={on ? "fill" : "regular"} />
-                                {f.label}
-                                {on && !chose(f.key) && <span className="font-normal text-ink-soft no-underline">(off)</span>}
+                                <NavIcon k={f.key} size={16} weight={on ? "fill" : "regular"} />
+                                <span className="hidden sm:inline">{f.label}</span>
+                                {on && !chose(f.key) && <span className="hidden sm:inline font-normal text-ink-soft no-underline">(off)</span>}
+                                {/* phones: a slash for "not allowed", a small dot for "they turned it off" */}
+                                {!on && <span aria-hidden="true" className="sm:hidden absolute w-[26px] h-[1.5px] bg-ink-soft/60 rotate-[-40deg] rounded-full" />}
+                                {on && !chose(f.key) && <span aria-hidden="true" className="sm:hidden absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-saffron ring-2 ring-surface" />}
                               </button>
                             );
                           })}
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                        <span className="font-ui text-[12.5px] text-ink-soft tabular">
-                          Storage used: {formatBytes(u.storageBytes)} of 2 GB
-                        </span>
+                      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <Fact icon={<Clock size={15} />} label="Last active" value={activeLabel(u.lastActiveAt)} />
+                        <Fact icon={<CalendarBlank size={15} />} label="Joined" value={dateFmt.format(new Date(u.createdAt))} />
+                        <Fact
+                          icon={<SealCheck size={15} />}
+                          label="Approved"
+                          value={u.approvedAt ? dateFmt.format(new Date(u.approvedAt)) : u.status === "PENDING" ? "Waiting" : "—"}
+                          sub={u.approvedBy ? `by ${u.approvedBy.split(" ")[0]}` : undefined}
+                        />
+                        <Fact icon={<DeviceMobile size={15} />} label="Signed in on" value={u.devices === 1 ? "1 device" : `${u.devices} devices`} />
+                        <Fact icon={<BellSimple size={15} />} label="Notifications" value={u.notifyDevices ? `On · ${u.notifyDevices === 1 ? "1 device" : `${u.notifyDevices} devices`}` : "Off"} />
+                        <Fact icon={<HardDrives size={15} />} label="Storage" value={`${formatBytes(u.storageBytes)} of 2 GB`}>
+                          <span className="mt-1.5 block h-1 rounded-full bg-line overflow-hidden">
+                            <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max(u.storageBytes ? 2 : 0, Math.min(100, (u.storageBytes / QUOTA) * 100))}%` }} />
+                          </span>
+                        </Fact>
+                      </dl>
+
+                      <div className="flex flex-wrap items-center justify-end gap-3">
                         {!isMe && (
                           <Button
                             size="sm"
@@ -228,7 +269,9 @@ function StatusActions({ u, isMe, busy, onChange }: { u: AdminUser; isMe: boolea
     if (!u.onboardedAt) {
       return (
         <>
-          <span className="font-ui text-[12.5px] text-ink-soft px-1">Finishing onboarding</span>
+          <span className="inline-flex items-center justify-center gap-1.5 h-9 min-w-[124px] px-3 rounded-[11px] bg-[color-mix(in_srgb,var(--saffron)_12%,var(--surface))] font-ui text-[12.5px] font-semibold text-saffron" title="They signed in but haven't finished the welcome steps yet">
+            <HourglassMedium size={14} weight="fill" /> Onboarding
+          </span>
           <Button size="sm" variant="danger" disabled={busy} onClick={() => onChange({ status: "SUSPENDED" })}>
             Decline
           </Button>
@@ -237,7 +280,7 @@ function StatusActions({ u, isMe, busy, onChange }: { u: AdminUser; isMe: boolea
     }
     return (
       <>
-        <Button size="sm" disabled={busy} onClick={() => onChange({ status: "APPROVED" })}>
+        <Button size="sm" disabled={busy} onClick={() => onChange({ status: "APPROVED" })} className="min-w-[124px]">
           <Check size={15} weight="bold" /> Approve
         </Button>
         <Button size="sm" variant="danger" disabled={busy} onClick={() => onChange({ status: "SUSPENDED" })}>
@@ -257,6 +300,22 @@ function StatusActions({ u, isMe, busy, onChange }: { u: AdminUser; isMe: boolea
     <Button size="sm" variant="ghost" disabled={busy} onClick={() => onChange({ status: "APPROVED" })}>
       Restore
     </Button>
+  );
+}
+
+function Fact({ icon, label, value, sub, children }: { icon: React.ReactNode; label: string; value: string; sub?: string; children?: React.ReactNode }) {
+  return (
+    <div className="min-w-0 rounded-[12px] bg-bg/70 px-3 py-2.5">
+      <dt className="flex items-center gap-1.5 font-ui text-[11.5px] font-semibold text-ink-soft">
+        <span className="text-ink-soft/80">{icon}</span>
+        {label}
+      </dt>
+      <dd className="mt-0.5 font-ui text-[13.5px] font-semibold text-ink tabular truncate">
+        {value}
+        {sub && <span className="font-normal text-ink-soft"> {sub}</span>}
+      </dd>
+      {children}
+    </div>
   );
 }
 
