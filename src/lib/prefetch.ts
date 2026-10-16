@@ -29,13 +29,15 @@ function stored(key: string, fallback: string) {
   }
 }
 
-/** Fresh enough to skip: anything fetched in the last 30 seconds isn't fetched again. */
+/** Fresh enough to skip: anything fetched this recently isn't fetched again. */
 const FRESH = 30_000;
 
-function plan(href: string): { key: readonly unknown[]; fn: () => Promise<unknown>; infinite?: boolean }[] {
+type Planned = { key: readonly unknown[]; fn: () => Promise<unknown>; infinite?: boolean; fresh?: number };
+
+function plan(href: string): Planned[] {
   const date = todayStr();
   const week = weekStart(date);
-  const me = { key: ["me"], fn: json("/api/me") };
+  const me = { key: ["me"], fn: json("/api/me"), fresh: 60_000 };
   const practices = { key: keys.practices(), fn: jsonOr("/api/practices", []) };
   const day = {
     key: keys.day(date),
@@ -46,12 +48,21 @@ function plan(href: string): { key: readonly unknown[]; fn: () => Promise<unknow
       return { date: data.date ?? date, entries: data.entries ?? {} };
     },
   };
-  const quote = { key: keys.quote(date), fn: json(`/api/quote?date=${date}`) };
+  const quote = { key: keys.quote(date), fn: json(`/api/quote?date=${date}`), fresh: 60 * 60_000 };
 
   if (href.startsWith("/today")) return [me, { key: ["today", date], fn: json(`/api/today?date=${date}`) }, quote, practices, day];
-  if (href.startsWith("/tracker")) return [practices, day, quote, { key: ["week", week], fn: json(`/api/days/week/${week}`) }];
+  if (href.startsWith("/tracker")) {
+    // The week grid is only fetched in week view, so only prefetch it there.
+    const weekly = stored("tracker.view", "daily") === "weekly";
+    return [practices, day, quote, ...(weekly ? [{ key: ["week", week], fn: json(`/api/days/week/${week}`) }] : [])];
+  }
   if (href.startsWith("/daily")) return [{ key: ["daily", date], fn: json(`/api/daily/${date}`) }, quote];
-  if (href.startsWith("/weekly")) return [{ key: ["weekly", week], fn: json(`/api/weekly/${week}`) }];
+  if (href.startsWith("/weekly")) {
+    const review = stored("weekly.tab", "reflection") === "digest";
+    return review
+      ? [{ key: ["week-review", week], fn: json(`/api/digest/${week}?today=${date}`) }]
+      : [{ key: ["weekly", week], fn: json(`/api/weekly/${week}`) }];
+  }
   if (href.startsWith("/expressions")) {
     // Same filters the page starts with (its remembered kind and sort, no search).
     const filters = { kind: stored("moments.filter", ""), q: "", person: "", stamp: "", sort: stored("moments.sort", "newest") };
@@ -72,9 +83,9 @@ function plan(href: string): { key: readonly unknown[]; fn: () => Promise<unknow
 export function prefetchScreen(qc: QueryClient, href: string) {
   for (const q of plan(href)) {
     if (q.infinite) {
-      qc.prefetchInfiniteQuery({ queryKey: q.key, queryFn: q.fn, initialPageParam: null, staleTime: FRESH }).catch(() => {});
+      qc.prefetchInfiniteQuery({ queryKey: q.key, queryFn: q.fn, initialPageParam: null, staleTime: q.fresh ?? FRESH }).catch(() => {});
     } else {
-      qc.prefetchQuery({ queryKey: q.key, queryFn: q.fn, staleTime: FRESH }).catch(() => {});
+      qc.prefetchQuery({ queryKey: q.key, queryFn: q.fn, staleTime: q.fresh ?? FRESH }).catch(() => {});
     }
   }
 }

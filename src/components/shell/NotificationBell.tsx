@@ -37,7 +37,8 @@ export function useNotifications() {
       const res = await fetch("/api/notifications");
       return res.ok ? res.json() : { items: [], unread: 0 };
     },
-    refetchInterval: 60_000,
+    // Every few minutes, and whenever the app comes back to the front.
+    refetchInterval: 5 * 60_000,
     refetchOnWindowFocus: true,
   });
 }

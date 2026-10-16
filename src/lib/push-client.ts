@@ -56,6 +56,9 @@ async function save(sub: PushSubscription) {
   if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't turn on notifications");
 }
 
+// The server's copy is refreshed once per page load, not by every component that mounts.
+let refreshedThisLoad = false;
+
 // Every mounted hook hears about changes made by any other.
 const listeners = new Set<() => void>();
 const changed = () => listeners.forEach((l) => l());
@@ -78,7 +81,8 @@ export function usePush() {
 
   // Keep the server's copy fresh (browsers rotate subscriptions; time zones change with travel).
   useEffect(() => {
-    if (state !== "on") return;
+    if (state !== "on" || refreshedThisLoad) return;
+    refreshedThisLoad = true;
     navigator.serviceWorker.getRegistration().then((reg) => reg?.pushManager.getSubscription()).then((sub) => sub && save(sub).catch(() => {}));
   }, [state]);
 
