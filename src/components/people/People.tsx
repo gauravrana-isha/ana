@@ -60,6 +60,43 @@ export function PersonAvatar({ person, size = 36, className }: { person: Pick<Pe
 }
 
 /** Tag people on a moment. Type to search; Enter on a new name adds that person. */
+/**
+ * Choose on the finger lifting, not on "click". On iPhone the click comes after the touch
+ * ends, by which time the field has lost focus, the keyboard is sliding away and the sheet
+ * has moved, so the click landed elsewhere and nothing was picked. A drag (scrolling the
+ * list) doesn't pick. Keyboard Enter still works through onClick.
+ */
+function PickButton({ onPick, className, children }: { onPick: () => void; className?: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      className={className}
+      onPointerDown={(e) => {
+        e.currentTarget.dataset.tapX = String(e.clientX);
+        e.currentTarget.dataset.tapY = String(e.clientY);
+        if (e.pointerType === "mouse") e.preventDefault(); // keep the field focused on desktop
+      }}
+      onPointerUp={(e) => {
+        const { tapX, tapY } = e.currentTarget.dataset;
+        delete e.currentTarget.dataset.tapX;
+        if (tapX === undefined) return;
+        if (Math.hypot(e.clientX - Number(tapX), e.clientY - Number(tapY)) < 10) {
+          e.preventDefault();
+          onPick();
+        }
+      }}
+      onPointerCancel={(e) => {
+        delete e.currentTarget.dataset.tapX;
+      }}
+      onClick={(e) => {
+        if (e.detail === 0) onPick(); // keyboard activation only; pointers were handled above
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (ids: string[]) => void }) {
   const qc = useQueryClient();
   const { data: people = [] } = usePeople();
@@ -153,10 +190,8 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
         <ul className="absolute z-20 left-0 right-0 mt-1.5 p-1.5 rounded-[14px] bg-bg shadow-[var(--shadow-lift)] border border-line max-h-[260px] overflow-y-auto">
           {matches.map((p) => (
             <li key={p.id}>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { onChange([...value, p.id]); setQuery(""); inputRef.current?.focus(); }}
+              <PickButton
+                onPick={() => { onChange([...value, p.id]); setQuery(""); inputRef.current?.focus(); }}
                 className="w-full flex items-center gap-2.5 p-2 rounded-[10px] text-left hover:bg-surface"
               >
                 <PersonAvatar person={p} size={30} />
@@ -164,20 +199,18 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
                   <span className="block font-ui text-[14px] font-semibold text-ink truncate">{p.name}</span>
                   {p.relation && <span className="block font-ui text-[12.5px] text-ink-soft truncate">{p.relation}</span>}
                 </span>
-              </button>
+              </PickButton>
             </li>
           ))}
           {q && !exact && (
             <li>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={create}
+              <PickButton
+                onPick={create}
                 className="w-full flex items-center gap-2.5 p-2 rounded-[10px] text-left hover:bg-surface text-accent"
               >
                 <span className="grid place-items-center w-[30px] h-[30px] rounded-full bg-accent-soft"><Plus size={15} weight="bold" /></span>
                 <span className="font-ui text-[14px] font-semibold">Add &ldquo;{query.trim()}&rdquo;</span>
-              </button>
+              </PickButton>
             </li>
           )}
         </ul>

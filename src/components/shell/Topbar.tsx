@@ -23,6 +23,7 @@ export function Topbar() {
       .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ?? "";
   const helpPage = HELP_PAGES.some((h) => pathname.startsWith(h));
   const headerRef = useRef<HTMLElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
 
   // Phones: each page opens at its title, with the "ana" + bell row tucked just above
   // (scroll up to reach it). Only when arriving at the top, so back/forward keeps its place.
@@ -31,7 +32,9 @@ export function Topbar() {
     const id = requestAnimationFrame(() => {
       const head = headerRef.current;
       if (!head) return;
-      const target = Math.max(0, head.getBoundingClientRect().top + window.scrollY - 14);
+      // Leave the status-bar strip (the clock, on iPhone) clear, plus a small gap.
+      const safeTop = statusRef.current?.offsetHeight ?? 0;
+      const target = Math.max(0, head.getBoundingClientRect().top + window.scrollY - safeTop - 14);
       if (window.scrollY < target) window.scrollTo({ top: target, behavior: "instant" });
     });
     return () => cancelAnimationFrame(id);
@@ -39,6 +42,8 @@ export function Topbar() {
 
   return (
     <div className="mb-6 lg:mb-8">
+    {/* Phones: a solid strip behind the status bar, so nothing scrolls under the clock. */}
+    <div ref={statusRef} aria-hidden="true" className="lg:hidden fixed top-0 inset-x-0 z-30 h-[env(safe-area-inset-top)] bg-bg/95 backdrop-blur-md" />
     {/* Phones: the logo row carries the bell at its far end. */}
     <div className="lg:hidden flex items-center justify-between mb-2 -mt-1">
       <Link href="/" className="flex items-center gap-1.5 text-accent w-fit" aria-label="ana home">
