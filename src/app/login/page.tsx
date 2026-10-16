@@ -56,9 +56,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1 className="mt-5 font-display text-[30px] lg:text-[36px] font-semibold leading-[1.12] tracking-[-0.02em] text-ink">
             Your sadhana, and the moments worth keeping.
           </h1>
-          <p className="mt-4 font-ui text-[15px] leading-[1.6] text-ink-soft">
-            Log your practices, reflect each day and week, and remember the people you meet along the way.
-          </p>
 
           <form action={signInWithGoogle} className="mt-9">
             <GoogleButton />
@@ -71,7 +68,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           )}
 
           <p className="mt-6 font-ui text-[13px] leading-[1.6] text-ink-soft">
-            New here? Sign in, set up your journal, and an admin will welcome you in shortly after.
+            New here? Sign in and an admin will let you in.
           </p>
         </div>
       </main>

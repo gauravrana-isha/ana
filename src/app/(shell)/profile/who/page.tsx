@@ -1,10 +1,10 @@
 "use client";
 
+import { WhoSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
-import { Loader } from "@/components/ui/Loader";
 import { useToast } from "@/components/ui/Toast";
 import { Busy } from "@/components/ui/Busy";
 import { Ornament } from "@/components/art/Ornament";
@@ -36,14 +36,14 @@ export default function WhoAmIPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: me } = useMe();
-  const { data: portraits, isLoading } = usePortraits();
+  const { data: portraits, isPending: isLoading } = usePortraits();
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [compareId, setCompareId] = useState<string | null>(null);
   const [savingRevisit, setSavingRevisit] = useState(false);
 
-  if (isLoading || !portraits) return <div className="py-20 grid place-items-center"><Loader /></div>;
+  if (isLoading || !portraits) return <WhoSkeleton />;
   const latest = portraits[0] ?? null;
   const writing = composing || !latest;
   const earlier = portraits.slice(1);

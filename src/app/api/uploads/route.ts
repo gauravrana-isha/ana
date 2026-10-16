@@ -25,12 +25,13 @@ export async function POST(req: NextRequest) {
         if (!isMediaKind(kind)) throw new Error("Unknown media kind");
         if (!pathname.startsWith(`${userPrefix(user.id)}${kind}/`)) throw new Error("Wrong folder");
         const rules = MEDIA_RULES[kind];
-        if ((await bytesUsed(user.id)) + rules.maxBytes > USER_QUOTA_BYTES) {
-          throw new Error("Storage is full for this account");
-        }
+        // Each upload may use up to the smaller of the kind's limit and the room left in the
+        // account; Blob enforces that size during the upload, so the quota can't be passed.
+        const room = USER_QUOTA_BYTES - (await bytesUsed(user.id));
+        if (room < 64 * 1024) throw new Error("Storage is full for this account");
         return {
           allowedContentTypes: rules.types.flatMap((t) => [t, `${t};*`]),
-          maximumSizeInBytes: rules.maxBytes,
+          maximumSizeInBytes: Math.min(rules.maxBytes, room),
           addRandomSuffix: true,
           validUntil: Date.now() + 30 * 60 * 1000,
         };

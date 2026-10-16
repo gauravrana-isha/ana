@@ -381,7 +381,38 @@ html.kb-open .ana-fab {
 .ana-pond-twinkle { animation: ana-pond-twinkle 4.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 @media (prefers-reduced-motion: reduce) { .ana-pond-twinkle { animation: none; } }
 
-/* The loading skeleton breathes softly (no shimmer sweep), and holds still for reduced motion. */
-@keyframes ana-skeleton { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
-.ana-skeleton { animation: ana-skeleton 1.6s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .ana-skeleton { animation: none; } }
+/* Skeletons: one light sweep across the whole screen (gradient pinned to the viewport), on
+   bones a shade deeper than the card they sit on. They appear after a short beat so quick
+   loads never flash placeholders. */
+.ana-bone {
+  background-color: color-mix(in srgb, var(--ink) 7%, var(--surface));
+  background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--bg) 75%, transparent) 50%, transparent 70%);
+  background-size: 200vw 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  animation: ana-bone-sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+[data-theme="dark"] .ana-bone {
+  background-color: color-mix(in srgb, var(--ink) 9%, var(--surface));
+  background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--ink) 10%, transparent) 50%, transparent 70%);
+}
+@keyframes ana-bone-sweep { from { background-position: -100vw 0; } to { background-position: 100vw 0; } }
+.ana-skeleton-in { animation: ana-skeleton-in 0.35s ease-out 0.12s both; }
+@keyframes ana-skeleton-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Each screen eases in when it replaces its skeleton. */
+.ana-page-in { animation: ana-page-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes ana-page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* The loader: a line lotus drawn stroke by stroke, then let go, on a loop. */
+.ana-draw path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ana-draw 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+@keyframes ana-draw { 0% { stroke-dashoffset: 1; opacity: 0.25; } 45% { stroke-dashoffset: 0; opacity: 1; } 70% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: -1; opacity: 0.25; } }
+
+/* Page-change progress line along the top edge. */
+.ana-progress { position: fixed; top: 0; left: 0; right: 0; height: 2.5px; z-index: 80; pointer-events: none; transform-origin: left; background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ana-bone { animation: none; background-image: none; }
+  .ana-skeleton-in, .ana-page-in { animation: none; }
+  .ana-draw path { animation-duration: 4.8s; }
+}

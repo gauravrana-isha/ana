@@ -1,10 +1,14 @@
 "use client";
 
-import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { IsRestoringProvider, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  persistQueryClientRestore,
+  persistQueryClientSubscribe,
+  type PersistQueryClientOptions,
+} from "@tanstack/query-persist-client-core";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { del, get, set } from "idb-keyval";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ConnectivityIndicator } from "@/components/shell/ConnectivityIndicator";
 import { ThemeColor } from "@/components/shell/ThemeColor";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -49,24 +53,62 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const [persistOptions] = useState<Omit<PersistQueryClientOptions, "queryClient">>(() => ({
+    persister,
+    maxAge: 7 * DAY,
+    // Bump when a cached response changes shape, so old copies are dropped once.
+    buster: "v3",
+    dehydrateOptions: {
+      shouldDehydrateQuery: (q) => q.state.status === "success" && !NOT_PERSISTED.has(String(q.queryKey[0])),
+    },
+  }));
+
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{
-        persister,
-        maxAge: 7 * DAY,
-        // Bump when a cached response changes shape, so old copies are dropped once.
-        buster: "v3",
-        dehydrateOptions: {
-          shouldDehydrateQuery: (q) => q.state.status === "success" && !NOT_PERSISTED.has(String(q.queryKey[0])),
-        },
-      }}
-    >
-      <ToastProvider>
-        <ThemeColor />
-        <ConnectivityIndicator />
-        {children}
-      </ToastProvider>
-    </PersistQueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <RestoreAfterHydration client={queryClient} options={persistOptions}>
+        <ToastProvider>
+          <ThemeColor />
+          <ConnectivityIndicator />
+          {children}
+        </ToastProvider>
+      </RestoreAfterHydration>
+    </QueryClientProvider>
   );
+}
+
+/**
+ * TanStack's PersistQueryClientProvider, with one difference: the saved cache is restored
+ * once the page has finished hydrating, not as soon as the shell mounts. Each section's
+ * loading boundary hydrates on its own, and restoring in between let a later part render
+ * with data the server never had (a hydration mismatch). Until the restore finishes,
+ * queries stay pending and don't fetch, exactly as with the stock provider.
+ */
+function RestoreAfterHydration({
+  client,
+  options,
+  children,
+}: {
+  client: QueryClient;
+  options: Omit<PersistQueryClientOptions, "queryClient">;
+  children: React.ReactNode;
+}) {
+  const [isRestoring, setIsRestoring] = useState(true);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const full = { ...options, queryClient: client };
+    if (!isRestoring) return persistQueryClientSubscribe(full);
+    if (started.current) return;
+    started.current = true;
+    // Let React finish hydrating every boundary first: idle time, or a short timeout at most.
+    const begin = () => {
+      persistQueryClientRestore(full)
+        .catch(() => {})
+        .finally(() => setIsRestoring(false));
+    };
+    if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(begin, { timeout: 300 });
+    else setTimeout(begin, 50);
+  }, [client, options, isRestoring]);
+
+  return <IsRestoringProvider value={isRestoring}>{children}</IsRestoringProvider>;
 }

@@ -300,7 +300,7 @@ function CustomTab({ onDone }: { onDone: () => void }) {
 function YoursTab({ onAdd }: { onAdd: () => void }) {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { data: practices = [], isLoading } = usePractices();
+  const { data: practices = [], isPending: isLoading } = usePractices();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Practice | null>(null);
 

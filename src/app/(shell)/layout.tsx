@@ -4,6 +4,7 @@ import { MobileTabBar } from "@/components/shell/MobileTabBar";
 import { Topbar } from "@/components/shell/Topbar";
 import { SearchDialog } from "@/components/shell/Search";
 import { CacheGuard } from "@/components/shell/CacheGuard";
+import { NavProgress } from "@/components/shell/NavProgress";
 import type { NavItem } from "@/components/shell/nav";
 import { requireAppUser } from "@/lib/session";
 import { featureByKey } from "@/lib/features";
@@ -39,6 +40,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       <MobileTabBar items={features} extras={admin ? [profile, admin] : [profile]} />
       <SearchDialog />
       <CacheGuard userId={user.id} />
+      <NavProgress />
     </div>
   );
 }

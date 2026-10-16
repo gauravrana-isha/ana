@@ -27,7 +27,7 @@ import { PracticeIcon } from "@/components/tracker/PracticeIcon";
 import { WeeklyTable } from "@/components/tracker/WeeklyTable";
 import { WeeklyEntryModal } from "@/components/tracker/WeeklyEntryModal";
 import { AddPracticeDialog } from "@/components/tracker/AddPracticeDialog";
-import { TrackerSkeleton } from "@/components/ui/Skeleton";
+import { TrackerSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { ButtonLoader } from "@/components/ui/Loader";
 import { Busy } from "@/components/ui/Busy";
 import { useToast } from "@/components/ui/Toast";
@@ -45,7 +45,7 @@ export default function TrackerPage() {
   const [weeklyModal, setWeeklyModal] = useState<{ practice: Practice; date: string } | null>(null);
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { data: practices, isLoading: practicesLoading } = usePractices();
+  const { data: practices, isPending: practicesLoading } = usePractices();
   const { data: dayLogData } = useDayLog(date);
   const updateDayLog = useUpdateDayLog(date);
 

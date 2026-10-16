@@ -1,5 +1,6 @@
 "use client";
 
+import { MomentsSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { usePersistentState } from "@/lib/persist";
 
 import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
@@ -13,7 +14,6 @@ import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PickerPanel } from "@/components/ui/pickers";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
-import { Loader } from "@/components/ui/Loader";
 import { LazyMomentComposer } from "@/components/moments/LazyMomentComposer";
 import { MomentCard, MomentTimeline } from "@/components/moments/MomentCard";
 import { useMoments } from "@/lib/moments-client";
@@ -30,7 +30,7 @@ const FILTERS = [
 
 export default function ExpressionsPage() {
   return (
-    <Suspense fallback={<div className="py-20 grid place-items-center"><Loader /></div>}>
+    <Suspense fallback={<MomentsSkeleton />}>
       <ExpressionsContent />
     </Suspense>
   );
@@ -60,7 +60,7 @@ function ExpressionsContent() {
   const [query, setQuery] = useState("");
   // Search once typing pauses, not on every keystroke.
   const q = useDebounced(query.trim(), 300);
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMoments({ kind, q, person, stamp, sort });
+  const { data, isPending: isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMoments({ kind, q, person, stamp, sort });
   const moments = data?.pages.flatMap((p) => p.items) ?? [];
 
   const [composer, setComposer] = useState<{ open: boolean; moment: Moment | null; kind: MomentKind }>({
@@ -159,9 +159,7 @@ function ExpressionsContent() {
       )}
 
       {isLoading ? (
-        <div className="py-20 grid place-items-center">
-          <Loader />
-        </div>
+        <MomentsSkeleton toolbar={false} />
       ) : moments.length === 0 ? (
         <div className="flex flex-col items-center text-center py-16 gap-4">
           <Ornament name="kolam" width={180} className="text-accent/60" />

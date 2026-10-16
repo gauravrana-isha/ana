@@ -1,9 +1,9 @@
 "use client";
 
+import { InsightsSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Ornament } from "@/components/art/Ornament";
-import { Loader } from "@/components/ui/Loader";
 import { PracticeIcon } from "@/components/tracker/PracticeIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { today as todayStr } from "@/lib/dates";
@@ -31,12 +31,12 @@ function fmtDay(iso: string) {
 
 export default function InsightsPage() {
   const date = todayStr();
-  const { data, isLoading } = useQuery({
+  const { data, isPending: isLoading } = useQuery({
     queryKey: ["insights", date],
     queryFn: async (): Promise<InsightsData> => (await fetch(`/api/insights?date=${date}`)).json(),
   });
 
-  if (isLoading || !data) return <div className="py-20 grid place-items-center"><Loader /></div>;
+  if (isLoading || !data) return <InsightsSkeleton />;
 
   return (
     <div className="flex flex-col gap-10">

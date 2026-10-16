@@ -1,5 +1,7 @@
 "use client";
 
+import { useHydrated } from "@/lib/hydrated";
+import { ProfileSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { Switch } from "@/components/ui/Switch";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 import { WhoAmICard } from "@/components/profile/WhoAmI";
@@ -42,6 +44,7 @@ export default function ProfilePage() {
   const qc = useQueryClient();
   const router = useRouter();
   const { data: me } = useMe();
+  const hydrated = useHydrated();
 
   function handleThemeChange(next: ThemeName) {
     applyTheme(next);
@@ -117,6 +120,8 @@ export default function ProfilePage() {
   }
 
   const practiceList: Practice[] = Array.isArray(practices) ? practices : [];
+
+  if (!hydrated || !me) return <ProfileSkeleton />;
 
   return (
     <div className="space-y-8">
@@ -380,7 +385,6 @@ function ProfileHeader({ me }: { me: Me | undefined }) {
     </section>
   );
 }
-
 
 
 function readTheme(): ThemeName {

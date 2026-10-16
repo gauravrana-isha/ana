@@ -23,7 +23,7 @@ export function longDate(iso: string) {
 
 /** The profile's "Who am I?": the latest portrait, small, with a way in. */
 export function WhoAmICard() {
-  const { data: portraits, isLoading } = usePortraits();
+  const { data: portraits, isPending: isLoading } = usePortraits();
   const latest = portraits?.[0] ?? null;
 
   return (

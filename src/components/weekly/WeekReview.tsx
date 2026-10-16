@@ -1,11 +1,11 @@
 "use client";
 
+import { WeekReviewSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, Feather, Microphone, VideoCamera } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
-import { Loader } from "@/components/ui/Loader";
 import { PracticeIcon } from "@/components/tracker/PracticeIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { today } from "@/lib/dates";
@@ -46,12 +46,12 @@ function Card({ title, lead, children, className }: { title: string; lead?: stri
 
 /** This week's story, next to the weekly reflection. Patterns, never scores. */
 export function WeekReview({ weekStart, weekRange }: { weekStart: string; weekRange: string }) {
-  const { data, isLoading } = useQuery({
+  const { data, isPending: isLoading } = useQuery({
     queryKey: ["week-review", weekStart],
     queryFn: async (): Promise<Review> => (await fetch(`/api/digest/${weekStart}?today=${today()}`)).json(),
   });
 
-  if (isLoading) return <div className="py-16 grid place-items-center"><Loader /></div>;
+  if (isLoading) return <WeekReviewSkeleton />;
   if (!data || !Array.isArray(data.practices)) {
     return <p className="rounded-[20px] bg-surface p-5 font-ui text-[14px] text-ink-soft">Couldn&rsquo;t load this week. Pull to refresh, or try again in a moment.</p>;
   }

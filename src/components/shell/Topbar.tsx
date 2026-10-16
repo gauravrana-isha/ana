@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { Lotus } from "@/components/art/Lotus";
 import { PAGE_TITLES } from "./nav";
 import { formatDateHand, today } from "@/lib/dates";
-import { useQuote } from "@/lib/queries";
 import { Info } from "@phosphor-icons/react";
 import { SearchButton } from "./Search";
 import { NotificationBell } from "./NotificationBell";
@@ -18,9 +17,6 @@ export const HELP_EVENT = "ana:page-help";
 export function Topbar() {
   const pathname = usePathname();
   const title = Object.entries(PAGE_TITLES).find(([href]) => pathname.startsWith(href))?.[1] ?? "";
-  const { data: quoteData } = useQuote(today());
-  const [quoteOpen, setQuoteOpen] = useState(false);
-  const quote = quoteData?.quote;
   const helpPage = HELP_PAGES.some((h) => pathname.startsWith(h));
   const headerRef = useRef<HTMLElement>(null);
 
@@ -85,17 +81,6 @@ export function Topbar() {
       <NotificationBell className="hidden lg:block ml-1" />
       </div>
     </header>
-      {/* Phones don't have the sidebar, so the day's quote lives here. Tap to read it all. */}
-      {quote && pathname.startsWith("/tracker") && (
-        <button
-          type="button"
-          onClick={() => setQuoteOpen((o) => !o)}
-          aria-expanded={quoteOpen}
-          className="lg:hidden mt-3 block w-full text-left font-serif italic text-[14.5px] leading-[1.55] text-ink-soft rounded-lg"
-        >
-          <span className={quoteOpen ? "" : "line-clamp-2"}>&ldquo;{quote}&rdquo;</span>
-        </button>
-      )}
     </div>
   );
 }

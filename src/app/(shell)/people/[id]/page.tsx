@@ -1,5 +1,6 @@
 "use client";
 
+import { ListSkeleton, PersonSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,7 +9,6 @@ import { Cake, Camera, Feather, Handshake, Microphone, PencilSimple, Trash, Vide
 import { Ornament } from "@/components/art/Ornament";
 import { Chevron } from "@/components/ui/Arrows";
 import { Button } from "@/components/ui/Button";
-import { Loader } from "@/components/ui/Loader";
 import { useToast } from "@/components/ui/Toast";
 import { PersonAvatar } from "@/components/people/People";
 import { PersonForm, type PersonDetail } from "@/components/people/PersonForm";
@@ -25,7 +25,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { data: person, isLoading } = useQuery({
+  const { data: person, isPending: isLoading } = useQuery({
     queryKey: ["person", id],
     queryFn: async (): Promise<PersonDetail | null> => {
       const res = await fetch(`/api/people/${id}`);
@@ -51,7 +51,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
     router.replace("/people");
   }
 
-  if (isLoading) return <div className="py-20 grid place-items-center"><Loader /></div>;
+  if (isLoading) return <PersonSkeleton />;
   if (!person) {
     return (
       <div className="py-16 text-center">
@@ -106,8 +106,8 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
       </section>
 
       <div className="mt-8">
-        {moments.isLoading ? (
-          <div className="py-12 grid place-items-center"><Loader /></div>
+        {moments.isPending ? (
+          <ListSkeleton kind="moment" count={3} />
         ) : list.length === 0 ? (
           <div className="flex flex-col items-center text-center py-10 gap-3">
             <Ornament name="divider" width={200} className="text-ink-soft/40" />

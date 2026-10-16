@@ -32,8 +32,8 @@ export const MEDIA_RULES: Record<MediaKind, { types: string[]; maxBytes: number;
   },
   video: {
     types: ["video/webm", "video/mp4", "video/quicktime"],
-    maxBytes: 250 * 1024 * 1024,
-    label: "250 MB",
+    maxBytes: 100 * 1024 * 1024,
+    label: "100 MB",
   },
   photo: {
     types: ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/gif"],
@@ -43,7 +43,7 @@ export const MEDIA_RULES: Record<MediaKind, { types: string[]; maxBytes: number;
 };
 
 /** Per-person storage ceiling while approval is the only gate on sign-ups. */
-export const USER_QUOTA_BYTES = 2 * 1024 * 1024 * 1024;
+export const USER_QUOTA_BYTES = 200 * 1024 * 1024;
 
 export function isMediaKind(v: unknown): v is MediaKind {
   return v === "audio" || v === "video" || v === "photo";

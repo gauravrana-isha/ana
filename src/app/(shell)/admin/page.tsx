@@ -5,7 +5,7 @@ import { usePersistentState } from "@/lib/persist";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { BellSimple, CalendarBlank, CaretDown, Check, Clock, Crown, DeviceMobile, HardDrives, HourglassMedium, SealCheck } from "@phosphor-icons/react";
+import { CalendarBlank, CaretDown, Check, Clock, Crown, HardDrives, HourglassMedium } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Avatar } from "@/components/shell/Sidebar";
 import { NavIcon } from "@/components/shell/NavIcon";
@@ -28,14 +28,10 @@ interface AdminUser {
   createdAt: string;
   features: { feature: string; allowed: boolean; enabled: boolean }[];
   storageBytes: number;
-  approvedAt: string | null;
-  approvedBy: string | null;
   lastActiveAt: string | null;
-  devices: number;
-  notifyDevices: number;
 }
 
-const QUOTA = 2 * 1024 * 1024 * 1024;
+const QUOTA = 200 * 1024 * 1024;
 
 /** "Today", "Yesterday", "3 days ago", or a date: sign-in activity is known to the day. */
 function activeLabel(iso: string | null) {
@@ -62,7 +58,7 @@ export default function AdminPage() {
   const [tab, setTab] = usePersistentState<Status | "ALL">("admin.tab", "PENDING", ["PENDING", "APPROVED", "SUSPENDED", "ALL"] as const);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isPending: isLoading } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async (): Promise<{ users: AdminUser[]; me: string }> => {
       const res = await fetch("/api/admin/users");
@@ -224,15 +220,7 @@ export default function AdminPage() {
                       <dl className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         <Fact icon={<Clock size={15} />} label="Last active" value={activeLabel(u.lastActiveAt)} />
                         <Fact icon={<CalendarBlank size={15} />} label="Joined" value={dateFmt.format(new Date(u.createdAt))} />
-                        <Fact
-                          icon={<SealCheck size={15} />}
-                          label="Approved"
-                          value={u.approvedAt ? dateFmt.format(new Date(u.approvedAt)) : u.status === "PENDING" ? "Waiting" : "—"}
-                          sub={u.approvedBy ? `by ${u.approvedBy.split(" ")[0]}` : undefined}
-                        />
-                        <Fact icon={<DeviceMobile size={15} />} label="Signed in on" value={u.devices === 1 ? "1 device" : `${u.devices} devices`} />
-                        <Fact icon={<BellSimple size={15} />} label="Notifications" value={u.notifyDevices ? `On · ${u.notifyDevices === 1 ? "1 device" : `${u.notifyDevices} devices`}` : "Off"} />
-                        <Fact icon={<HardDrives size={15} />} label="Storage" value={`${formatBytes(u.storageBytes)} of 2 GB`}>
+                        <Fact icon={<HardDrives size={15} />} label="Storage" value={`${formatBytes(u.storageBytes)} of 200 MB`}>
                           <span className="mt-1.5 block h-1 rounded-full bg-line overflow-hidden">
                             <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max(u.storageBytes ? 2 : 0, Math.min(100, (u.storageBytes / QUOTA) * 100))}%` }} />
                           </span>
@@ -310,11 +298,12 @@ function Fact({ icon, label, value, sub, children }: { icon: React.ReactNode; la
         <span className="text-ink-soft/80">{icon}</span>
         {label}
       </dt>
-      <dd className="mt-0.5 font-ui text-[13.5px] font-semibold text-ink tabular truncate">
+      {/* Value (and any bar) line up with the label's text, past its 15px icon + 6px gap. */}
+      <dd className="mt-0.5 pl-[21px] font-ui text-[13.5px] font-semibold text-ink tabular truncate">
         {value}
         {sub && <span className="font-normal text-ink-soft"> {sub}</span>}
       </dd>
-      {children}
+      {children && <div className="pl-[21px]">{children}</div>}
     </div>
   );
 }

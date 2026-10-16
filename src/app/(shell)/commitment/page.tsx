@@ -1,5 +1,6 @@
 "use client";
 
+import { CommitmentSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { Busy, BusyBar } from "@/components/ui/Busy";
 
 import { useEffect, useState } from "react";
@@ -12,7 +13,6 @@ import { usePersistentState } from "@/lib/persist";
 import { NotifyNudge } from "@/components/push/Notifications";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
-import { Loader } from "@/components/ui/Loader";
 import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
@@ -46,7 +46,7 @@ export default function CommitmentPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: me } = useMe();
-  const { data, isLoading } = useQuery({
+  const { data, isPending: isLoading } = useQuery({
     queryKey: ["commitment"],
     queryFn: async (): Promise<{ current: Letter | null; due: boolean; history: Letter[] }> => (await fetch("/api/commitment")).json(),
   });
@@ -67,7 +67,7 @@ export default function CommitmentPage() {
     return () => window.removeEventListener(HELP_EVENT, open);
   }, []);
 
-  if (isLoading || !data) return <div className="py-20 grid place-items-center"><Loader /></div>;
+  if (isLoading || !data) return <CommitmentSkeleton />;
   const current = data.current;
   const editing = writing || !current;
   const introOpen = introAsked || (!current && introSeen === "no");

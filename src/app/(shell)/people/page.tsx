@@ -1,17 +1,17 @@
 "use client";
 
+import { ListSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { MagnifyingGlass, Plus, X } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
-import { Loader } from "@/components/ui/Loader";
 import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PersonForm } from "@/components/people/PersonForm";
 import { timeAgo } from "@/lib/dates";
 
 export default function PeoplePage() {
-  const { data: people = [], isLoading } = usePeople();
+  const { data: people = [], isPending: isLoading } = usePeople();
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
 
@@ -39,7 +39,7 @@ export default function PeoplePage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 grid place-items-center"><Loader /></div>
+        <ListSkeleton kind="person" count={5} />
       ) : people.length === 0 ? (
         <div className="flex flex-col items-center text-center py-16 gap-4">
           <Ornament name="kolam" width={180} className="text-accent/60" />

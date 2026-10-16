@@ -1,5 +1,7 @@
 "use client";
 
+import { useHydrated } from "@/lib/hydrated";
+import { ListSkeleton, TodaySkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +10,6 @@ import { MomentBadge } from "@/components/art/MomentIcon";
 import { Arrow } from "@/components/ui/Arrows";
 import { Ornament } from "@/components/art/Ornament";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
-import { Loader } from "@/components/ui/Loader";
 import { PracticeRow } from "@/components/tracker/PracticeRow";
 import { PersonAvatar } from "@/components/people/People";
 import { LazyMomentComposer } from "@/components/moments/LazyMomentComposer";
@@ -44,10 +45,11 @@ function yearsAgo(iso: string) {
 export default function TodayPage() {
   const date = todayStr();
   const { data: me } = useMe();
+  const hydrated = useHydrated();
   const { data: quoteData } = useQuote(date);
   const has = (f: string) => !!me?.features.includes(f as never);
 
-  const { data, isLoading } = useQuery({
+  const { data, isPending: isLoading } = useQuery({
     queryKey: ["today", date],
     queryFn: async (): Promise<TodayData> => (await fetch(`/api/today?date=${date}`)).json(),
   });
@@ -55,6 +57,9 @@ export default function TodayPage() {
   const [composer, setComposer] = useState<{ open: boolean; moment: Moment | null; kind: MomentKind }>({ open: false, moment: null, kind: "writing" });
   const openNew = (k: MomentKind) => setComposer({ open: true, moment: null, kind: k });
   const edit = (m: Moment) => setComposer({ open: true, moment: m, kind: m.kind });
+
+  // Until we know which sections this person has, show the whole screen's skeleton.
+  if (!hydrated || !me) return <TodaySkeleton />;
 
   return (
     <div className="flex flex-col gap-8">
@@ -138,7 +143,7 @@ export default function TodayPage() {
       )}
 
       {isLoading ? (
-        <div className="py-8 grid place-items-center"><Loader size="sm" /></div>
+        <ListSkeleton kind="moment" count={1} />
       ) : (
         <>
           {/* Birthdays */}
@@ -208,7 +213,7 @@ function SectionHead({ title, icon, action }: { title: string; icon?: React.Reac
 }
 
 function TodayPractices({ date }: { date: string }) {
-  const { data: practices = [], isLoading } = usePractices();
+  const { data: practices = [], isPending: isLoading } = usePractices();
   const { data: day } = useDayLog(date);
   const update = useUpdateDayLog(date);
   const entries: DayLogEntries = useMemo(() => day?.entries ?? {}, [day]);
@@ -236,7 +241,7 @@ function TodayPractices({ date }: { date: string }) {
         }
       />
       {isLoading ? (
-        <div className="py-6 grid place-items-center"><Loader size="sm" /></div>
+        <ListSkeleton kind="practice" count={5} />
       ) : practices.length === 0 ? (
         <Link href="/tracker" className="block rounded-[16px] bg-surface p-4 font-ui text-[14px] text-ink-soft hover:bg-surface-2">
           Add the practices you keep, and tick them here each day.

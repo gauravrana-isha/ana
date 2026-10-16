@@ -18,34 +18,26 @@ export async function GET() {
       role: true,
       status: true,
       onboardedAt: true,
-      approvedAt: true,
-      approvedById: true,
       createdAt: true,
       features: { select: { feature: true, allowed: true, enabled: true } },
     },
   });
 
   // Admins see what they need to let people in and look after storage, never anything
-  // people write or track: account facts only (activity is from sign-in sessions, to the day).
+  // people write or track: when they were last active (from sign-in sessions), when they
+  // joined, and how much storage they use.
   const ids = users.map((u) => u.id);
-  const [storage, sessions, pushes, approvers] = await Promise.all([
-    db.attachment.groupBy({ by: ["userId"], _sum: { size: true } }),
-    db.session.groupBy({ by: ["userId"], where: { userId: { in: ids }, expires: { gt: new Date() } }, _max: { updatedAt: true }, _count: { _all: true } }),
-    db.pushSubscription.groupBy({ by: ["userId"], where: { userId: { in: ids } }, _count: { _all: true } }),
-    db.user.findMany({ where: { id: { in: [...new Set(users.map((u) => u.approvedById).filter(Boolean) as string[])] } }, select: { id: true, name: true, email: true } }),
+  const [storage, sessions] = await Promise.all([
+    db.attachment.groupBy({ by: ["userId"], where: { userId: { in: ids } }, _sum: { size: true } }),
+    db.session.groupBy({ by: ["userId"], where: { userId: { in: ids }, expires: { gt: new Date() } }, _max: { updatedAt: true } }),
   ]);
   const used = new Map(storage.map((s) => [s.userId, s._sum.size ?? 0]));
-  const seen = new Map(sessions.map((s) => [s.userId, { at: s._max.updatedAt, devices: s._count._all }]));
-  const push = new Map(pushes.map((p) => [p.userId, p._count._all]));
-  const approver = new Map(approvers.map((a) => [a.id, a.name ?? a.email]));
+  const seen = new Map(sessions.map((s) => [s.userId, s._max.updatedAt]));
   return NextResponse.json({
     users: users.map((u) => ({
       ...u,
       storageBytes: used.get(u.id) ?? 0,
-      lastActiveAt: seen.get(u.id)?.at?.toISOString() ?? null,
-      devices: seen.get(u.id)?.devices ?? 0,
-      notifyDevices: push.get(u.id) ?? 0,
-      approvedBy: u.approvedById ? approver.get(u.approvedById) ?? null : null,
+      lastActiveAt: seen.get(u.id)?.toISOString() ?? null,
     })),
     me: admin.id,
   });

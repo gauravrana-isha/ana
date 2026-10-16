@@ -21,7 +21,7 @@ const EXT: Record<string, string> = {
 
 export const MAX_BYTES: Record<MediaKind, number> = {
   audio: 50 * 1024 * 1024,
-  video: 250 * 1024 * 1024,
+  video: 100 * 1024 * 1024,
   photo: 15 * 1024 * 1024,
 };
 
