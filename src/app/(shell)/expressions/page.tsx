@@ -2,7 +2,7 @@
 
 import { usePersistentState } from "@/lib/persist";
 
-import { Suspense, useDeferredValue, useState, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Check, MagnifyingGlass, Plus, Cards, List, SlidersHorizontal, X } from "@phosphor-icons/react";
@@ -14,7 +14,7 @@ import { PickerPanel } from "@/components/ui/pickers";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/ui/Loader";
-import { MomentComposer } from "@/components/moments/MomentComposer";
+import { LazyMomentComposer } from "@/components/moments/LazyMomentComposer";
 import { MomentCard, MomentTimeline } from "@/components/moments/MomentCard";
 import { useMoments } from "@/lib/moments-client";
 import type { Moment, MomentKind } from "@/lib/moment-types";
@@ -58,7 +58,8 @@ function ExpressionsContent() {
   const { data: people = [] } = usePeople();
   const personName = people.find((p) => p.id === person)?.name;
   const [query, setQuery] = useState("");
-  const q = useDeferredValue(query.trim());
+  // Search once typing pauses, not on every keystroke.
+  const q = useDebounced(query.trim(), 300);
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMoments({ kind, q, person, stamp, sort });
   const moments = data?.pages.flatMap((p) => p.items) ?? [];
 
@@ -256,7 +257,7 @@ function ExpressionsContent() {
         </div>
       </PickerPanel>
 
-      <MomentComposer
+      <LazyMomentComposer
         open={composer.open || autoOpen}
         moment={composer.open ? composer.moment : null}
         defaultKind={composer.open ? composer.kind : "writing"}
@@ -275,6 +276,15 @@ function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) 
       {label} <X size={12} weight="bold" />
     </button>
   );
+}
+
+function useDebounced<T>(value: T, ms: number) {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return settled;
 }
 
 function noopSubscribe() {

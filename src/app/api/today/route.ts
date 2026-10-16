@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
               { lookBackAt: null, lookBackOn: { gte: addDays(today, -7), lte: today } },
             ],
           },
+          relationLoadStrategy: "join",
           include: momentInclude,
           orderBy: [{ lookBackOn: "desc" }, { lookBackAt: "desc" }],
           take: 5,
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
   ]);
 
   const onThisDay = onThisDayRaw.length
-    ? await db.expression.findMany({ where: { id: { in: onThisDayRaw.map((r) => r.id) } }, include: momentInclude, orderBy: { occurredAt: "desc" } })
+    ? await db.expression.findMany({ where: { id: { in: onThisDayRaw.map((r) => r.id) } }, relationLoadStrategy: "join", include: momentInclude, orderBy: { occurredAt: "desc" } })
     : [];
 
   // Birthdays in the coming week, however many years ago they were born.

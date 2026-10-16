@@ -80,10 +80,12 @@ function DailyContent() {
           moodKey: localMood,
         }),
       });
+      if (!res.ok) throw new Error("Couldn't save");
       return res.json();
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["daily", date] });
+    onSuccess: (saved) => {
+      // The reply is the saved reflection: show it directly instead of fetching it again.
+      qc.setQueryData(["daily", date], saved);
       setDirty(false);
       setEditing(false);
     },

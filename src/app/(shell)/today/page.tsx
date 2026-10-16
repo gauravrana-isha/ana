@@ -11,7 +11,7 @@ import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { Loader } from "@/components/ui/Loader";
 import { PracticeRow } from "@/components/tracker/PracticeRow";
 import { PersonAvatar } from "@/components/people/People";
-import { MomentComposer } from "@/components/moments/MomentComposer";
+import { LazyMomentComposer } from "@/components/moments/LazyMomentComposer";
 import { MomentCard } from "@/components/moments/MomentCard";
 import { useDayLog, usePractices, useQuote, useUpdateDayLog } from "@/lib/queries";
 import { callName, useMe } from "@/lib/me";
@@ -190,7 +190,7 @@ export default function TodayPage() {
 
       <Ornament name="divider" width={220} className="mx-auto mt-2 text-ink-soft/35" />
 
-      <MomentComposer open={composer.open} moment={composer.moment} defaultKind={composer.kind} onClose={() => setComposer((c) => ({ ...c, open: false }))} />
+      <LazyMomentComposer open={composer.open} moment={composer.moment} defaultKind={composer.kind} onClose={() => setComposer((c) => ({ ...c, open: false }))} />
     </div>
   );
 }

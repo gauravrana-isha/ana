@@ -23,7 +23,7 @@ import "./globals.css";
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
-  axes: ["opsz"],
+  // No optical-size axis: it made the font files about 60% larger for a barely visible change.
   style: ["normal", "italic"],
   display: "swap",
 });

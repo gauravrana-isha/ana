@@ -12,7 +12,7 @@ import { Loader } from "@/components/ui/Loader";
 import { useToast } from "@/components/ui/Toast";
 import { PersonAvatar } from "@/components/people/People";
 import { PersonForm, type PersonDetail } from "@/components/people/PersonForm";
-import { MomentComposer } from "@/components/moments/MomentComposer";
+import { LazyMomentComposer } from "@/components/moments/LazyMomentComposer";
 import { MomentTimeline } from "@/components/moments/MomentCard";
 import { useMoments } from "@/lib/moments-client";
 import type { Moment, MomentKind } from "@/lib/moment-types";
@@ -128,7 +128,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
       </div>
 
       <PersonForm open={editing} onClose={() => setEditing(false)} person={person} />
-      <MomentComposer
+      <LazyMomentComposer
         open={composer.open}
         moment={composer.moment}
         defaultKind={composer.kind}

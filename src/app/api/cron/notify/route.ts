@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
     select: { id: true, userId: true, title: true, body: true, kind: true, occurredAt: true, date: true },
     take: 200,
   });
-  for (const m of due) {
+  await inParallel(due, async (m) => {
     const claimed = await db.expression.updateMany({ where: { id: m.id, lookBackSentAt: null }, data: { lookBackSentAt: now } });
-    if (!claimed.count) continue;
+    if (!claimed.count) return;
     const when = (m.occurredAt ?? m.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const words = m.title || plainText(m.body).slice(0, 120) || (m.kind === "audio" ? "A voice note" : m.kind === "video" ? "A video" : m.kind === "photo" ? "Photos" : "A moment");
     try {
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
       await db.expression.update({ where: { id: m.id }, data: { lookBackSentAt: null } }).catch(() => {});
       console.error("moment notify failed", e);
     }
-  }
+  });
 
   // ---- Commitment letters to read again
   const letters = await db.commitment.findMany({
@@ -64,19 +64,19 @@ export async function GET(req: NextRequest) {
     },
     select: { id: true, userId: true, revisit: true, revisitedAt: true, remindedAt: true, createdAt: true, user: { select: { timeZone: true } } },
   });
-  for (const c of letters) {
+  await inParallel(letters, async (c) => {
     const tz = c.user.timeZone;
     const nowLocal = zonedParts(now, tz);
-    if (nowLocal.hour < MORNING) continue;
+    if (nowLocal.hour < MORNING) return;
     const period = periodKey(nowLocal, c.revisit);
     const lastRead = zonedParts(c.revisitedAt ?? c.createdAt, tz);
-    if (periodKey(lastRead, c.revisit) === period) continue; // already read this period
-    if (c.remindedAt && periodKey(zonedParts(c.remindedAt, tz), c.revisit) === period) continue; // already reminded
+    if (periodKey(lastRead, c.revisit) === period) return; // already read this period
+    if (c.remindedAt && periodKey(zonedParts(c.remindedAt, tz), c.revisit) === period) return; // already reminded
     const claimed = await db.commitment.updateMany({
       where: { id: c.id, OR: [{ remindedAt: null }, { remindedAt: c.remindedAt }] },
       data: { remindedAt: now },
     });
-    if (!claimed.count) continue;
+    if (!claimed.count) return;
     try {
       const made = await notify({ userId: c.userId, kind: "commitment", key: `commitment:${c.id}:${period}`, title: "Your commitment", body: "Time to read your letter again.", url: "/commitment" });
       if (made) sent.commitments++;
@@ -84,19 +84,19 @@ export async function GET(req: NextRequest) {
       await db.commitment.update({ where: { id: c.id }, data: { remindedAt: c.remindedAt } }).catch(() => {});
       console.error("commitment notify failed", e);
     }
-  }
+  });
 
   // ---- Birthdays (from the morning, local time; gone the day after)
   const people = await db.person.findMany({
     where: { birthday: { not: null }, user: { status: "APPROVED" } },
     select: { id: true, name: true, userId: true, birthday: true, user: { select: { timeZone: true, features: { where: { feature: "people" } } } } },
   });
-  for (const p of people) {
+  await inParallel(people, async (p) => {
     const f = p.user.features[0];
-    if (f && (!f.allowed || !f.enabled)) continue;
+    if (f && (!f.allowed || !f.enabled)) return;
     const local = zonedParts(now, p.user.timeZone);
-    if (local.hour < BIRTHDAY_HOUR) continue;
-    if (p.birthday!.getUTCMonth() + 1 !== local.month || p.birthday!.getUTCDate() !== local.day) continue;
+    if (local.hour < BIRTHDAY_HOUR) return;
+    if (p.birthday!.getUTCMonth() + 1 !== local.month || p.birthday!.getUTCDate() !== local.day) return;
     const made = await notify({
       userId: p.userId,
       kind: "birthday",
@@ -107,18 +107,18 @@ export async function GET(req: NextRequest) {
       expiresAt: new Date(now.getTime() + (48 - local.hour) * 60 * 60 * 1000),
     });
     if (made) sent.birthdays++;
-  }
+  });
 
   // ---- "Who are you now?" (every few months after the last portrait, from the morning)
   const sitters = await db.user.findMany({
     where: { status: "APPROVED", portraitEveryMonths: { gt: 0 }, portraits: { some: {} } },
     select: { id: true, timeZone: true, portraitEveryMonths: true, portraits: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true, createdAt: true } } },
   });
-  for (const u of sitters) {
+  await inParallel(sitters, async (u) => {
     const last = u.portraits[0];
     const due = new Date(last.createdAt);
     due.setMonth(due.getMonth() + u.portraitEveryMonths);
-    if (due > now || zonedParts(now, u.timeZone).hour < MORNING) continue;
+    if (due > now || zonedParts(now, u.timeZone).hour < MORNING) return;
     const made = await notify({
       userId: u.id,
       kind: "portrait",
@@ -128,10 +128,15 @@ export async function GET(req: NextRequest) {
       url: "/profile/who",
     });
     if (made) sent.portraits++;
-  }
+  });
 
   sent.swept = await sweepNotifications(now);
   return NextResponse.json({ ok: true, sent });
+}
+
+/** Run `fn` over items, a few at a time (each item is claimed in the database before it is sent). */
+async function inParallel<T>(items: T[], fn: (item: T) => Promise<void>, size = 8) {
+  for (let i = 0; i < items.length; i += size) await Promise.all(items.slice(i, i + size).map(fn));
 }
 
 function periodKey(p: { year: number; month: number }, revisit: string) {

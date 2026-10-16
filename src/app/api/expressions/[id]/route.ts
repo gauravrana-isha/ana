@@ -10,7 +10,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   const user = await resolveUser("expressions");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const m = await db.expression.findFirst({ where: { id, userId: user.id }, include: momentInclude });
+  const m = await db.expression.findFirst({ where: { id, userId: user.id }, relationLoadStrategy: "join", include: momentInclude });
   if (!m) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(serializeMoment(m));
 }
@@ -19,19 +19,24 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const user = await resolveUser("expressions");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const existing = await db.expression.findFirst({ where: { id, userId: user.id }, select: { id: true, lookBackAt: true } });
+  // One round: the moment (ownership), the request body, then everything it refers to.
+  const [existing, body] = await Promise.all([
+    db.expression.findFirst({ where: { id, userId: user.id }, select: { id: true, lookBackAt: true } }),
+    req.json().catch(() => null),
+  ]);
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const parsed = MomentSchema.safeParse(await req.json().catch(() => null));
+  const parsed = MomentSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const d = parsed.data;
-  const owned = await ownedIds(user.id, d.personIds, d.attachmentIds);
+  const [owned, current] = await Promise.all([
+    ownedIds(user.id, d.personIds, d.attachmentIds),
+    db.attachment.findMany({ where: { expressionId: id, userId: user.id }, select: { id: true, storage: true, pathname: true } }),
+  ]);
   const occurredAt = new Date(d.occurredAt);
 
   // Media removed while editing is deleted for good.
-  const dropped = await db.attachment.findMany({
-    where: { expressionId: id, userId: user.id, id: { notIn: owned.attachments } },
-  });
+  const dropped = current.filter((a) => !owned.attachments.includes(a.id));
 
   await db.$transaction([
     db.expressionPerson.deleteMany({ where: { expressionId: id } }),
@@ -52,9 +57,10 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     db.attachment.updateMany({ where: { id: { in: owned.attachments }, userId: user.id }, data: { expressionId: id } }),
     db.attachment.deleteMany({ where: { id: { in: dropped.map((a) => a.id) } } }),
   ]);
-  await Promise.all(dropped.map((a) => removeStored(a.storage, a.pathname)));
-
-  const full = await db.expression.findUniqueOrThrow({ where: { id }, include: momentInclude });
+  const [full] = await Promise.all([
+    db.expression.findUniqueOrThrow({ where: { id }, relationLoadStrategy: "join", include: momentInclude }),
+    ...dropped.map((a) => removeStored(a.storage, a.pathname)),
+  ]);
   return NextResponse.json(serializeMoment(full));
 }
 

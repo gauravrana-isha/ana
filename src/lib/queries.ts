@@ -42,6 +42,7 @@ export function useDayLog(date: string) {
 export function useUpdateDayLog(date: string) {
   const qc = useQueryClient();
   return useMutation({
+    mutationKey: ["day-save", date],
     mutationFn: async (entries: DayLogEntries) => {
       try {
         const res = await fetch(`/api/days/${date}`, {
@@ -77,9 +78,16 @@ export function useUpdateDayLog(date: string) {
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(keys.day(date), ctx.prev);
     },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: keys.day(date) });
-      // Also invalidate week view so it picks up changes
+    onSuccess: (saved: { entries?: DayLogEntries; queued?: boolean } | undefined) => {
+      // The reply is the whole saved day: show it directly instead of asking again. If more
+      // ticks are still on their way, the last one to land fills it in.
+      if (saved?.entries && qc.isMutating({ mutationKey: ["day-save", date] }) <= 1) {
+        qc.setQueryData(keys.day(date), { date, entries: saved.entries });
+      }
+    },
+    onSettled: (saved: { entries?: DayLogEntries } | undefined, err) => {
+      if (err) qc.invalidateQueries({ queryKey: keys.day(date) });
+      // The week grid and review are refreshed only if they're on screen (otherwise just marked stale).
       qc.invalidateQueries({ queryKey: ["week"] });
       qc.invalidateQueries({ queryKey: ["week-review"] });
     },

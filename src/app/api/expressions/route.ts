@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
 
   const rows = await db.expression.findMany({
     where,
+    relationLoadStrategy: "join",
     include: momentInclude,
     orderBy: [{ occurredAt: { sort: dir, nulls: "last" } }, { date: dir }, { createdAt: dir }],
     take: limit + 1,
@@ -78,6 +79,6 @@ export async function POST(req: NextRequest) {
     await db.attachment.updateMany({ where: { id: { in: owned.attachments }, userId: user.id }, data: { expressionId: moment.id } });
   }
 
-  const full = await db.expression.findUniqueOrThrow({ where: { id: moment.id }, include: momentInclude });
+  const full = await db.expression.findUniqueOrThrow({ where: { id: moment.id }, relationLoadStrategy: "join", include: momentInclude });
   return NextResponse.json(serializeMoment(full), { status: 201 });
 }

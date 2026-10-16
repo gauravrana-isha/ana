@@ -65,9 +65,12 @@ function WeeklyContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) throw new Error("Couldn't save");
       return res.json();
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: ["weekly", selectedWeekStart] }),
+    // The reply is the saved reflection: show it directly; ask again only if saving failed.
+    onSuccess: (saved) => qc.setQueryData(["weekly", selectedWeekStart], saved),
+    onError: () => qc.invalidateQueries({ queryKey: ["weekly", selectedWeekStart] }),
   });
 
   const answers: Record<string, string> = reflection?.answers ?? {};
