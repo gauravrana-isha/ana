@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, X } from "@phosphor-icons/react";
 import { mediaUrl } from "@/lib/media-client";
@@ -67,6 +67,24 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  // Close on a tap outside or Escape, never on blur: on iPhone the field loses focus (and the
+  // keyboard starts to slide away) before Safari delivers the tap on a name, so closing on
+  // blur swallowed the choice.
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", outside, true);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
 
   const selected = value.map((id) => people.find((p) => p.id === id)).filter(Boolean) as PersonSummary[];
   const q = query.trim().toLowerCase();
@@ -97,7 +115,7 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
   }
 
   return (
-    <div className="relative">
+    <div ref={boxRef} className="relative">
       <div
         className="flex flex-wrap items-center gap-1.5 min-h-12 p-1.5 rounded-[14px] bg-surface-2 border border-transparent focus-within:border-accent transition-colors cursor-text"
         onClick={() => inputRef.current?.focus()}
@@ -116,7 +134,6 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
           value={query}
           onChange={(e) => { setQuery(e.target.value.slice(0, 80)); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -139,7 +156,7 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { onChange([...value, p.id]); setQuery(""); }}
+                onClick={() => { onChange([...value, p.id]); setQuery(""); inputRef.current?.focus(); }}
                 className="w-full flex items-center gap-2.5 p-2 rounded-[10px] text-left hover:bg-surface"
               >
                 <PersonAvatar person={p} size={30} />

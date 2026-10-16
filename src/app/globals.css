@@ -380,3 +380,8 @@ html.kb-open .ana-fab {
 @keyframes ana-pond-twinkle { 0%, 100% { opacity: 0.75; transform: scale(0.85) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(20deg); } }
 .ana-pond-twinkle { animation: ana-pond-twinkle 4.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 @media (prefers-reduced-motion: reduce) { .ana-pond-twinkle { animation: none; } }
+
+/* The loading skeleton breathes softly (no shimmer sweep), and holds still for reduced motion. */
+@keyframes ana-skeleton { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.ana-skeleton { animation: ana-skeleton 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .ana-skeleton { animation: none; } }

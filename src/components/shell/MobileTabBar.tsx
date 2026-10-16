@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePersistentState } from "@/lib/persist";
+import { usePrefetchScreen } from "@/lib/prefetch";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { DotsThreeCircle } from "@phosphor-icons/react";
@@ -17,6 +18,7 @@ const PRIORITY = ["today", "tracker", "expressions", "people", "daily", "weekly"
 export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavItem[] }) {
   const pathname = usePathname();
   const [more, setMore] = useState(false);
+  const prefetch = usePrefetchScreen();
   useKeyboardAware();
 
   // Everything fits in five slots, or the first four stay and the rest go under "More".
@@ -72,7 +74,7 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
                   const active = pathname.startsWith(item.href);
                   return (
                     <li key={item.key}>
-                      <Link href={item.href} onClick={() => setMore(false)} aria-current={active ? "page" : undefined} className={cn("press flex items-center gap-3 h-12 px-3 rounded-[14px] font-ui text-[15px] font-semibold", active ? "bg-accent-soft text-accent" : "text-ink hover:bg-surface")}>
+                      <Link href={item.href} {...prefetch(item.href)} onClick={() => setMore(false)} aria-current={active ? "page" : undefined} className={cn("press flex items-center gap-3 h-12 px-3 rounded-[14px] font-ui text-[15px] font-semibold", active ? "bg-accent-soft text-accent" : "text-ink hover:bg-surface")}>
                         <NavIcon k={item.key} size={21} weight={active ? "fill" : "regular"} />
                         {item.label}
                       </Link>
@@ -89,8 +91,9 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
 }
 
 function Tab({ href, label, active, icon }: { href: string; label: string; active: boolean; icon: (on: boolean) => React.ReactNode }) {
+  const prefetch = usePrefetchScreen();
   return (
-    <Link href={href} aria-current={active ? "page" : undefined} className="press relative flex flex-1 flex-col items-center justify-center gap-1 min-w-0">
+    <Link href={href} {...prefetch(href)} aria-current={active ? "page" : undefined} className="press relative flex flex-1 flex-col items-center justify-center gap-1 min-w-0">
       <TabInner active={active} label={label} icon={icon} layoutId={active ? "tab-active" : undefined} />
     </Link>
   );

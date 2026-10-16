@@ -3,22 +3,26 @@
  *  - pages: network first, last good copy when offline
  *  - /_next/static: cache first (file names change every build)
  *  - images, fonts, icons: cache first
- *  - /api and auth: never cached here (private data; the app keeps its own cache, cleared on sign-out)
+ *  - /api and auth: never cached here (private data; the app keeps its own cache, cleared on sign-out),
+ *    except a person's own photos from /api/media: kept on the device so avatars appear at once
+ *    (whole-file image requests only; audio and video stream with Range and go to the network)
  *  - push: shows reminders (moments coming back, the commitment letter); a tap opens the page
  * On localhost it only handles push, so development builds are never served from cache.
  */
-const VERSION = "ana-v4";
+const VERSION = "ana-v5";
 const DEV = self.location.hostname === "localhost" || self.location.hostname === "127.0.0.1";
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
 const MEDIA = `${VERSION}-media`;
+/** People's own photos (private; cleared with everything else on sign-out). */
+const PHOTOS = `${VERSION}-photos`;
 
 self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      const keep = new Set([PAGES, STATIC, MEDIA]);
+      const keep = new Set([PAGES, STATIC, MEDIA, PHOTOS]);
       for (const key of await caches.keys()) if (!keep.has(key)) await caches.delete(key);
       await self.clients.claim();
     })()
@@ -31,6 +35,15 @@ async function cacheFirst(cacheName, request) {
   if (hit) return hit;
   const res = await fetch(request);
   if (res.ok) cache.put(request, res.clone());
+  return res;
+}
+
+async function cachePhoto(request) {
+  const cache = await caches.open(PHOTOS);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+  const res = await fetch(request);
+  if (res.ok && (res.headers.get("content-type") || "").startsWith("image/")) cache.put(request, res.clone());
   return res;
 }
 
@@ -51,6 +64,10 @@ self.addEventListener("fetch", (event) => {
   if (DEV || request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/media/") && !request.headers.has("range")) {
+    event.respondWith(cachePhoto(request));
+    return;
+  }
   if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {

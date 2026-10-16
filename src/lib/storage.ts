@@ -128,7 +128,9 @@ export async function streamStored(
   const baseHeaders: Record<string, string> = {
     "Content-Type": file.contentType,
     "Accept-Ranges": "bytes",
-    "Cache-Control": "private, max-age=3600",
+    // A stored file never changes under its id (an edit makes a new file), so the browser
+    // can keep it for good. Private: only this person's browser, never a shared cache.
+    "Cache-Control": "private, max-age=31536000, immutable",
     "X-Content-Type-Options": "nosniff",
   };
 

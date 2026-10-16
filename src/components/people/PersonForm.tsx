@@ -7,7 +7,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
-import { uploadMedia } from "@/lib/media-client";
+import { shrinkPhoto, uploadMedia } from "@/lib/media-client";
 import { PersonAvatar } from "./People";
 import { DateField } from "@/components/ui/pickers";
 import { today } from "@/lib/dates";
@@ -62,7 +62,7 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
     setSaving(true);
     try {
       let photoId: string | undefined;
-      if (photo) photoId = (await uploadMedia(photo.blob, "photo", { userId: me.id, storage: me.storage })).id;
+      if (photo) photoId = (await uploadMedia(await shrinkPhoto(photo.blob), "photo", { userId: me.id, storage: me.storage })).id;
       const body = {
         name: name.trim(),
         relation: relation.trim() || null,

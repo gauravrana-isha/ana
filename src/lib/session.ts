@@ -1,19 +1,40 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { cookies } from "next/headers";
 import { db } from "./db";
 import { effectiveFeatures, featureByKey, type FeatureKey } from "./features";
+
+const SESSION_COOKIES = ["__Secure-authjs.session-token", "authjs.session-token"];
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Same as Auth.js: sessions last 30 days and are pushed forward at most once a day. */
+const SESSION_MAX_AGE_MS = 30 * DAY_MS;
+const SESSION_UPDATE_AGE_MS = DAY_MS;
 
 /**
  * The signed-in user with their feature rows, whatever their status.
  * Cached per request so layouts, pages and guards share one lookup.
+ *
+ * Reads the Auth.js database session straight from its cookie in ONE query (session, user
+ * and features joined), instead of auth() plus a second user lookup (four queries). Every
+ * page and API call starts here, so this is the hottest path in the app.
  */
 export const getCurrentUser = cache(async () => {
-  const session = await auth();
-  const id = session?.user?.id;
-  if (!id) return null;
-  const user = await db.user.findUnique({ where: { id }, include: { features: true } });
-  if (!user) return null;
+  const jar = await cookies();
+  const token = SESSION_COOKIES.map((n) => jar.get(n)?.value).find(Boolean);
+  if (!token) return null;
+  const session = await db.session.findUnique({
+    where: { sessionToken: token },
+    relationLoadStrategy: "join",
+    include: { user: { include: { features: true } } },
+  });
+  if (!session || session.expires.getTime() < Date.now()) return null;
+  // Rolling expiry, as Auth.js does: extend once the session is a day old. Not awaited.
+  if (session.expires.getTime() - SESSION_MAX_AGE_MS + SESSION_UPDATE_AGE_MS < Date.now()) {
+    db.session
+      .update({ where: { sessionToken: token }, data: { expires: new Date(Date.now() + SESSION_MAX_AGE_MS) } })
+      .catch(() => {});
+  }
+  const user = session.user;
   return { ...user, effective: effectiveFeatures(user.features) };
 });
 

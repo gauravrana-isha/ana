@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { DateField } from "@/components/ui/pickers";
 import { Avatar } from "@/components/shell/Sidebar";
-import { mediaUrl, uploadMedia } from "@/lib/media-client";
+import { mediaUrl, shrinkPhoto, uploadMedia } from "@/lib/media-client";
 import type { Me } from "@/lib/me";
 import { today } from "@/lib/dates";
 
@@ -55,7 +55,7 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
     setSaving(true);
     try {
       let photoId: string | null | undefined = undefined;
-      if (photo instanceof File) photoId = (await uploadMedia(photo, "photo", { userId: me.id, storage: me.storage })).id;
+      if (photo instanceof File) photoId = (await uploadMedia(await shrinkPhoto(photo), "photo", { userId: me.id, storage: me.storage })).id;
       else if (photo === null) photoId = null;
       const res = await fetch("/api/me", {
         method: "PATCH",

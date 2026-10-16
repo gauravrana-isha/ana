@@ -42,6 +42,14 @@ function hashDate(date: string): number {
   return Math.abs(hash);
 }
 
+/*
+ * The day's quote is the same for everyone, so Vercel's edge (Mumbai) keeps it for an hour
+ * and serves it instantly, refreshing in the background. A fallback quote (the Sadhguru
+ * service didn't answer) is kept only briefly, so the real one comes back soon.
+ */
+const EDGE_HOUR = { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" };
+const EDGE_SHORT = { "Cache-Control": "public, s-maxage=300" };
+
 export async function GET(req: NextRequest) {
   const date =
     req.nextUrl.searchParams.get("date") ??
@@ -66,7 +74,7 @@ export async function GET(req: NextRequest) {
     const res = await fetch(`${API_URL}?${params}`, {
       headers: HEADERS,
       signal: controller.signal,
-      next: { revalidate: 60 },
+      next: { revalidate: 3600 },
     });
 
     clearTimeout(timeout);
@@ -78,7 +86,7 @@ export async function GET(req: NextRequest) {
         // Always take the most recent quote (today's)
         const quote = cards[0]?.summary?.trim();
         if (quote) {
-          return NextResponse.json({ quote, source: "api" });
+          return NextResponse.json({ quote, source: "api" }, { headers: EDGE_HOUR });
         }
       }
     }
@@ -87,5 +95,5 @@ export async function GET(req: NextRequest) {
   }
 
   const idx = hashDate(date) % FALLBACK_QUOTES.length;
-  return NextResponse.json({ quote: FALLBACK_QUOTES[idx], source: "fallback" });
+  return NextResponse.json({ quote: FALLBACK_QUOTES[idx], source: "fallback" }, { headers: EDGE_SHORT });
 }

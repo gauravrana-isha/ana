@@ -80,3 +80,25 @@ export function formatDuration(sec: number | null | undefined) {
   const s = Math.round(sec);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
+
+/**
+ * Scale a portrait photo down before upload (longest side `max` px, JPEG). Avatars show at
+ * 80px at most, so a phone camera's 4000px original is wasted on every load. If the browser
+ * can't decode the format (e.g. HEIC outside Safari), the original is sent unchanged.
+ */
+export async function shrinkPhoto(file: Blob, max = 640): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size < 400_000) return file;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
+    return out && out.size < file.size ? out : file;
+  } catch {
+    return file;
+  }
+}

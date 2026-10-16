@@ -8,6 +8,7 @@ import { SidebarSimple } from "@phosphor-icons/react";
 import { Lotus } from "@/components/art/Lotus";
 import { Ornament } from "@/components/art/Ornament";
 import { NavIcon } from "./NavIcon";
+import { usePrefetchScreen } from "@/lib/prefetch";
 import { openSearch } from "./Search";
 import type { NavItem } from "./nav";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
   }
 
   const profileActive = pathname.startsWith("/profile");
+  const prefetchProfile = usePrefetchScreen()("/profile");
 
   return (
     <aside
@@ -158,6 +160,7 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
             ))}
             <Link
               href="/profile"
+              {...prefetchProfile}
               aria-current={profileActive ? "page" : undefined}
               className={cn(
                 "group relative flex items-center h-12 rounded-[12px] transition-colors",
@@ -181,9 +184,11 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
 }
 
 function SideLink({ item, active, collapsed }: { item: NavItem; active: boolean; collapsed: boolean }) {
+  const prefetch = usePrefetchScreen();
   return (
     <Link
       href={item.href}
+      {...prefetch(item.href)}
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? item.label : undefined}
       className={cn(

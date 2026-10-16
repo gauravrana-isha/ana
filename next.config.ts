@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
     // 85 is used for the large Sadhguru photo; everything else stays at the default 75.
     qualities: [75, 85],
   },
+  experimental: {
+    // Reuse pages already visited for a few minutes instead of asking the server again on
+    // every tap (screens fetch their own data; this is just the page shell).
+    staleTimes: { dynamic: 300, static: 600 },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
