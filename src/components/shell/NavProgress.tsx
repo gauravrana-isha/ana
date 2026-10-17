@@ -49,7 +49,9 @@ export function NavProgress() {
   });
 
   // The new page is on screen.
+  const shown = useRef(pathname);
   useEffect(() => {
+    shown.current = pathname;
     api.current.finish();
   }, [pathname]);
 
@@ -65,7 +67,13 @@ export function NavProgress() {
       if (url.pathname === location.pathname) ctl.finish();
       else ctl.begin();
     };
-    const onPop = () => ctl.begin();
+    // Back and forward to a page that's still in memory: Next swaps it in before this runs,
+    // so the change it waits for has already happened. If what's shown already matches the
+    // address a moment later, finish instead of waiting for the safety timeout.
+    const onPop = () => {
+      ctl.begin();
+      requestAnimationFrame(() => requestAnimationFrame(() => shown.current === location.pathname && ctl.finish()));
+    };
     document.addEventListener("click", onClick, true);
     window.addEventListener("popstate", onPop);
     return () => {
