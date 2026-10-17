@@ -185,11 +185,18 @@ body::before {
   transition: transform 220ms var(--ease-out-expo), filter 220ms ease, background-color 200ms ease, color 200ms ease,
     border-color 200ms ease, opacity 200ms ease;
 }
-.press:active:not(:disabled),
+/* Touch screens get .is-pressed from TapFeedback (only once it's clearly a tap, not a scroll). */
 .press.is-pressed {
   transform: scale(0.97);
   filter: brightness(0.96);
   transition-duration: 60ms;
+}
+@media (hover: hover) {
+  .press:active:not(:disabled) {
+    transform: scale(0.97);
+    filter: brightness(0.96);
+    transition-duration: 60ms;
+  }
 }
 [data-theme="dark"] .press.is-pressed { filter: brightness(1.12); }
 
