@@ -474,12 +474,18 @@ html.kb-open .ana-fab {
 .fb-play .fb-dots circle:nth-child(4) { animation-delay: 0.15s; }
 .fb-play .fb-dots circle:nth-child(5) { animation-delay: 0.2s; }
 .fb-play .fb-second { animation: fb-step 0.4s var(--ease-out-expo) 0.06s both; }
+.fb-play .fb-head { transform-box: fill-box; transform-origin: center; animation: fb-head 0.5s var(--ease-out-expo) 0.05s both; }
 .fb-play .fb-hand { transform-box: view-box; transform-origin: 25px 25px; animation: fb-hand 0.55s var(--ease-out-expo) both; }
 @keyframes fb-pop { 0% { transform: scale(0.72); } 100% { transform: scale(1); } }
 @keyframes fb-turn { from { transform: rotate(-30deg); } to { transform: none; } }
 @keyframes fb-dot { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes fb-step { from { transform: translateX(-4px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fb-head { 0% { transform: translateY(3px) scale(0.8); } 60% { transform: translateY(-1px); } 100% { transform: none; } }
 @keyframes fb-hand { from { transform: rotate(-90deg); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .fb-play, .fb-play * { animation: none !important; }
 }
+
+/* Reading pages (a moment) fill the screen without the tab bar: no extra height for the logo
+   row to tuck into, and no room kept for the bar. */
+.ana-page:has([data-bare]) { min-height: 0; padding-bottom: calc(32px + env(safe-area-inset-bottom)); }

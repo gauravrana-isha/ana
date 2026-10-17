@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { DotsThreeCircle } from "@phosphor-icons/react";
 import { NavIcon } from "./NavIcon";
-import type { NavItem } from "./nav";
+import { BARE_PAGES, type NavItem } from "./nav";
 import { cn } from "@/lib/utils";
 
 const MAX_TABS = 5;
@@ -41,10 +41,12 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
   const tabs = pinned ? [pinned, ...primary.slice(1)] : primary;
   const overflow = pinned ? [primary[0], ...rest.filter((i) => i.key !== pinned.key)] : rest;
   const moreActive = overflow.some((i) => pathname.startsWith(i.href));
+  // Reading pages (a moment) take the whole screen; they bring their own way back.
+  const bare = BARE_PAGES.some((p) => pathname.startsWith(p));
 
   return (
     <>
-      <nav aria-label="Main" className="ana-tabbar fixed bottom-0 inset-x-0 z-20 lg:hidden bg-nav/95 backdrop-blur-md border-t border-line pb-safe transition-transform duration-200">
+      <nav aria-label="Main" className={cn("ana-tabbar fixed bottom-0 inset-x-0 z-20 lg:hidden bg-nav/95 backdrop-blur-md border-t border-line pb-safe transition-transform duration-200", bare && "hidden")}>
         <div className="flex items-stretch justify-around h-16 px-1 max-w-[560px] mx-auto">
           {tabs.map((item) => (
             <Tab key={item.key} href={item.href} label={item.label} active={pathname.startsWith(item.href)} icon={(on) => <NavIcon k={item.key} size={22} weight={on ? "fill" : "regular"} />} />
@@ -104,7 +106,7 @@ function TabInner({ active, label, icon, layoutId }: { active: boolean; label: s
     <>
       <span className={cn("relative grid place-items-center w-14 h-8", active ? "text-accent" : "text-ink-soft")}>
         {layoutId && (
-          <motion.span layoutId={layoutId} className="absolute inset-0 rounded-full bg-accent-soft" transition={{ type: "spring", stiffness: 500, damping: 38 }} />
+          <motion.span layoutId={layoutId} layoutDependency={label} className="absolute inset-0 rounded-full bg-accent-soft" transition={{ type: "spring", stiffness: 500, damping: 38 }} />
         )}
         <span className="relative">{icon(active)}</span>
       </span>

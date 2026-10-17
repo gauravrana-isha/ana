@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarBlank, Camera, Feather, Microphone, Plus, ShieldCheck, SunHorizon, UserCircle, VideoCamera } from "@phosphor-icons/react";
+import { CalendarBlank, Camera, Feather, Microphone, ShieldCheck, SunHorizon, UserCircle, VideoCamera } from "@phosphor-icons/react";
 import { PersonAvatar } from "@/components/people/People";
 import { FeatureBadge, FeatureGlyph } from "@/components/art/FeatureBadge";
 import { FEATURES } from "@/lib/features";
@@ -12,7 +12,7 @@ import { useMe } from "@/lib/me";
 import { Loader } from "@/components/ui/Loader";
 import { dayHeading } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { CrossMark } from "@/components/ui/CloseButton";
+import { CrossMark, PlusMark } from "@/components/art/PenMarks";
 
 interface Results {
   moments: { id: string; title: string; kind: string; at: string; snippet: string }[];
@@ -174,7 +174,7 @@ export function SearchDialog() {
                       <FeatureBadge k={p.key} size={32} />
                     ) : (
                       <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-surface-2 text-accent shrink-0">
-                        {p.icon === "plus" ? <Plus size={16} weight="bold" /> : p.icon === "admin" ? <ShieldCheck size={16} /> : <UserCircle size={17} />}
+                        {p.icon === "plus" ? <PlusMark size={18} /> : p.icon === "admin" ? <ShieldCheck size={16} /> : <UserCircle size={17} />}
                       </span>
                     )}
                     <span className="min-w-0 flex-1">

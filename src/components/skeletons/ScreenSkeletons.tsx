@@ -439,9 +439,12 @@ export function ListSkeleton({ kind, count = 3 }: { kind: "practice" | "moment" 
 export function MomentPageSkeleton() {
   return (
     <Skeleton>
-      <div className="flex items-center justify-between -mx-1 mb-4">
+      <div data-bare className="flex items-center justify-between -mx-1 mb-4">
         <Bone className="w-10 h-10 rounded-full" />
-        <Bone className="w-10 h-10 rounded-full" />
+        <div className="flex gap-2">
+          <Bone className="w-10 sm:w-[78px] h-10 rounded-full" />
+          <Bone className="w-10 sm:w-[96px] h-10 rounded-full" />
+        </div>
       </div>
       <div className="flex items-start gap-3.5">
         <Bone className="w-11 h-11 rounded-[13px] shrink-0 mt-1" />

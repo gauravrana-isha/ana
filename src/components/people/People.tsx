@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "@phosphor-icons/react";
+
 import { mediaUrl } from "@/lib/media-client";
 import { cn } from "@/lib/utils";
-import { CrossMark } from "@/components/ui/CloseButton";
+import { CrossMark, PlusMark } from "@/components/art/PenMarks";
 
 export interface PersonSummary {
   id: string;
@@ -209,7 +209,7 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
                 onPick={create}
                 className="w-full flex items-center gap-2.5 p-2 rounded-[10px] text-left hover:bg-surface text-accent"
               >
-                <span className="grid place-items-center w-[30px] h-[30px] rounded-full bg-accent-soft"><Plus size={15} weight="bold" /></span>
+                <span className="grid place-items-center w-[30px] h-[30px] rounded-full bg-accent-soft"><PlusMark size={17} /></span>
                 <span className="font-ui text-[14px] font-semibold">Add &ldquo;{query.trim()}&rdquo;</span>
               </PickButton>
             </li>

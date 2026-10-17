@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
  * stroke). In dark mode the tile sinks into the surface and the stroke lifts, so the set
  * stays calm at night.
  */
-type Key = "today" | "tracker" | "daily" | "weekly" | "expressions" | "people" | "commitment" | "insights";
-type GlyphKey = Key | "profile" | "admin" | "search" | "bell";
+type Key = "today" | "tracker" | "daily" | "weekly" | "expressions" | "people" | "commitment" | "insights" | "profile" | "admin";
+type GlyphKey = Key | "search" | "bell";
 
 const TONES: Record<Key, { tile: string; ink: string }> = {
   today: { tile: "#FBE3CC", ink: "#C8672F" },
@@ -17,6 +17,8 @@ const TONES: Record<Key, { tile: string; ink: string }> = {
   people: { tile: "#E6EAD7", ink: "#56662C" },
   commitment: { tile: "#EFE3D0", ink: "#8A6A3F" },
   insights: { tile: "#DCEBE5", ink: "#2F6B5E" },
+  profile: { tile: "#F2E0D8", ink: "#8C4E3A" },
+  admin: { tile: "#DEE5EE", ink: "#3E5A78" },
 };
 
 function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
@@ -97,7 +99,7 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
       return (
         <>
           <circle cx="24" cy="24" r="14" />
-          <circle cx="24" cy="20.5" r="4.8" />
+          <circle className="fb-head" cx="24" cy="20.5" r="4.8" />
           <path d="M15.2 34.2c1.8-4 5-6 8.8-6s7 2 8.8 6" />
         </>
       );
@@ -105,7 +107,7 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
       return (
         <>
           <path d="M24 9.5 36 14v9.5c0 7.5-5.2 12.8-12 15-6.8-2.2-12-7.5-12-15V14z" />
-          <path d="m18.5 24 4 4 7.5-8" />
+          <path className="fb-tick" pathLength={1} d="m18.5 24 4 4 7.5-8" />
         </>
       );
     case "bell":

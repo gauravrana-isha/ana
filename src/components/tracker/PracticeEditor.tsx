@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Trash } from "@phosphor-icons/react";
+import { Trash } from "@phosphor-icons/react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -13,6 +13,7 @@ import { describeTracking } from "@/lib/practiceCatalog";
 import type { Practice } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PracticeIcon } from "./PracticeIcon";
+import { MinusMark, PlusMark } from "@/components/art/PenMarks";
 
 type Draft = Record<string, { default?: string | number | null; fill?: number | null }>;
 
@@ -173,7 +174,7 @@ function Stepper({ value, unit, label, max = 99999, onChange }: { value: number;
   const clamp = (n: number) => Math.min(max, Math.max(0, n));
   return (
     <div className="flex items-center gap-1.5 shrink-0">
-      <button type="button" aria-label="Less" onClick={() => onChange(clamp(value - 1))} className="press grid place-items-center w-9 h-9 rounded-full bg-surface-2 text-ink"><Minus size={15} /></button>
+      <button type="button" aria-label="Less" onClick={() => onChange(clamp(value - 1))} className="press grid place-items-center w-9 h-9 rounded-full bg-surface-2 text-ink"><MinusMark size={17} /></button>
       <label className="flex flex-col items-center w-[64px]">
         <input
           aria-label={label}
@@ -185,7 +186,7 @@ function Stepper({ value, unit, label, max = 99999, onChange }: { value: number;
         />
         <span className="font-ui text-[10.5px] text-ink-soft mt-0.5">{unit}</span>
       </label>
-      <button type="button" aria-label="More" onClick={() => onChange(clamp(value + 1))} className="press grid place-items-center w-9 h-9 rounded-full bg-surface-2 text-ink"><Plus size={15} /></button>
+      <button type="button" aria-label="More" onClick={() => onChange(clamp(value + 1))} className="press grid place-items-center w-9 h-9 rounded-full bg-surface-2 text-ink"><PlusMark size={17} /></button>
     </div>
   );
 }

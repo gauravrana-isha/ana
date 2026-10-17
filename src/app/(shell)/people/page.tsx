@@ -3,13 +3,13 @@
 import { ListSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PersonForm } from "@/components/people/PersonForm";
 import { timeAgo } from "@/lib/dates";
-import { CrossMark } from "@/components/ui/CloseButton";
+import { CrossMark, PlusMark } from "@/components/art/PenMarks";
 
 export default function PeoplePage() {
   const { data: people = [], isPending: isLoading } = usePeople();
@@ -35,7 +35,7 @@ export default function PeoplePage() {
           )}
         </label>
         <Button onClick={() => setAdding(true)} className="shrink-0">
-          <Plus size={16} weight="bold" /> Add a person
+          <PlusMark size={18} /> Add a person
         </Button>
       </div>
 
@@ -47,7 +47,7 @@ export default function PeoplePage() {
           <p className="font-serif italic text-[17px] text-ink-soft max-w-[340px]">
             The people you meet along the way. Add someone, then keep the moments you share with them.
           </p>
-          <Button variant="secondary" onClick={() => setAdding(true)}><Plus size={16} weight="bold" /> Add the first person</Button>
+          <Button variant="secondary" onClick={() => setAdding(true)}><PlusMark size={18} /> Add the first person</Button>
         </div>
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

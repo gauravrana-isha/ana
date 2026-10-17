@@ -5,7 +5,7 @@ import { Busy } from "@/components/ui/Busy";
 import { createElement, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash } from "@phosphor-icons/react";
+import { Trash } from "@phosphor-icons/react";
 import { practiceIcon } from "./practiceIcons";
 import type { IconProps } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
@@ -26,6 +26,7 @@ import { ButtonLoader } from "@/components/ui/Loader";
 import type { Practice } from "@/lib/types";
 
 import { PaintedTile, PracticeIcon } from "./PracticeIcon";
+import { PlusMark } from "@/components/art/PenMarks";
 
 const ICON_OPTIONS = [
   "Leaf", "Flower", "FlowerLotus", "Sun", "SunHorizon", "Moon", "Star", "Sparkle",
@@ -348,7 +349,7 @@ function YoursTab({ onAdd }: { onAdd: () => void }) {
         })}
       </ul>
       <button type="button" onClick={onAdd} className="press mt-4 inline-flex items-center gap-1.5 font-ui text-[14px] font-semibold text-accent">
-        <Plus size={15} weight="bold" /> Add from the library
+        <PlusMark size={17} /> Add from the library
       </button>
       <PracticeEditor practice={editing} open={!!editing} onClose={() => setEditing(null)} />
     </>

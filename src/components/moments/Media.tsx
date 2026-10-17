@@ -10,7 +10,7 @@ import { prefersNativeCapture, useCamera } from "./useCamera";
 import { MomentBadge, MomentGlyph } from "@/components/art/MomentIcon";
 import type { UploadState } from "./useEagerUploads";
 import { TickMark } from "@/components/tracker/FieldInput";
-import { CrossMark } from "@/components/ui/CloseButton";
+import { CrossMark } from "@/components/art/PenMarks";
 
 // ---------------------------------------------------------------- playback
 

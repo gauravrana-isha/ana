@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowCounterClockwise, CaretDown, CaretRight, DotsThree, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, CaretDown, CaretRight, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { useToast } from "@/components/ui/Toast";
@@ -14,6 +14,7 @@ import { MediaPreview } from "./Media";
 import { StampChip } from "@/components/art/StampIcon";
 import { BusyBar } from "@/components/ui/Busy";
 import { plainText } from "./RichText";
+import { DotsMark } from "@/components/art/PenMarks";
 
 export const STAMP_LABEL: Record<string, string> = {
   growth: "Growth", struggle: "Struggle", insight: "Insight", stillness: "Stillness", devotion: "Devotion",
@@ -59,8 +60,8 @@ export function useDeleteMoment() {
 
 export const momentHref = (m: Moment) => `/expressions/${m.id}`;
 
-/** The ⋯ menu for one moment (Edit, Delete), on its card and on its own page. */
-export function MomentMenu({ onEdit, onDelete, className, buttonClassName }: { onEdit: () => void; onDelete: () => void; className?: string; buttonClassName?: string }) {
+/** The ⋯ menu on a moment's card: Edit, Delete. */
+export function MomentMenu({ onEdit, onDelete, className }: { onEdit: () => void; onDelete: () => void; className?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -90,8 +91,8 @@ export function MomentMenu({ onEdit, onDelete, className, buttonClassName }: { o
 
   return (
     <div ref={ref} className={cn("relative", className)}>
-      <button type="button" aria-label="Moment options" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={cn("press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-ink/5", buttonClassName)}>
-        <DotsThree size={22} weight="bold" />
+      <button type="button" aria-label="Moment options" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-ink/5">
+        <DotsMark size={20} />
       </button>
       {open && (
         <div className="absolute right-0 top-10 z-20 w-40 p-1 rounded-[14px] bg-bg border border-line shadow-[var(--shadow-lift)]">

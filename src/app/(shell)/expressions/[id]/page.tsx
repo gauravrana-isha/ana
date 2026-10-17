@@ -5,20 +5,21 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowCounterClockwise, CaretLeft, CaretRight, MapPin } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { MomentComposer } from "@/components/moments/MomentComposer";
 import { AudioPlayer } from "@/components/moments/Media";
 import { RichText, plainText } from "@/components/moments/RichText";
-import { MomentMenu, lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
+import { lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
 import { MomentPageSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { mediaUrl } from "@/lib/media-client";
 import type { Moment } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 import { Portal } from "@/components/ui/Portal";
 import { CloseButton } from "@/components/ui/CloseButton";
+import { BackMark } from "@/components/art/PenMarks";
 
 /**
  * One moment, in full: its media at full size (photos open fullscreen), the whole text, the
@@ -65,13 +66,23 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
   }
 
   return (
-    <article inert={deleting} className={cn("pb-10 transition-opacity", deleting && "opacity-50")}>
-      {/* No page header here: back and ⋯ float at the top and stay in reach while reading. */}
+    <article data-bare inert={deleting} className={cn("pb-10 transition-opacity", deleting && "opacity-50")}>
+      {/* No page header here: back, Edit and Delete float at the top and stay in reach while reading. */}
       <div className="sticky top-[max(12px,calc(env(safe-area-inset-top)+6px))] lg:top-6 z-20 -mx-1 mb-4 flex items-center justify-between pointer-events-none">
         <button type="button" onClick={back} aria-label="Back to moments" className={cn(FLOAT, "pointer-events-auto")}>
-          <CaretLeft size={18} weight="bold" />
+          <BackMark size={18} />
         </button>
-        <MomentMenu onEdit={() => setEditing(true)} onDelete={remove} className="pointer-events-auto" buttonClassName={FLOAT} />
+        {/* Only two things to do here, so both are out in the open: icons on phones, labelled from sm up. */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <button type="button" onClick={() => setEditing(true)} aria-label="Edit moment" className={cn(FLOAT, "sm:w-auto sm:px-4 sm:gap-1.5 sm:flex sm:text-accent")}>
+            <PencilSimple size={17} />
+            <span className="hidden sm:inline font-ui text-[14px] font-semibold">Edit</span>
+          </button>
+          <button type="button" onClick={remove} aria-label="Delete moment" className={cn(FLOAT, "sm:w-auto sm:px-4 sm:gap-1.5 sm:flex hover:text-danger")}>
+            <Trash size={17} />
+            <span className="hidden sm:inline font-ui text-[14px] font-semibold">Delete</span>
+          </button>
+        </div>
       </div>
 
       <header className="flex items-start gap-3.5">
@@ -146,7 +157,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
   );
 }
 
-/** The round back and ⋯ buttons, on a soft blur so they read over photos and text. */
+/** The round back, Edit and Delete buttons, on a soft blur so they read over photos and text. */
 const FLOAT = "press grid place-items-center w-10 h-10 rounded-full bg-bg/90 backdrop-blur-xl border border-line/70 text-ink-soft shadow-[0_1px_3px_rgb(0_0_0/0.06)] hover:text-ink hover:bg-surface";
 
 /** Photos fullscreen: swipe or use the arrows to move between them; Escape or ✕ closes. */
@@ -207,10 +218,10 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
             <>
               <span className="absolute bottom-[max(18px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 font-ui text-[13px] text-white/80 tabular">{index + 1} / {photos.length}</span>
               {index > 0 && (
-                <button type="button" onClick={() => go(-1)} aria-label="Previous photo" className="press hidden sm:grid absolute left-4 top-1/2 -translate-y-1/2 place-items-center w-11 h-11 rounded-full bg-white/15 text-white"><CaretLeft size={20} /></button>
+                <button type="button" onClick={() => go(-1)} aria-label="Previous photo" className="press hidden sm:grid absolute left-4 top-1/2 -translate-y-1/2 place-items-center w-11 h-11 rounded-full bg-white/15 text-white"><BackMark size={20} /></button>
               )}
               {index < photos.length - 1 && (
-                <button type="button" onClick={() => go(1)} aria-label="Next photo" className="press hidden sm:grid absolute right-4 top-1/2 -translate-y-1/2 place-items-center w-11 h-11 rounded-full bg-white/15 text-white"><CaretRight size={20} /></button>
+                <button type="button" onClick={() => go(1)} aria-label="Next photo" className="press hidden sm:grid absolute right-4 top-1/2 -translate-y-1/2 place-items-center w-11 h-11 rounded-full bg-white/15 text-white"><BackMark size={20} className="-scale-x-100" /></button>
               )}
             </>
           )}

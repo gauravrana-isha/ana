@@ -74,7 +74,7 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
         collapsed ? "w-[76px]" : "w-[252px]"
       )}
     >
-      <div className="flex flex-col h-full px-3.5 pt-5 pb-4">
+      <div className="flex flex-col h-full min-h-0 overflow-y-auto no-scrollbar px-3.5 pt-5 pb-4">
         {/* Header: logo + collapse. Collapsed: the logo turns into the expand button on hover. */}
         <div className="relative flex items-center h-12 mb-5">
           <div className="group relative grid place-items-center w-12 h-12 shrink-0">
@@ -141,7 +141,8 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
           {quote && (
             <figure
               className={cn(
-                "px-3 mb-4 overflow-hidden transition-[opacity,max-height] duration-300",
+                // Short windows keep the room for the nav and profile; the quote is on Today too.
+                "px-3 mb-4 overflow-hidden transition-[opacity,max-height] duration-300 [@media(max-height:860px)]:hidden",
                 EASE,
                 collapsed ? "opacity-0 max-h-0 mb-0" : "opacity-100 max-h-[260px]"
               )}
@@ -167,7 +168,8 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
                 profileActive ? "bg-accent-soft" : "hover:bg-surface"
               )}
             >
-              <span className="grid place-items-center w-12 h-12 shrink-0">
+              {/* Remounts when it becomes the current page, so it pops like the other nav badges. */}
+              <span key={profileActive ? "on" : "off"} className={cn("grid place-items-center w-12 h-12 shrink-0", profileActive && "fb-play")}>
                 <Avatar name={user.name} image={user.image} size={30} />
               </span>
               <Label collapsed={collapsed} className="flex flex-col min-w-0">
@@ -197,7 +199,9 @@ function SideLink({ item, active, collapsed }: { item: NavItem; active: boolean;
       )}
     >
       {active && (
-        <motion.span layoutId="side-active" className="absolute inset-0 rounded-[12px] bg-accent-soft" transition={{ type: "spring", stiffness: 500, damping: 40 }} />
+        // Measured only when it moves to another item: the page scrolling under the sidebar (or
+        // jumping to the top on a new page) is not movement.
+        <motion.span layoutId="side-active" layoutDependency={item.key} className="absolute inset-0 rounded-[12px] bg-accent-soft" transition={{ type: "spring", stiffness: 500, damping: 40 }} />
       )}
       <span className="relative grid place-items-center w-12 h-11 shrink-0">
         <NavIcon k={item.key} size={21} weight={active ? "fill" : "regular"} />

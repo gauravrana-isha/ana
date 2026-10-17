@@ -21,7 +21,7 @@ import { NotifyNudge } from "@/components/push/Notifications";
 import { AudioCapture, MediaView, PhotoCapture, UploadStrip, VideoCapture, type CapturedMedia } from "./Media";
 import { useEagerUploads } from "./useEagerUploads";
 import { plainText } from "./RichText";
-import { CrossMark } from "@/components/ui/CloseButton";
+import { CrossMark } from "@/components/art/PenMarks";
 
 const KINDS: { id: MomentKind; label: string }[] = [
   { id: "writing", label: "Write" },

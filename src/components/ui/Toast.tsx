@@ -3,7 +3,7 @@
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { CheckCircle, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { CrossMark } from "@/components/ui/CloseButton";
+import { CrossMark } from "@/components/art/PenMarks";
 
 type ToastType = "success" | "error" | "loading";
 

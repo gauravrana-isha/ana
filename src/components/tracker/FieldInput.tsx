@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Minus, Plus } from "@phosphor-icons/react";
+
 import { cn } from "@/lib/utils";
 import { PickerPanel, TimeField } from "@/components/ui/pickers";
 import { DEFAULT_SCALE, SCALE_KEYS, type FieldSpec } from "@/lib/practiceSpec";
+import { MinusMark, PlusMark } from "@/components/art/PenMarks";
 
 /* The controls a practice row is made of. Every control says what it is. */
 
@@ -131,7 +132,7 @@ export function NumberSheet({ open, onClose, field, value, practiceName, onSave 
       <p className="font-ui text-[14px] font-semibold text-ink">{field.title}</p>
       {field.hint && <p className="font-ui text-[12.5px] text-ink-soft mt-0.5">{field.hint}</p>}
       <div className="mt-4 flex items-center justify-center gap-4">
-        <button type="button" aria-label="Less" onClick={() => step(-1)} className="press grid place-items-center w-11 h-11 rounded-full bg-surface text-ink"><Minus size={18} /></button>
+        <button type="button" aria-label="Less" onClick={() => step(-1)} className="press grid place-items-center w-11 h-11 rounded-full bg-surface text-ink"><MinusMark size={20} /></button>
         <label className="flex flex-col items-center">
           <input
             autoFocus
@@ -146,7 +147,7 @@ export function NumberSheet({ open, onClose, field, value, practiceName, onSave 
           />
           <span className="font-ui text-[13px] text-ink-soft mt-1">{field.unit}</span>
         </label>
-        <button type="button" aria-label="More" onClick={() => step(1)} className="press grid place-items-center w-11 h-11 rounded-full bg-surface text-ink"><Plus size={18} /></button>
+        <button type="button" aria-label="More" onClick={() => step(1)} className="press grid place-items-center w-11 h-11 rounded-full bg-surface text-ink"><PlusMark size={20} /></button>
       </div>
       {picks.length > 0 && <div className="mt-4 flex flex-wrap justify-center gap-1.5">
         {picks.map((n) => (

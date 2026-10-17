@@ -6,7 +6,7 @@ import { usePersistentState } from "@/lib/persist";
 import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Check, MagnifyingGlass, Plus, Cards, List, SlidersHorizontal } from "@phosphor-icons/react";
+import { Check, MagnifyingGlass, Cards, List, SlidersHorizontal } from "@phosphor-icons/react";
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { STAMP_GUIDE } from "@/components/reflection/StampRow";
@@ -19,7 +19,7 @@ import { MomentCard, MomentTimeline } from "@/components/moments/MomentCard";
 import { useMoments } from "@/lib/moments-client";
 import type { Moment, MomentKind } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
-import { CrossMark } from "@/components/ui/CloseButton";
+import { CrossMark, PlusMark } from "@/components/art/PenMarks";
 
 const FILTERS = [
   { id: "", label: "All" },
@@ -99,7 +99,7 @@ function ExpressionsContent() {
           )}
         </label>
         <Button onClick={() => openNew()} className="shrink-0">
-          <Plus size={16} weight="bold" /> New moment
+          <PlusMark size={18} /> New moment
         </Button>
       </div>
 

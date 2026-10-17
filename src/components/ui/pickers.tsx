@@ -9,7 +9,7 @@ import { CloseButton } from "./CloseButton";
 import { useVisibleArea } from "@/lib/visual-viewport";
 import { toISODate, today } from "@/lib/dates";
 import { Chevron, RoundArrowButton } from "./Arrows";
-import { CrossMark } from "@/components/ui/CloseButton";
+import { CrossMark } from "@/components/art/PenMarks";
 
 /*
  * ana's own date and time pickers. Used everywhere instead of the browser/device pickers so
