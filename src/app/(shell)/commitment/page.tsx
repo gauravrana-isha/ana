@@ -3,7 +3,7 @@
 import { CommitmentSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { Busy, BusyBar } from "@/components/ui/Busy";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HELP_EVENT } from "@/components/shell/Topbar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -54,6 +54,7 @@ export default function CommitmentPage() {
   // then only when asked for.
   const [introSeen, setIntroSeen] = usePersistentState("commitment.intro", "no", ["no", "yes"] as const);
   const [introAsked, setIntroAsked] = useState(false);
+  const letter = useRef<HTMLTextAreaElement | null>(null);
   // The ⓘ beside the date in the header opens it again.
   useEffect(() => {
     const open = () => setIntroAsked(true);
@@ -66,6 +67,13 @@ export default function CommitmentPage() {
   const editing = writing || !current;
   const introOpen = introAsked || (!current && introSeen === "no");
   const closeIntro = () => { setIntroSeen("yes"); setIntroAsked(false); };
+  // "Begin the letter": the cursor goes straight into it (inside the tap, so phones open the keyboard).
+  const begin = () => {
+    closeIntro();
+    if (!letter.current) return;
+    letter.current.focus({ preventScroll: true });
+    setTimeout(() => letter.current?.focus({ preventScroll: true }), 350); // once the sheet has gone
+  };
 
   async function save() {
     if (!draft.trim()) return;
@@ -119,6 +127,7 @@ export default function CommitmentPage() {
               rows={12}
               // Desktop starts ready to type; phones wait for a tap (no keyboard popping up unasked).
               ref={(el) => {
+                letter.current = el;
                 if (el && !el.dataset.focused && window.matchMedia("(min-width: 1024px)").matches) {
                   el.dataset.focused = "1";
                   el.focus();
@@ -201,7 +210,7 @@ export default function CommitmentPage() {
         open={introOpen}
         onClose={closeIntro}
         title="Your commitment"
-        footer={<div className="flex justify-end"><Button onClick={closeIntro}>Begin the letter</Button></div>}
+        footer={<div className="flex justify-end"><Button onClick={editing ? begin : closeIntro}>{editing ? "Begin the letter" : "Close"}</Button></div>}
       >
         <div className="flex flex-col gap-5">
           <FeatureBadge k="commitment" size={56} />
