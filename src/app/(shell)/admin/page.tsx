@@ -33,6 +33,8 @@ interface AdminUser {
   features: { feature: string; allowed: boolean; enabled: boolean }[];
   storageBytes: number;
   lastActiveAt: string | null;
+  /** Days in the last 30 with any entry (dates only, never content). */
+  activeDays: number;
 }
 
 const QUOTA = 200 * 1024 * 1024;
@@ -225,8 +227,13 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <Fact icon={<Glyph k="clock" size={17} />} label="Last active" value={activeLabel(u.lastActiveAt)} />
+                        <Fact icon={<Glyph k="sunrise" size={17} />} label="Active days" value={`${u.activeDays} of 30`}>
+                          <span className="mt-1.5 block h-1 rounded-full bg-line overflow-hidden">
+                            <span className="block h-full rounded-full bg-saffron" style={{ width: `${(u.activeDays / 30) * 100}%` }} />
+                          </span>
+                        </Fact>
                         <Fact icon={<Glyph k="calendar" size={17} />} label="Joined" value={dateFmt.format(new Date(u.createdAt))} />
                         <Fact icon={<Glyph k="storage" size={17} />} label="Storage" value={`${formatBytes(u.storageBytes)} of 200 MB`}>
                           <span className="mt-1.5 block h-1 rounded-full bg-line overflow-hidden">
