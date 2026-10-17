@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FeatureBadge, FeatureGlyph } from "@/components/art/FeatureBadge";
+import { BellMark } from "@/components/art/PenMarks";
 import { BellBadge } from "@/components/push/Notifications";
 import { timeAgo } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { CloseButton } from "@/components/ui/CloseButton";
-import { FLOAT_BUTTON } from "@/components/ui/DetailBar";
 
 interface Item {
   id: string;
@@ -48,7 +48,7 @@ export function useNotifications() {
  * The bell. A dot (never a count) when something is new. Opens a list: new first, then
  * earlier; tapping one opens it and marks it read. Things end on their own (see lib/notify).
  */
-export function NotificationBell({ className, floating = false }: { className?: string; floating?: boolean }) {
+export function NotificationBell({ className }: { className?: string }) {
   const qc = useQueryClient();
   const router = useRouter();
   const reduce = useReducedMotion();
@@ -85,10 +85,10 @@ export function NotificationBell({ className, floating = false }: { className?: 
         onClick={() => setOpen((o) => !o)}
         aria-label={unread ? `Notifications, ${unread} new` : "Notifications"}
         aria-expanded={open}
-        className={floating ? cn(FLOAT_BUTTON, "relative") : "press relative grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-surface"}
+        className="press relative grid place-items-center w-12 h-12 rounded-full bg-surface text-ink-soft hover:text-ink hover:bg-surface-2 transition-colors"
       >
-        <FeatureGlyph k="bell" size={21} />
-        {unread > 0 && <span className={cn("absolute w-2 h-2 rounded-full bg-saffron ring-2 ring-bg", floating ? "top-[8px] right-[9px]" : "top-[7px] right-[8px]")} aria-hidden="true" />}
+        <BellMark size={21} />
+        {unread > 0 && <span className="absolute top-[11px] right-[12px] w-2.5 h-2.5 rounded-full bg-saffron ring-2 ring-surface" aria-hidden="true" />}
       </button>
 
       <AnimatePresence>

@@ -35,15 +35,16 @@ import { deletePractice, fetchProfileStats } from "@/lib/journal";
 import { exportJournal, importJournal } from "@/lib/importer";
 import { PrivacySettings } from "@/components/vault/PrivacySettings";
 import { fetchStatus } from "@/lib/vault/vault";
-import { DeleteMark, EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
+import { BellMark, DeleteMark, EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
 import { Chevron } from "@/components/ui/Arrows";
+import { BackButton } from "@/components/ui/DetailBar";
 
 /*
- * Profile, as a short hub: your card and "Who am I?" up top, then a few grouped rows (each
- * with a one-line status), then Sign out. On phones a row opens its own page (with a way
+ * Profile, as a short hub: your card and "Who am I?" up top, then one Settings list (each row
+ * with a one-line status), then Sign out. On phones a row opens its own full page (with a way
  * back); on wider screens the list sits on the left and the open part on the right.
  */
 
@@ -81,14 +82,14 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 
   if (!hydrated || !me) return <ProfileSkeleton />;
 
-  // Phones, one part open: just that, with the way back.
+  // Phones, one part open: a page of its own (no tab bar), with the way back.
   if (!wide && section) {
     return (
       <div>
-        <Link href="/profile" className="press inline-flex items-center gap-1 h-9 -ml-2 pl-1.5 pr-3 rounded-full font-ui text-[13.5px] font-semibold text-ink-soft hover:text-ink hover:bg-surface">
-          <Chevron dir="left" size={16} /> Profile
-        </Link>
-        <h2 className="mt-2 mb-4 font-display text-[26px] font-semibold tracking-[-0.015em] text-ink">{TITLES[section]}</h2>
+        <div className="sticky top-[max(12px,calc(var(--safe-top)+6px))] z-20 -mx-1 mb-4 pointer-events-none">
+          <BackButton to="/profile" label="Back to Profile" />
+        </div>
+        <h1 className="mb-5 font-display text-[28px] font-semibold tracking-[-0.015em] text-ink">{TITLES[section]}</h1>
         <Panel k={section} me={me} />
       </div>
     );
@@ -134,57 +135,38 @@ function Rows({ me, active }: { me: Me; active?: SectionKey }) {
   const ways = vault
     ? [vault.keys.some((k) => k.kind === "passkey") && "Passkey", vault.keys.some((k) => k.kind === "passphrase") && "Passphrase", "recovery words"].filter(Boolean).join(" · ")
     : "";
-  const groups: { label: string; rows: { k: SectionKey; icon: React.ReactNode; status: string }[] }[] = [
-    {
-      label: "Your journal",
-      rows: [
-        { k: "sections", icon: <Glyph k="cards" size={19} />, status: `${me.features.length} on` },
-        ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} />, status: practices ? `${practices.length} ${practices.length === 1 ? "practice" : "practices"}` : "" }] : []),
-      ],
-    },
-    {
-      label: "This device",
-      rows: [
-        { k: "appearance", icon: theme === "dark" ? <MoonMark size={19} /> : <SunMark size={19} />, status: theme === "dark" ? "Dark" : "Light" },
-        { k: "notifications", icon: <FeatureGlyph k="bell" size={19} />, status: push.state === "on" ? "On" : push.state === "off" ? "Off" : "" },
-      ],
-    },
-    {
-      label: "Privacy",
-      rows: [
-        { k: "privacy", icon: <Glyph k="lock" size={19} />, status: ways },
-        { k: "data", icon: <Glyph k="download" size={19} />, status: "Download or import" },
-      ],
-    },
+  const rows: { k: SectionKey; icon: React.ReactNode; status: string }[] = [
+    { k: "sections", icon: <Glyph k="cards" size={19} />, status: `${me.features.length} on` },
+    ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} />, status: practices ? `${practices.length} ${practices.length === 1 ? "practice" : "practices"}` : "" }] : []),
+    { k: "appearance", icon: theme === "dark" ? <MoonMark size={19} /> : <SunMark size={19} />, status: theme === "dark" ? "Dark" : "Light" },
+    { k: "notifications", icon: <BellMark size={19} />, status: push.state === "on" ? "On" : push.state === "off" ? "Off" : "" },
+    { k: "privacy", icon: <Glyph k="lock" size={19} />, status: ways },
+    { k: "data", icon: <Glyph k="download" size={19} />, status: "Download or import" },
   ];
 
   return (
-    <nav aria-label="Profile" className="flex flex-col gap-5">
-      {groups.map((g) => (
-        <div key={g.label}>
-          <p className="mb-2 px-1 font-ui text-[12.5px] font-semibold text-ink-soft">{g.label}</p>
-          <ul className="rounded-[18px] bg-surface divide-y divide-line overflow-hidden">
-            {g.rows.map((r) => {
-              const on = active === r.k;
-              return (
-                <li key={r.k}>
-                  <Link
-                    href={`/profile/${r.k}`}
-                    scroll={!active}
-                    aria-current={on ? "page" : undefined}
-                    className={cn("press flex items-center gap-3 px-3.5 py-3 transition-colors", on ? "bg-accent-soft" : "hover:bg-surface-2")}
-                  >
-                    <span className={cn("grid place-items-center w-9 h-9 rounded-[11px] shrink-0", on ? "bg-bg text-accent" : "bg-accent-soft text-accent")}>{r.icon}</span>
-                    <span className={cn("flex-1 min-w-0 font-ui text-[15px] font-semibold truncate", on ? "text-accent" : "text-ink")}>{TITLES[r.k]}</span>
-                    {r.status && <span className="font-ui text-[13px] text-ink-soft truncate max-w-[45%]">{r.status}</span>}
-                    <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+    <nav aria-label="Settings">
+      <h2 className="mb-2 px-1 font-ui text-[13px] font-semibold text-ink-soft">Settings</h2>
+      <ul className="rounded-[18px] bg-surface p-1.5 flex flex-col gap-0.5">
+        {rows.map((r) => {
+          const on = active === r.k;
+          return (
+            <li key={r.k}>
+              <Link
+                href={`/profile/${r.k}`}
+                scroll={!active}
+                aria-current={on ? "page" : undefined}
+                className={cn("press flex items-center gap-3 px-2.5 py-2.5 rounded-[13px] transition-colors", on ? "bg-bg shadow-[var(--shadow-soft)]" : "hover:bg-bg/60")}
+              >
+                <span className={cn("grid place-items-center w-9 h-9 rounded-[11px] shrink-0 transition-colors", on ? "bg-accent text-bg" : "bg-accent-soft text-accent")}>{r.icon}</span>
+                <span className="flex-1 min-w-0 font-ui text-[15px] font-semibold text-ink truncate">{TITLES[r.k]}</span>
+                {r.status && <span className="font-ui text-[13px] text-ink-soft truncate max-w-[45%]">{r.status}</span>}
+                <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

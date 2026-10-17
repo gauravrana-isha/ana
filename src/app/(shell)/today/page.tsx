@@ -23,6 +23,7 @@ import { isKept } from "@/lib/practiceDefaults";
 import { cn } from "@/lib/utils";
 import { fetchToday } from "@/lib/journal";
 import { Glyph } from "@/components/art/Glyphs";
+import { TodaySearchBar } from "@/components/shell/Search";
 
 function greeting(first: string | null | undefined) {
   const h = new Date().getHours();
@@ -56,7 +57,10 @@ export default function TodayPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <p className="font-serif italic text-[17px] text-ink-soft">{greeting(callName(me))}.</p>
+      <div className="flex flex-col gap-5">
+        <TodaySearchBar />
+        <p className="font-serif italic text-[17px] text-ink-soft">{greeting(callName(me))}.</p>
+      </div>
 
       {/* The day's quote */}
       {quoteData?.quote && (

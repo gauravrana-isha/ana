@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { StampBadge, StampChip, type StampKey } from "@/components/art/StampIcon";
 import { Sheet } from "@/components/ui/Sheet";
-import { Glyph } from "@/components/art/Glyphs";
+import { InfoMark } from "@/components/art/PenMarks";
 
 const STAMPS = [
   { key: "growth", label: "Growth", meaning: "Something shifted upward" },
@@ -32,7 +32,7 @@ export function StampRow({ selected, onToggle }: StampRowProps) {
         aria-label="What the stamps mean"
         className="press inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-full font-ui text-[12.5px] font-semibold text-ink-soft hover:text-ink hover:bg-surface-2"
       >
-        <Glyph k="info" size={16} /> <span className="sm:hidden">Meaning</span>
+        <InfoMark size={17} /> <span className="sm:hidden">Meaning</span>
       </button>
       <Sheet open={guide} onClose={() => setGuide(false)} title="Stamps">
         <ul className="flex flex-col gap-3 pb-2">

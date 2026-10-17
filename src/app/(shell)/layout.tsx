@@ -38,7 +38,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         initialCollapsed={collapsed}
       />
       <main className="flex-1 min-w-0">
-        <div className="ana-page max-w-[860px] mx-auto w-full px-4 sm:px-6 pt-[max(20px,var(--safe-top))] pb-[calc(96px+env(safe-area-inset-bottom))] lg:px-12 lg:pt-10 lg:pb-16">
+        <div className="ana-page max-w-[860px] mx-auto w-full px-4 sm:px-6 pt-[calc(var(--safe-top)+16px)] pb-[calc(96px+env(safe-area-inset-bottom))] lg:px-12 lg:pt-10 lg:pb-16">
           <Topbar />
           {children}
         </div>

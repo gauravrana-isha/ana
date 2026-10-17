@@ -8,6 +8,17 @@ import { cn } from "@/lib/utils";
 export const FLOAT_BUTTON =
   "press grid place-items-center w-10 h-10 rounded-full bg-bg/90 backdrop-blur-xl border border-line/70 text-ink-soft shadow-[0_1px_3px_rgb(0_0_0/0.06)] hover:text-ink hover:bg-surface";
 
+/** Back, as a round floating button: to where you came from, else `to`. */
+export function BackButton({ to, label, className }: { to: string; label: string; className?: string }) {
+  const router = useRouter();
+  const back = () => (window.history.length > 1 ? router.back() : router.push(to));
+  return (
+    <button type="button" onClick={back} aria-label={label} className={cn(FLOAT_BUTTON, "pointer-events-auto", className)}>
+      <BackMark size={18} />
+    </button>
+  );
+}
+
 /**
  * The top of a full-page view (a moment, a person): back, Edit and Delete, floating and
  * staying in reach while reading. Only two things to do, so both are out in the open:
@@ -29,13 +40,9 @@ export function DetailBar({
   what: string;
   deleteWord?: string;
 }) {
-  const router = useRouter();
-  const back = () => (window.history.length > 1 ? router.back() : router.push(backTo));
   return (
     <div className="sticky top-[max(12px,calc(var(--safe-top)+6px))] lg:top-6 z-20 -mx-1 mb-4 flex items-center justify-between pointer-events-none">
-      <button type="button" onClick={back} aria-label={backLabel} className={cn(FLOAT_BUTTON, "pointer-events-auto")}>
-        <BackMark size={18} />
-      </button>
+      <BackButton to={backTo} label={backLabel} />
       <div className="flex items-center gap-2 pointer-events-auto">
         <button type="button" onClick={onEdit} aria-label={`Edit ${what}`} className={cn(FLOAT_BUTTON, "sm:w-auto sm:px-4 sm:gap-1.5 sm:flex sm:text-accent")}>
           <EditMark size={19} />

@@ -2,11 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { BARE_PAGES, PAGE_TITLES } from "./nav";
-import { SearchButton } from "./Search";
-import { NotificationBell } from "./NotificationBell";
-import { Glyph } from "@/components/art/Glyphs";
-import { FLOAT_BUTTON } from "@/components/ui/DetailBar";
-import { cn } from "@/lib/utils";
+import { InfoMark } from "@/components/art/PenMarks";
 
 /** Pages that explain themselves on request: the ⓘ asks the page to open its help. */
 const HELP_PAGES = ["/commitment"];
@@ -14,8 +10,8 @@ export const HELP_EVENT = "ana:page-help";
 
 /**
  * The top of every section page: no title row (the tab bar and sidebar already show where you
- * are), just search and the bell as two small round buttons at the top right that stay in
- * reach as you scroll, on a soft blur. Full-page views (a moment, a person) bring their own bar.
+ * are). Search and the bell sit on Today; pages with an explanation get a small ⓘ. Full-page
+ * views (a moment, a person, a settings page) bring their own bar.
  */
 export function Topbar() {
   const pathname = usePathname();
@@ -36,21 +32,20 @@ export function Topbar() {
       {statusStrip}
       {/* The page's name, for screen readers (sighted people see it in the tab bar or sidebar). */}
       <h1 className="sr-only">{title}</h1>
-      <div className="sticky top-[max(10px,calc(var(--safe-top)+6px))] lg:top-6 z-30 h-10 -mr-1 mb-3 lg:mb-5 flex justify-end gap-2 pointer-events-none">
-        {helpPage && (
+      {helpPage && (
+        // Floats over the top of the page (taking no room of its own), quiet until needed.
+        <div className="sticky top-[max(10px,calc(var(--safe-top)+6px))] lg:top-6 z-30 h-0 flex justify-end">
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event(HELP_EVENT))}
             aria-label={`About ${title}`}
             title={`About ${title}`}
-            className={cn(FLOAT_BUTTON, "pointer-events-auto")}
+            className="press -mr-2 grid place-items-center w-10 h-10 rounded-full text-ink-soft/60 hover:text-ink hover:bg-surface transition-colors"
           >
-            <Glyph k="info" size={20} />
+            <InfoMark size={21} />
           </button>
-        )}
-        <SearchButton floating className="pointer-events-auto" />
-        <NotificationBell floating className="pointer-events-auto" />
-      </div>
+        </div>
+      )}
     </>
   );
 }

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { savePortrait } from "@/lib/journal";
 import { DeleteMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
+import { BackButton } from "@/components/ui/DetailBar";
 
 /** Words in their own colours, separated by quiet dots. */
 function Words({ words, weights, className }: { words: string[]; weights?: Weights; className?: string }) {
@@ -177,6 +178,7 @@ export default function WhoAmIPage() {
   // ---------------------------------------------------------------- viewing
   return (
     <div className="flex flex-col gap-10">
+      <BackButton to="/profile" label="Back to Profile" className="-ml-1 -mb-4" />
       <section className="grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] gap-8 lg:gap-10 items-start">
         <div className="flex flex-col items-center">
           <PortraitPond portrait={latest} maxWidth={440} />
