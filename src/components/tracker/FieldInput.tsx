@@ -76,7 +76,10 @@ export function NumberChip({ field, value, onChange, practiceName }: { field: Fi
         onClick={() => setOpen(true)}
         aria-label={`${practiceName}: ${field.title}${value ? ` ${value}` : " not set"}`}
         title={`${field.title} (${field.unit})`}
-        className="press inline-flex items-baseline justify-center gap-[3px] min-w-[52px] h-9 px-2.5 rounded-full bg-surface-2 hover:bg-[color-mix(in_srgb,var(--surface-2)_85%,var(--ink)_6%)] whitespace-nowrap"
+        // A fixed width (room for the longest likely value and its unit), so entering a value
+        // never resizes the chip or shifts the row.
+        style={{ width: `calc(${chipDigits(field)}ch + ${field.short.length * 0.62}em + 22px)` }}
+        className="press inline-flex items-baseline justify-center gap-[3px] h-9 px-2.5 rounded-full bg-surface-2 tabular hover:bg-[color-mix(in_srgb,var(--surface-2)_85%,var(--ink)_6%)] whitespace-nowrap"
       >
         <span className={cn("font-ui text-[14.5px] font-semibold tabular leading-9", value ? "text-ink" : "text-ink-soft/60")}>{value || "–"}</span>
         {!!value && <span className="font-ui text-[12px] font-medium text-ink-soft leading-9">{field.short}</span>}
@@ -84,6 +87,13 @@ export function NumberChip({ field, value, onChange, practiceName }: { field: Fi
       <NumberSheet open={open} onClose={() => setOpen(false)} field={field} value={value} practiceName={practiceName} onSave={onChange} />
     </>
   );
+}
+
+/** How many digits a value of this field is likely to need (minutes up to 3, counts up to 4). */
+function chipDigits(field: FieldSpec) {
+  if (field.kind === "MINUTES") return 3;
+  if (field.max) return String(field.max).length;
+  return 4;
 }
 
 function quickPicks(field: FieldSpec) {
