@@ -13,6 +13,7 @@ import { Busy } from "@/components/ui/Busy";
 import { WeekReview } from "@/components/weekly/WeekReview";
 import { weekStart as getWeekStart, today, addDays } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { fetchWeekly, saveWeekly } from "@/lib/journal";
 
 const WEEKLY_PROMPTS = [
   { key: "1", q: "How is my experience of Sadhana?", hint: "Sitting still with more ease, for longer? Stronger? During or after Pradakshina?" },
@@ -52,22 +53,11 @@ function WeeklyContent() {
 
   const { data: reflection } = useQuery({
     queryKey: ["weekly", selectedWeekStart],
-    queryFn: async () => {
-      const res = await fetch(`/api/weekly/${selectedWeekStart}`);
-      return res.json();
-    },
+    queryFn: () => fetchWeekly(selectedWeekStart),
   });
 
   const mutation = useMutation({
-    mutationFn: async (payload: Record<string, unknown>) => {
-      const res = await fetch(`/api/weekly/${selectedWeekStart}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Couldn't save");
-      return res.json();
-    },
+    mutationFn: (payload: { answers: Record<string, string>; stamps: Record<string, string[]> }) => saveWeekly(selectedWeekStart, payload),
     // The reply is the saved reflection: show it directly; ask again only if saving failed.
     onSuccess: (saved) => qc.setQueryData(["weekly", selectedWeekStart], saved),
     onError: () => qc.invalidateQueries({ queryKey: ["weekly", selectedWeekStart] }),

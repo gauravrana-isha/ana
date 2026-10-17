@@ -9,6 +9,7 @@ import { PersonAvatar } from "@/components/people/People";
 import { today as todayStr } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { formatTime12 } from "@/components/ui/pickers";
+import { fetchInsights } from "@/lib/journal";
 
 interface InsightsData {
   month: { label: string; days: string[]; todayIndex: number };
@@ -33,7 +34,7 @@ export default function InsightsPage() {
   const date = todayStr();
   const { data, isPending: isLoading } = useQuery({
     queryKey: ["insights", date],
-    queryFn: async (): Promise<InsightsData> => (await fetch(`/api/insights?date=${date}`)).json(),
+    queryFn: (): Promise<InsightsData> => fetchInsights(date),
   });
 
   if (isLoading || !data) return <InsightsSkeleton />;

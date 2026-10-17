@@ -12,6 +12,7 @@ import { Avatar } from "@/components/shell/Sidebar";
 import { mediaUrl, shrinkPhoto, uploadMedia } from "@/lib/media-client";
 import type { Me } from "@/lib/me";
 import { today } from "@/lib/dates";
+import { sealFields } from "@/lib/vault/vault";
 
 const field =
   "mt-2 w-full h-12 px-4 rounded-[14px] bg-surface-2 text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/70";
@@ -57,15 +58,17 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
       let photoId: string | null | undefined = undefined;
       if (photo instanceof File) photoId = (await uploadMedia(await shrinkPhoto(photo), "photo", { userId: me.id, storage: me.storage })).id;
       else if (photo === null) photoId = null;
+      const personal = await sealFields(
+        { intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null },
+        ["intention", "birthday", "place"]
+      );
       const res = await fetch("/api/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
           preferredName: preferredName.trim() || null,
-          intention: intention.trim(),
-          birthday: birthday || null,
-          place: place.trim() || null,
+          ...personal,
           ...(photoId !== undefined ? { photoId } : {}),
         }),
       });

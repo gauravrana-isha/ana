@@ -54,7 +54,10 @@ export async function GET(req: NextRequest) {
           LIMIT 5`
       : [],
     has("people")
-      ? db.person.findMany({ where: { userId: user.id, birthday: { not: null } }, select: { id: true, name: true, photoId: true, birthday: true } })
+      ? db.person.findMany({
+          where: { userId: user.id, OR: [{ birthdayMD: { not: null } }, { birthday: { not: null } }] },
+          select: { id: true, name: true, photoId: true, birthday: true, birthdayMD: true },
+        })
       : [],
     has("daily") ? db.dailyReflection.findUnique({ where: { userId_date: { userId: user.id, date: today } } }) : null,
     has("commitment") ? db.commitment.findFirst({ where: { userId: user.id, supersededAt: null } }) : null,
@@ -64,23 +67,18 @@ export async function GET(req: NextRequest) {
     ? await db.expression.findMany({ where: { id: { in: onThisDayRaw.map((r) => r.id) } }, relationLoadStrategy: "join", include: momentInclude, orderBy: { occurredAt: "desc" } })
     : [];
 
-  // Birthdays in the coming week, however many years ago they were born.
+  // Birthdays in the coming week, from the day and month alone (names stay sealed).
   const birthdays = people
     .map((p) => {
-      const b = p.birthday!;
-      let next = new Date(Date.UTC(today.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate()));
-      if (next < today) next = new Date(Date.UTC(today.getUTCFullYear() + 1, b.getUTCMonth(), b.getUTCDate()));
+      const [bm, bd] = p.birthdayMD ? p.birthdayMD.split("-").map(Number) : [p.birthday!.getUTCMonth() + 1, p.birthday!.getUTCDate()];
+      let next = new Date(Date.UTC(today.getUTCFullYear(), bm - 1, bd));
+      if (next < today) next = new Date(Date.UTC(today.getUTCFullYear() + 1, bm - 1, bd));
       const inDays = Math.round((next.getTime() - today.getTime()) / 86_400_000);
       return { id: p.id, name: p.name, photoId: p.photoId, inDays };
     })
     .filter((p) => p.inDays <= 7)
     .sort((a, b) => a.inDays - b.inDays);
 
-  const answers = (daily?.answers ?? {}) as Record<string, string>;
-  // A question counts as answered with words written or a stamp chosen.
-  const stamps = (daily?.stamps ?? {}) as Record<string, string[]>;
-  const keys = new Set([...Object.keys(answers), ...Object.keys(stamps)]);
-  const answered = [...keys].filter((k) => (typeof answers[k] === "string" && answers[k].trim()) || (stamps[k]?.length ?? 0) > 0).length;
 
   return NextResponse.json({
     lookBack: lookBack.map(serializeMoment),
@@ -88,6 +86,7 @@ export async function GET(req: NextRequest) {
     birthdays,
     commitment: commitment && commitmentDue(commitment) ? { body: commitment.body, createdAt: commitment.createdAt.toISOString() } : null,
     commitmentMissing: has("commitment") && !commitment,
-    daily: has("daily") ? { answered, total: DAILY_PROMPT_COUNT, mood: daily?.moodKey ?? null } : null,
+    // Sealed: the device opens these and counts what's answered.
+    daily: has("daily") ? { answers: daily?.answers ?? {}, stamps: daily?.stamps ?? {}, total: DAILY_PROMPT_COUNT, mood: daily?.moodKey ?? null } : null,
   });
 }

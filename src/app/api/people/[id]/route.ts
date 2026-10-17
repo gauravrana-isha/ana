@@ -3,16 +3,18 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
 import { removeStored } from "@/lib/storage";
+import { MUST_SEAL, sealed } from "@/lib/sealed";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 const PatchSchema = z.object({
-  name: z.string().trim().min(1).max(80).optional(),
-  relation: z.string().trim().max(60).nullable().optional(),
-  howMet: z.string().trim().max(300).nullable().optional(),
-  birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  notes: z.string().trim().max(4000).nullable().optional(),
-  photoId: z.string().nullable().optional(),
+  name: sealed(2_000).optional(),
+  relation: sealed(2_000).nullable().optional(),
+  howMet: sealed(4_000).nullable().optional(),
+  birthday: sealed(500).nullable().optional(),
+  birthdayMD: z.string().regex(/^\d{2}-\d{2}$/).nullable().optional(),
+  notes: sealed(20_000).nullable().optional(),
+  photoId: z.string().max(40).nullable().optional(),
 });
 
 async function peopleUser() {
@@ -40,7 +42,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     name: p.name,
     relation: p.relation,
     howMet: p.howMet,
-    birthday: p.birthday?.toISOString().slice(0, 10) ?? null,
+    birthday: p.birthdaySealed ?? p.birthday?.toISOString().slice(0, 10) ?? null,
     notes: p.notes,
     photoId: p.photoId,
     momentCount: p._count.moments,
@@ -57,7 +59,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (!person) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
   const d = parsed.data;
 
   let photoId: string | null | undefined = undefined;
@@ -71,10 +73,10 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     where: { id },
     data: {
       name: d.name,
-      relation: d.relation === undefined ? undefined : d.relation || null,
-      howMet: d.howMet === undefined ? undefined : d.howMet || null,
-      birthday: d.birthday === undefined ? undefined : d.birthday ? new Date(d.birthday) : null,
-      notes: d.notes === undefined ? undefined : d.notes || null,
+      relation: d.relation,
+      howMet: d.howMet,
+      ...(d.birthday !== undefined ? { birthdaySealed: d.birthday, birthday: null, birthdayMD: d.birthdayMD ?? null } : {}),
+      notes: d.notes,
       photoId,
     },
   });

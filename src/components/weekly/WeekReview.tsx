@@ -11,6 +11,7 @@ import { PersonAvatar } from "@/components/people/People";
 import { today } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { WeekBars, WeekGrid } from "./WeekCharts";
+import { fetchDigest } from "@/lib/journal";
 
 interface Review {
   days: string[];
@@ -48,7 +49,7 @@ function Card({ title, lead, children, className }: { title: string; lead?: stri
 export function WeekReview({ weekStart, weekRange }: { weekStart: string; weekRange: string }) {
   const { data, isPending: isLoading } = useQuery({
     queryKey: ["week-review", weekStart],
-    queryFn: async (): Promise<Review> => (await fetch(`/api/digest/${weekStart}?today=${today()}`)).json(),
+    queryFn: (): Promise<Review> => fetchDigest(weekStart, today()),
   });
 
   if (isLoading) return <WeekReviewSkeleton />;

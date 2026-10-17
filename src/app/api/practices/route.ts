@@ -1,44 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
-import { catalogById } from "@/lib/practiceCatalog";
+import { sealed, MUST_SEAL } from "@/lib/sealed";
+
+/*
+ * Practices. Name, icon, library id and fields arrive sealed (only the person's device can
+ * read them); order, tier and the done-toggle stay plain so the list can be kept in order.
+ * Edits replace the sealed values whole: the device merges, since the server can't.
+ */
+
+const ID = z.string().regex(/^[a-z0-9]{20,40}$/);
 
 const CreateSchema = z.object({
-  name: z.string().trim().min(1).max(50),
-  catalogId: z.string().max(60).optional(),
-  iconName: z.string().min(1),
+  /** Made on the device (so a save retried after a dropped connection isn't doubled). */
+  id: ID.optional(),
+  name: sealed(2000),
+  iconName: sealed(2000),
+  catalogId: sealed(2000).nullable().optional(),
+  tier: z.enum(["FIXED", "CUSTOM"]),
   hasDoneToggle: z.boolean(),
-  fields: z.array(
-    z.object({
-      key: z.string(),
-      kind: z.enum(["TIME", "COUNT", "MINUTES", "NUMBER", "ICONSCALE", "MOOD"]),
-      label: z.string().optional(),
-      min: z.number().optional(),
-      max: z.number().optional(),
-      default: z.union([z.string().max(20), z.number()]).optional(),
-    })
-  ),
+  fields: sealed(40_000),
 });
 
 const ReorderSchema = z.object({
   reorder: z.array(z.object({ id: z.string(), order: z.number() })),
 });
 
-const RenameSchema = z.object({ id: z.string(), name: z.string().trim().min(1).max(50) });
-const DefaultsSchema = z.object({ id: z.string(), defaults: z.record(z.string(), z.union([z.string().max(20), z.number()])) });
-/** Edit a practice: name, and per-field usual values (fill on tick) and defaults (rhythm). */
 const EditSchema = z.object({
   id: z.string(),
-  name: z.string().trim().min(1).max(50).optional(),
-  fields: z.record(
-    z.string().max(30),
-    z.object({
-      kind: z.enum(["TIME", "COUNT", "MINUTES", "NUMBER", "ICONSCALE", "MOOD"]),
-      default: z.union([z.string().max(20), z.number().min(0).max(99999)]).nullable().optional(),
-      fill: z.number().int().min(0).max(99999).nullable().optional(),
-    })
-  ),
+  name: sealed(2000).optional(),
+  iconName: sealed(2000).optional(),
+  fields: sealed(40_000).optional(),
 });
 
 export async function GET() {
@@ -57,19 +51,15 @@ export async function POST(req: NextRequest) {
   const user = await resolveUser("tracker");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  const parsed = CreateSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
+  const d = parsed.data;
 
-  const catalogId = parsed.data.catalogId && catalogById(parsed.data.catalogId) ? parsed.data.catalogId : null;
-  if (catalogId) {
-    const existing = await db.practice.findFirst({ where: { userId: user.id, catalogId } });
+  if (d.id) {
+    const existing = await db.practice.findFirst({ where: { id: d.id, userId: user.id } });
     if (existing) return NextResponse.json(existing, { status: 200 });
   }
 
-  // Get max order
   const maxOrder = await db.practice.aggregate({
     where: { userId: user.id },
     _max: { order: true },
@@ -77,14 +67,15 @@ export async function POST(req: NextRequest) {
 
   const practice = await db.practice.create({
     data: {
+      ...(d.id ? { id: d.id } : {}),
       userId: user.id,
-      name: parsed.data.name.trim(),
-      iconName: parsed.data.iconName,
-      catalogId,
-      tier: catalogId ? "FIXED" : "CUSTOM",
-      hasDoneToggle: parsed.data.hasDoneToggle,
+      name: d.name,
+      iconName: d.iconName,
+      catalogId: d.catalogId ?? null,
+      tier: d.tier,
+      hasDoneToggle: d.hasDoneToggle,
       order: (maxOrder._max.order ?? -1) + 1,
-      fields: parsed.data.fields,
+      fields: d.fields as Prisma.InputJsonValue,
     },
   });
 
@@ -95,66 +86,29 @@ export async function PATCH(req: NextRequest) {
   const user = await resolveUser("tracker");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
+
+  const order = ReorderSchema.safeParse(body);
+  if (order.success) {
+    await Promise.all(
+      order.data.reorder.map((item) =>
+        db.practice.updateMany({
+          where: { id: item.id, userId: user.id },
+          data: { order: item.order },
+        })
+      )
+    );
+    return NextResponse.json({ ok: true });
+  }
 
   const edit = EditSchema.safeParse(body);
-  if (edit.success) {
-    const p = await db.practice.findFirst({ where: { id: edit.data.id, userId: user.id } });
-    if (!p) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    type F = { key: string; kind: string; default?: string | number; fill?: number };
-    const fields = (Array.isArray(p.fields) ? [...p.fields] : []) as F[];
-    for (const [key, change] of Object.entries(edit.data.fields)) {
-      let f = fields.find((x) => x.key === key);
-      if (!f) {
-        // Library practices may not have stored this field yet; keep just the override.
-        f = { key, kind: change.kind };
-        fields.push(f);
-      }
-      if (change.default !== undefined) {
-        if (change.default === null) delete f.default;
-        else f.default = change.default;
-      }
-      if (change.fill !== undefined) {
-        if (change.fill === null) delete f.fill;
-        else f.fill = change.fill;
-      }
-    }
-    await db.practice.update({ where: { id: p.id }, data: { fields, ...(edit.data.name ? { name: edit.data.name } : {}) } });
-    return NextResponse.json({ ok: true });
-  }
-
-  const rename = RenameSchema.safeParse(body);
-  if (rename.success) {
-    await db.practice.updateMany({ where: { id: rename.data.id, userId: user.id }, data: { name: rename.data.name } });
-    return NextResponse.json({ ok: true });
-  }
-
-  // Change the default of one or more fields (e.g. usual wake-up time).
-  const defaults = DefaultsSchema.safeParse(body);
-  if (defaults.success) {
-    const p = await db.practice.findFirst({ where: { id: defaults.data.id, userId: user.id } });
-    if (!p) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    const fields = (Array.isArray(p.fields) ? p.fields : []) as { key: string; default?: string | number }[];
-    const next = fields.map((f) => (f.key in defaults.data.defaults ? { ...f, default: defaults.data.defaults[f.key] } : f));
-    await db.practice.update({ where: { id: p.id }, data: { fields: next } });
-    return NextResponse.json({ ok: true });
-  }
-
-  const parsed = ReorderSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
-
-  // Update order for each practice
-  await Promise.all(
-    parsed.data.reorder.map((item) =>
-      db.practice.updateMany({
-        where: { id: item.id, userId: user.id },
-        data: { order: item.order },
-      })
-    )
-  );
-
+  if (!edit.success) return NextResponse.json(MUST_SEAL, { status: 400 });
+  const { id, name, iconName, fields } = edit.data;
+  const updated = await db.practice.updateMany({
+    where: { id, userId: user.id },
+    data: { ...(name ? { name } : {}), ...(iconName ? { iconName } : {}), ...(fields ? { fields: fields as Prisma.InputJsonValue } : {}) },
+  });
+  if (!updated.count) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }
 

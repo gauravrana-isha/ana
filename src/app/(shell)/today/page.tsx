@@ -21,15 +21,7 @@ import type { DayLogEntries, DayLogEntry } from "@/lib/types";
 import { today as todayStr } from "@/lib/dates";
 import { isKept } from "@/lib/practiceDefaults";
 import { cn } from "@/lib/utils";
-
-interface TodayData {
-  lookBack: Moment[];
-  onThisDay: Moment[];
-  birthdays: { id: string; name: string; photoId: string | null; inDays: number }[];
-  daily: { answered: number; total: number; mood: string | null } | null;
-  commitment?: { body: string; createdAt: string } | null;
-  commitmentMissing?: boolean;
-}
+import { fetchToday } from "@/lib/journal";
 
 function greeting(first: string | null | undefined) {
   const h = new Date().getHours();
@@ -51,7 +43,7 @@ export default function TodayPage() {
 
   const { data, isPending: isLoading } = useQuery({
     queryKey: ["today", date],
-    queryFn: async (): Promise<TodayData> => (await fetch(`/api/today?date=${date}`)).json(),
+    queryFn: () => fetchToday(date),
   });
 
   const [composer, setComposer] = useState<{ open: boolean; moment: Moment | null; kind: MomentKind }>({ open: false, moment: null, kind: "writing" });

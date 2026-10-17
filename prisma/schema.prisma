@@ -37,6 +37,14 @@ model User {
   lastSeenAt          DateTime?
   /// IANA time zone from the browser (e.g. "Asia/Kolkata"), so reminders arrive at a sensible hour.
   timeZone            String?
+  /// When the journal was locked with this person's own key (end-to-end encryption).
+  vaultAt             DateTime?
+  /// A known value sealed with the journal key, so a device can tell a right key from a wrong one.
+  vaultCheck          String?
+  /// When everything written before the key was sealed (moving an existing journal over is done).
+  vaultSealedAt       DateTime?
+  /// Birthday, sealed (the plain `birthday` column is left empty once the journal is locked).
+  birthdaySealed      String?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @default(now()) @updatedAt
 
@@ -55,6 +63,8 @@ model User {
   pushSubscriptions PushSubscription[]
   notifications     Notification[]
   portraits         Portrait[]
+  vaultKeys         VaultKey[]
+  vaultLinks        VaultLink[]
 
   @@index([status])
 }
@@ -222,19 +232,22 @@ model Expression {
 }
 
 model Person {
-  id        String             @id @default(cuid())
-  userId    String
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  relation  String?
-  howMet    String?
-  birthday  DateTime?          @db.Date
-  notes     String?
-  photoId   String?            @unique
-  photo     Attachment?        @relation("PersonPhoto", fields: [photoId], references: [id], onDelete: SetNull)
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @default(now()) @updatedAt
-  moments   ExpressionPerson[]
+  id             String             @id @default(cuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  relation       String?
+  howMet         String?
+  birthday       DateTime?          @db.Date
+  notes          String?
+  /// Birthday, sealed; `birthdayMD` ("MM-DD", no year, no name) is all the server keeps, for the morning reminder.
+  birthdaySealed String?
+  birthdayMD     String?
+  photoId        String?            @unique
+  photo          Attachment?        @relation("PersonPhoto", fields: [photoId], references: [id], onDelete: SetNull)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @default(now()) @updatedAt
+  moments        ExpressionPerson[]
 
   @@index([userId, name])
 }
@@ -262,6 +275,8 @@ model Attachment {
   contentType  String
   size         Int
   durationSec  Float?
+  /// The stored bytes are encrypted on the device (lib/vault/files).
+  sealed       Boolean     @default(false)
   createdAt    DateTime    @default(now())
   personPhoto  Person?     @relation("PersonPhoto")
   userPhoto    User?       @relation("UserPhoto")
@@ -342,4 +357,37 @@ model Portrait {
   createdAt    DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+/// One way to unlock a journal: the journal key, encrypted ("wrapped") by a key only that method can
+/// make (a recovery phrase, a passphrase, or a passkey's PRF secret). The server never sees the key.
+model VaultKey {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "phrase" | "passphrase" | "passkey"
+  kind         String
+  label        String?
+  wrapped      String
+  salt         String?
+  iterations   Int?
+  credentialId String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
+}
+
+/// A new device asking an unlocked one for the journal key: its public key, then the answer
+/// (the key wrapped for it). Short-lived.
+model VaultLink {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publicKey String
+  response  String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
 }

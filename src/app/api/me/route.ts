@@ -5,6 +5,7 @@ import { resolveNotifications } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/session";
 import { FEATURE_KEYS, isFeatureKey } from "@/lib/features";
 import { removeStored, storageMode } from "@/lib/storage";
+import { MUST_SEAL, sealed } from "@/lib/sealed";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -22,7 +23,8 @@ export async function GET() {
     intention: user.intention,
     preferredName: user.preferredName,
     photoId: user.photoId,
-    birthday: user.birthday?.toISOString().slice(0, 10) ?? null,
+    birthday: user.birthdaySealed ?? user.birthday?.toISOString().slice(0, 10) ?? null,
+    vault: !!user.vaultAt,
     place: user.place,
     portraitEveryMonths: user.portraitEveryMonths,
     features: user.effective,
@@ -36,10 +38,11 @@ export async function GET() {
 
 const PatchSchema = z.object({
   name: z.string().trim().min(1).max(80).optional(),
-  intention: z.string().trim().max(500).optional(),
+  // Personal lines arrive sealed (only the person's devices can read them).
+  intention: sealed(8_000).nullable().optional(),
   preferredName: z.string().trim().max(40).nullable().optional(),
-  birthday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  place: z.string().trim().max(80).nullable().optional(),
+  birthday: sealed(500).nullable().optional(),
+  place: sealed(2_000).nullable().optional(),
   /** An uploaded photo attachment to use as your picture, or null to go back to the Google one. */
   photoId: z.string().max(40).nullable().optional(),
   portraitEveryMonths: z.union([z.literal(0), z.literal(3), z.literal(6), z.literal(12)]).optional(),
@@ -54,7 +57,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
   const { name, intention, features, preferredName, birthday, place, photoId, portraitEveryMonths } = parsed.data;
 
   // A new photo must be yours and a photo; the old one is removed for good.
@@ -70,10 +73,10 @@ export async function PATCH(req: NextRequest) {
   const ops = [];
   const data = {
     ...(name !== undefined ? { name } : {}),
-    ...(intention !== undefined ? { intention: intention || null } : {}),
+    ...(intention !== undefined ? { intention } : {}),
     ...(preferredName !== undefined ? { preferredName: preferredName || null } : {}),
-    ...(birthday !== undefined ? { birthday: birthday ? new Date(birthday) : null } : {}),
-    ...(place !== undefined ? { place: place || null } : {}),
+    ...(birthday !== undefined ? { birthdaySealed: birthday, birthday: null } : {}),
+    ...(place !== undefined ? { place } : {}),
     ...(photoId !== undefined ? { photoId } : {}),
     ...(portraitEveryMonths !== undefined ? { portraitEveryMonths } : {}),
   };

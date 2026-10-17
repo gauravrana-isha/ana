@@ -6,14 +6,12 @@ import { Arrow } from "@/components/ui/Arrows";
 import type { PortraitDTO } from "@/lib/portrait";
 import { cn } from "@/lib/utils";
 import { PortraitPond } from "./PortraitPond";
+import { fetchPortraits } from "@/lib/journal";
 
 export function usePortraits() {
   return useQuery({
     queryKey: ["portraits"],
-    queryFn: async (): Promise<PortraitDTO[]> => {
-      const res = await fetch("/api/portraits");
-      return res.ok ? res.json() : [];
-    },
+    queryFn: () => fetchPortraits<PortraitDTO>(),
   });
 }
 

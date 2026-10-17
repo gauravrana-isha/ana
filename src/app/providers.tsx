@@ -17,7 +17,7 @@ export const QUERY_CACHE_KEY = "ana-query-cache";
 const DAY = 24 * 60 * 60 * 1000;
 
 // Things that are only useful live, or too personal to keep lying around.
-const NOT_PERSISTED = new Set(["search", "admin-users"]);
+const NOT_PERSISTED = new Set(["search", "search-index", "admin-users", "vault-status"]);
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -30,6 +30,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
             retry: 1,
             refetchOnWindowFocus: true,
           },
+          // Saves always run: offline, they go into the outbox (kept on the device) instead of
+          // waiting in memory, where a reload would lose them.
+          mutations: { networkMode: "always" },
         },
       })
   );

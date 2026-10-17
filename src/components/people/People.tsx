@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { mediaUrl } from "@/lib/media-client";
 import { cn } from "@/lib/utils";
 import { CrossMark, PlusMark } from "@/components/art/PenMarks";
+import { fetchPeople, savePerson } from "@/lib/journal";
+import { StoredImg } from "@/components/moments/StoredMedia";
 
 export interface PersonSummary {
   id: string;
@@ -19,10 +20,7 @@ export interface PersonSummary {
 export function usePeople() {
   return useQuery({
     queryKey: ["people"],
-    queryFn: async (): Promise<PersonSummary[]> => {
-      const res = await fetch("/api/people");
-      return res.ok ? res.json() : [];
-    },
+    queryFn: () => fetchPeople<PersonSummary>(),
   });
 }
 
@@ -37,10 +35,8 @@ function tone(name: string) {
 export function PersonAvatar({ person, size = 36, className }: { person: Pick<PersonSummary, "name" | "photoId">; size?: number; className?: string }) {
   if (person.photoId) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={mediaUrl(person.photoId)}
-        alt=""
+      <StoredImg
+        id={person.photoId}
         width={size}
         height={size}
         className={cn("rounded-full object-cover shrink-0 bg-surface-2", className)}
@@ -137,13 +133,8 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
     if (!name || creating) return;
     setCreating(true);
     try {
-      const res = await fetch("/api/people", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) return;
-      const person: PersonSummary = await res.json();
+      const { id } = await savePerson(null, { name });
+      const person: PersonSummary = { id, name, relation: null, photoId: null, momentCount: 0, lastMomentAt: null };
       qc.setQueryData<PersonSummary[]>(["people"], (old = []) => [...old, person].sort((a, b) => a.name.localeCompare(b.name)));
       onChange([...value, person.id]);
       setQuery("");

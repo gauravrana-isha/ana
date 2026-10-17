@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { DayLogEntries, Practice } from "./types";
+import type { DayLogEntries } from "./types";
+import { fetchDay, fetchPractices, saveDay } from "./journal";
+import { openDeep } from "./vault/vault";
 
 // === Query Keys ===
 export const keys = {
@@ -15,56 +17,22 @@ export const keys = {
 
 // === Practices ===
 export function usePractices() {
-  return useQuery({
-    queryKey: keys.practices(),
-    queryFn: async (): Promise<Practice[]> => {
-      const res = await fetch("/api/practices");
-      if (!res.ok) return [];
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
-    },
-  });
+  return useQuery({ queryKey: keys.practices(), queryFn: fetchPractices });
 }
 
 // === DayLog ===
 export function useDayLog(date: string) {
-  return useQuery({
-    queryKey: keys.day(date),
-    queryFn: async () => {
-      const res = await fetch(`/api/days/${date}`);
-      if (!res.ok) return { date, entries: {} as DayLogEntries };
-      const data = await res.json();
-      return { date: data.date ?? date, entries: (data.entries ?? {}) as DayLogEntries };
-    },
-  });
+  return useQuery({ queryKey: keys.day(date), queryFn: () => fetchDay(date) });
 }
 
+/** Save ticks and values; the screen updates at once, and offline saves wait in the outbox. */
 export function useUpdateDayLog(date: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationKey: ["day-save", date],
     mutationFn: async (entries: DayLogEntries) => {
-      try {
-        const res = await fetch(`/api/days/${date}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ entries }),
-        });
-        if (!res.ok) throw new Error("Failed to update day log");
-        return res.json();
-      } catch (err) {
-        // Offline — queue for later
-        if (!navigator.onLine) {
-          const { enqueue } = await import("./offlineQueue");
-          await enqueue({
-            url: `/api/days/${date}`,
-            method: "PATCH",
-            body: JSON.stringify({ entries }),
-          });
-          return { queued: true };
-        }
-        throw err;
-      }
+      const res = await saveDay(date, entries);
+      return res.queued ? undefined : { entries: await openDeep((res.data?.entries ?? {}) as DayLogEntries) };
     },
     onMutate: async (newEntries) => {
       await qc.cancelQueries({ queryKey: keys.day(date) });
@@ -78,14 +46,14 @@ export function useUpdateDayLog(date: string) {
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(keys.day(date), ctx.prev);
     },
-    onSuccess: (saved: { entries?: DayLogEntries; queued?: boolean } | undefined) => {
+    onSuccess: (saved) => {
       // The reply is the whole saved day: show it directly instead of asking again. If more
       // ticks are still on their way, the last one to land fills it in.
       if (saved?.entries && qc.isMutating({ mutationKey: ["day-save", date] }) <= 1) {
         qc.setQueryData(keys.day(date), { date, entries: saved.entries });
       }
     },
-    onSettled: (saved: { entries?: DayLogEntries } | undefined, err) => {
+    onSettled: (saved, err) => {
       if (err) qc.invalidateQueries({ queryKey: keys.day(date) });
       // The week grid and review are refreshed only if they're on screen (otherwise just marked stale).
       qc.invalidateQueries({ queryKey: ["week"] });

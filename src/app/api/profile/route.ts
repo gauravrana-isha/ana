@@ -4,7 +4,7 @@ import { resolveUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-/** Counts for the Profile's "This month" row, for the caller's local month (?date=YYYY-MM-DD). */
+/** What the Profile's "This month" row is counted from, for the caller's local month (?date=YYYY-MM-DD). */
 export async function GET(req: NextRequest) {
   const user = await resolveUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,20 +20,9 @@ export async function GET(req: NextRequest) {
     db.dayLog.findMany({ where: { userId: user.id, date: { gte: start, lt: end } }, select: { entries: true } }),
   ]);
 
-  const answeredDays = dailies.filter(
-    (d) =>
-      d.moodKey ||
-      Object.values((d.answers ?? {}) as Record<string, string>).some((v) => typeof v === "string" && v.trim()) ||
-      Object.values((d.stamps ?? {}) as Record<string, string[]>).some((v) => v?.length)
-  ).length;
-  const practiceDays = logs.filter((l) =>
-    Object.values((l.entries ?? {}) as Record<string, { done?: boolean; values?: Record<string, unknown> }>).some(
-      (e) => e?.done || Object.values(e?.values ?? {}).some((v) => v !== "" && v !== 0 && v != null)
-    )
-  ).length;
-
+  // Reflections and logs are sealed: the device counts the days that have something in them.
   return NextResponse.json({
     memberSince: user.createdAt.toISOString(),
-    month: { daily: answeredDays, weekly: weeklies, expressions: moments, tracker: practiceDays },
+    month: { dailies, weekly: weeklies, expressions: moments, logs },
   });
 }

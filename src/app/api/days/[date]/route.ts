@@ -3,15 +3,11 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
 import { Prisma } from "@prisma/client";
+import { MUST_SEAL, sealed } from "@/lib/sealed";
 
+/** Each practice's entry for the day, sealed on the device (keys are practice ids). */
 const PatchSchema = z.object({
-  entries: z.record(
-    z.string(),
-    z.object({
-      done: z.boolean().optional(),
-      values: z.record(z.string(), z.union([z.string(), z.number()])),
-    })
-  ),
+  entries: z.record(z.string().max(40), sealed(20_000)),
 });
 
 export async function GET(
@@ -39,9 +35,8 @@ export async function PATCH(
   const { date } = await params;
   const body = await req.json();
   const parsed = PatchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: "Bad date" }, { status: 400 });
 
   const existing = await db.dayLog.findUnique({
     where: { userId_date: { userId: user.id, date: new Date(date) } },

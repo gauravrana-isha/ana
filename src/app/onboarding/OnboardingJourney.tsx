@@ -2,28 +2,35 @@
 
 import { BusyBar } from "@/components/ui/Busy";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check } from "@phosphor-icons/react";
 import { Chevron } from "@/components/ui/Arrows";
 import { Lotus } from "@/components/art/Lotus";
+import { LotusDraw } from "@/components/ui/Loader";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { STARTER_IDS } from "@/lib/practiceCatalog";
 import { FEATURES, type FeatureKey } from "@/lib/features";
 import { PracticeLibrary } from "@/components/tracker/PracticeLibrary";
+import { KeySetup } from "@/components/vault/KeySetup";
+import { Unlock } from "@/components/vault/Unlock";
+import { catalogById } from "@/lib/practiceCatalog";
+import { newId } from "@/lib/outbox";
+import { fetchStatus, seal, sealFields, start, useVault, type VaultStatus } from "@/lib/vault/vault";
 import { cn } from "@/lib/utils";
 
 type Step = "welcome" | "you" | "sections" | "practices";
 
 interface Props {
-  user: { name: string; email: string; image: string | null };
+  user: { id: string; name: string; email: string; image: string | null };
   allowed: FeatureKey[];
+  vault: { set: boolean; check: string | null };
 }
 
-export function OnboardingJourney({ user, allowed }: Props) {
+export function OnboardingJourney({ user, allowed, vault }: Props) {
   const reduce = useReducedMotion();
   const [step, setStep] = useState<Step>("welcome");
   const [direction, setDirection] = useState(1);
@@ -34,6 +41,28 @@ export function OnboardingJourney({ user, allowed }: Props) {
   const [practices, setPractices] = useState<string[]>(STARTER_IDS);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // After the choices: the journal gets its key (or, back here after that, this device unlocks it).
+  const [keyStage, setKeyStage] = useState(false);
+  const lock = useVault();
+  const [status, setStatus] = useState<VaultStatus | null>(null);
+
+  useEffect(() => {
+    start(user.id, vault).catch(() => {});
+  }, [user.id, vault]);
+  useEffect(() => {
+    if (keyStage && lock.status === "locked" && !status) fetchStatus().then(setStatus).catch(() => {});
+  }, [keyStage, lock.status, status]);
+  // Once the journal has its key (made just now, or unlocked here), finish: once.
+  const finishing = useRef(false);
+  const latestFinish = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => {
+    latestFinish.current = finish;
+  });
+  useEffect(() => {
+    if (!keyStage || lock.status !== "unlocked" || finishing.current) return;
+    finishing.current = true;
+    latestFinish.current().catch(() => {});
+  }, [keyStage, lock.status]);
 
   const steps = useMemo<Step[]>(() => {
     const s: Step[] = ["welcome", "you", "sections"];
@@ -54,14 +83,21 @@ export function OnboardingJourney({ user, allowed }: Props) {
     setSaving(true);
     setError("");
     try {
+      // Everything personal is sealed here, with the key just made.
+      const chosen = features.includes("tracker") ? practices.map(catalogById).filter((e) => !!e) : [];
+      const sealedPractices = await Promise.all(
+        chosen.map((p) =>
+          sealFields({ id: newId(), name: p.name, iconName: p.icon, catalogId: p.id, hasDoneToggle: p.hasDoneToggle, fields: p.fields }, ["name", "iconName", "catalogId", "fields"])
+        )
+      );
       const res = await fetch("/api/onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          intention: intention.trim() || undefined,
+          intention: intention.trim() ? await seal(intention.trim()) : undefined,
           features,
-          catalogIds: features.includes("tracker") ? practices : [],
+          practices: sealedPractices,
         }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't save");
@@ -69,12 +105,25 @@ export function OnboardingJourney({ user, allowed }: Props) {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't save. Please try again.");
       setSaving(false);
+      finishing.current = false;
+      setKeyStage(false);
     }
   }
 
   function next() {
-    if (isLast) finish();
-    else go(steps[index + 1]);
+    if (!isLast) return go(steps[index + 1]);
+    if (lock.status === "unlocked") finish();
+    else setKeyStage(true);
+  }
+
+  if (keyStage && lock.status === "none") return <KeySetup firstTime user={user} onDone={() => {}} />;
+  if (keyStage && lock.status === "locked" && status) return <Unlock userId={user.id} status={status} />;
+  if (keyStage && lock.status === "unlocked" && !error) {
+    return (
+      <div className="min-h-dvh grid place-items-center bg-bg" role="status" aria-label="Setting up your journal">
+        <LotusDraw size={56} />
+      </div>
+    );
   }
 
   const canContinue =
@@ -139,7 +188,7 @@ export function OnboardingJourney({ user, allowed }: Props) {
 
             {step === "you" && (
               <div>
-                <StepTitle title="How should we call you?" lead="This is how you'll appear to admins. You can change it later." />
+                <StepTitle title="How should we call you?" lead="Your name is how you'll appear to the person who lets you in. You can change it later." />
                 <label className="block mt-8">
                   <span className="font-ui text-[13px] font-semibold text-ink">Name</span>
                   <input
@@ -157,7 +206,7 @@ export function OnboardingJourney({ user, allowed }: Props) {
                     value={intention}
                     onChange={(e) => setIntention(e.target.value.slice(0, 500))}
                     rows={4}
-                    placeholder="A line or two helps the admin welcome you, e.g. “I volunteer at the Ashram and want to keep my sadhana steady.”"
+                    placeholder="A line or two, just for you, e.g. “I want to keep my sadhana steady.” Only you will be able to read it."
                     className="mt-2 w-full px-4 py-3 rounded-[14px] bg-surface text-ink font-ui text-[16px] leading-[1.55] outline-none border border-transparent focus:border-accent resize-none placeholder:text-ink-soft/80 transition-colors"
                   />
                   <span className="block mt-1.5 text-right font-ui text-[12px] text-ink-soft tabular">
@@ -234,7 +283,7 @@ export function OnboardingJourney({ user, allowed }: Props) {
             </p>
           )}
           <Button size="lg" className="w-full" onClick={next} disabled={!canContinue} loading={saving}>
-            {step === "welcome" ? "Begin" : isLast ? "Finish" : "Continue"}
+            {step === "welcome" ? "Begin" : "Continue"}
           </Button>
         </div>
       </footer>

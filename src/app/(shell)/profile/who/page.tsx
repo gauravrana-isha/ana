@@ -13,6 +13,7 @@ import { longDate, usePortraits } from "@/components/profile/WhoAmI";
 import { useMe } from "@/lib/me";
 import { MAX_WORDS, REVISIT_CHOICES, RINGS, SCALE_WEIGHTS, WEIGHT_SCALE, toneStyle, type PortraitDTO, type RingKey, type Weights } from "@/lib/portrait";
 import { cn } from "@/lib/utils";
+import { savePortrait } from "@/lib/journal";
 
 /** Words in their own colours, separated by quiet dots. */
 function Words({ words, weights, className }: { words: string[]; weights?: Weights; className?: string }) {
@@ -59,16 +60,14 @@ export default function WhoAmIPage() {
 
   async function keep() {
     setSaving(true);
-    const res = await fetch("/api/portraits", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...Object.fromEntries(RINGS.map((r) => [r.key, { words: draft[r.key].words, note: draft[r.key].note.trim() || null }])),
-        weights: draft.weights,
-      }),
-    });
+    const ring = (k: (typeof RINGS)[number]["key"]) => ({ words: draft[k].words, note: draft[k].note.trim() || null });
+    try {
+      await savePortrait({ body: ring("body"), mind: ring("mind"), emotion: ring("emotion"), weights: draft.weights });
+    } catch {
+      setSaving(false);
+      return toast("Couldn't keep it. Please try again.", "error");
+    }
     setSaving(false);
-    if (!res.ok) return toast("Couldn't keep it. Please try again.", "error");
     await Promise.all([qc.invalidateQueries({ queryKey: ["portraits"] }), qc.invalidateQueries({ queryKey: ["notifications"] })]);
     toast("Kept", "success", 1600);
     setComposing(false);

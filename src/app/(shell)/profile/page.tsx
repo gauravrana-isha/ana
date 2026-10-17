@@ -32,6 +32,9 @@ import { applyTheme, type ThemeName } from "@/lib/theme";
 import { FEATURES, type FeatureKey } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import type { Practice } from "@/lib/types";
+import { deletePractice, fetchProfileStats } from "@/lib/journal";
+import { exportJournal, importJournal } from "@/lib/importer";
+import { PrivacySettings } from "@/components/vault/PrivacySettings";
 
 export default function ProfilePage() {
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as ThemeName);
@@ -81,9 +84,7 @@ export default function ProfilePage() {
     setDataBusy("export");
     const toastId = toast("Preparing your journal…", "loading");
     try {
-      const res = await fetch("/api/export");
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
+      const blob = await exportJournal();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -106,10 +107,8 @@ export default function ProfilePage() {
     const toastId = toast("Bringing in your journal…", "loading");
     try {
       const data = JSON.parse(await file.text());
-      const res = await fetch("/api/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-      const result = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(result.error || "Import failed.");
-      update(toastId, result.message || "Imported", "success");
+      const message = await importJournal(data);
+      update(toastId, message, "success");
       // Refresh everything that might have changed, without reloading the page.
       await qc.invalidateQueries();
     } catch (err) {
@@ -225,6 +224,9 @@ export default function ProfilePage() {
         </div>
       </section>
 
+      {/* Privacy */}
+      <PrivacySettings />
+
       {/* Data */}
       <section>
         <SectionTitle>Your data</SectionTitle>
@@ -260,13 +262,12 @@ function ManagePractices({ practices }: { practices: Practice[] }) {
   async function remove(p: Practice) {
     if (!confirm(`Remove ${p.name}? Days you've already logged stay as they are.`)) return;
     setBusyId(p.id);
-    const res = await fetch("/api/practices", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: p.id }),
-    });
-    if (!res.ok) toast("Couldn't remove. Please try again.", "error");
-    else toast(`${p.name} removed`, "success", 1800);
+    try {
+      await deletePractice(p.id);
+      toast(`${p.name} removed`, "success", 1800);
+    } catch {
+      toast("Couldn't remove. Please try again.", "error");
+    }
     await qc.invalidateQueries({ queryKey: keys.practices() });
     setBusyId(null);
   }
@@ -322,8 +323,7 @@ function ProfileHeader({ me }: { me: Me | undefined }) {
   const [editing, setEditing] = useState(false);
   const { data: stats } = useQuery({
     queryKey: ["profile-stats", today()],
-    queryFn: async (): Promise<{ memberSince: string; month: Record<"daily" | "weekly" | "expressions" | "tracker", number> }> =>
-      (await fetch(`/api/profile?date=${today()}`)).json(),
+    queryFn: () => fetchProfileStats(today()),
   });
 
   const cells = [

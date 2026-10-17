@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { FeatureKey } from "./features";
+import { openDeep } from "./vault/vault";
 
 export interface Me {
   id: string;
@@ -30,7 +31,7 @@ export function callName(me: Pick<Me, "name" | "preferredName"> | undefined | nu
 export function useMe() {
   return useQuery({
     queryKey: ["me"],
-    queryFn: async (): Promise<Me> => (await fetch("/api/me")).json(),
+    queryFn: async (): Promise<Me> => openDeep((await (await fetch("/api/me")).json()) as Me),
     staleTime: 60_000,
   });
 }

@@ -14,6 +14,7 @@ import type { NavItem } from "./nav";
 import { cn } from "@/lib/utils";
 import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
+import { useMediaSrc } from "@/lib/vault/files";
 
 interface SidebarProps {
   items: NavItem[];
@@ -215,12 +216,16 @@ function SideLink({ item, active, collapsed }: { item: NavItem; active: boolean;
 }
 
 export function Avatar({ name, image, size = 28 }: { name: string; image: string | null; size?: number }) {
-  if (image) {
+  // Your own photo is stored encrypted: open it here. (Google pictures load as they are.)
+  const stored = image?.startsWith("/api/media/") ? image.slice("/api/media/".length) : null;
+  const opened = useMediaSrc(stored);
+  const src = stored ? opened : image;
+  if (src) {
     return (
       // Google avatars are small remote images; a plain img avoids an image-domain config.
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={image}
+        src={src}
         alt=""
         width={size}
         height={size}

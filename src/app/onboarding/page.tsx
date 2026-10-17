@@ -16,8 +16,9 @@ export default async function OnboardingPage() {
 
   return (
     <OnboardingJourney
-      user={{ name: user.name ?? "", email: user.email ?? "", image: user.image }}
+      user={{ id: user.id, name: user.name ?? "", email: user.email ?? "", image: user.image }}
       allowed={allowed}
+      vault={{ set: !!user.vaultAt, check: user.vaultCheck }}
     />
   );
 }

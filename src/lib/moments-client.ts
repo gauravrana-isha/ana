@@ -1,24 +1,49 @@
 "use client";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { Moment } from "./moment-types";
+import { fetchAllMoments } from "./journal";
+import { plainText } from "@/components/moments/RichText";
 
-export function useMoments(filters: { person?: string; kind?: string; q?: string; stamp?: string; sort?: "newest" | "oldest" } = {}) {
-  return useInfiniteQuery({
-    queryKey: ["moments", filters],
-    initialPageParam: null as string | null,
-    queryFn: async ({ pageParam }) => {
-      const sp = new URLSearchParams();
-      if (filters.person) sp.set("person", filters.person);
-      if (filters.kind) sp.set("kind", filters.kind);
-      if (filters.q) sp.set("q", filters.q);
-      if (filters.stamp) sp.set("stamp", filters.stamp);
-      if (filters.sort === "oldest") sp.set("sort", "oldest");
-      if (pageParam) sp.set("cursor", pageParam);
-      const res = await fetch(`/api/expressions?${sp}`);
-      if (!res.ok) return { items: [] as Moment[], hasMore: false, nextCursor: null };
-      return (await res.json()) as { items: Moment[]; hasMore: boolean; nextCursor: string | null };
-    },
-    getNextPageParam: (last) => (last.hasMore ? last.nextCursor : null),
-  });
+export type MomentFilters = { person?: string; kind?: string; q?: string; stamp?: string; sort?: "newest" | "oldest" };
+
+const PAGE = 20;
+
+/** Every moment, opened on the device (words are sealed, so search and filters run here). */
+export function useAllMoments() {
+  return useQuery({ queryKey: ["moments", "all"], queryFn: fetchAllMoments });
+}
+
+export function filterMoments(all: Moment[], f: MomentFilters) {
+  const q = f.q?.trim().toLowerCase();
+  const list = all.filter(
+    (m) =>
+      (!f.person || m.people.some((p) => p.id === f.person)) &&
+      (!f.kind || (f.kind === "writing" ? m.kind === "writing" || m.kind === "moment" : m.kind === f.kind)) &&
+      (!f.stamp || m.stamps.includes(f.stamp)) &&
+      (!q ||
+        m.title.toLowerCase().includes(q) ||
+        plainText(m.body).toLowerCase().includes(q) ||
+        (m.place ?? "").toLowerCase().includes(q) ||
+        m.people.some((p) => p.name.toLowerCase().includes(q)))
+  );
+  const dir = f.sort === "oldest" ? 1 : -1;
+  return list.sort((a, b) => dir * (a.occurredAt.localeCompare(b.occurredAt) || a.createdAt.localeCompare(b.createdAt)));
+}
+
+/** Moments matching the filters, shown a page at a time (same shape as before: pages of items). */
+export function useMoments(filters: MomentFilters = {}) {
+  const all = useAllMoments();
+  const key = JSON.stringify(filters);
+  const [shown, setShown] = useState({ key, n: PAGE });
+  const n = shown.key === key ? shown.n : PAGE;
+  const matching = useMemo(() => filterMoments(all.data ?? [], JSON.parse(key) as MomentFilters), [all.data, key]);
+  return {
+    data: all.data ? { pages: [{ items: matching.slice(0, n) }] } : undefined,
+    isPending: all.isPending,
+    hasNextPage: matching.length > n,
+    isFetchingNextPage: false,
+    fetchNextPage: () => setShown({ key, n: n + PAGE }),
+  };
 }

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { zonedParts } from "@/lib/push";
 import { notify, sweepNotifications } from "@/lib/notify";
-import { plainText } from "@/components/moments/RichText";
 
 /*
  * Announces what is due (in the bell, and as a push where it's turned on): moments coming
@@ -37,14 +36,15 @@ export async function GET(req: NextRequest) {
       lookBackAt: { lte: now, gte: new Date(now.getTime() - LATE_LIMIT_MS) },
       user: { status: "APPROVED" },
     },
-    select: { id: true, userId: true, title: true, body: true, kind: true, occurredAt: true, date: true },
+    select: { id: true, userId: true, kind: true, occurredAt: true, date: true },
     take: 200,
   });
   await inParallel(due, async (m) => {
     const claimed = await db.expression.updateMany({ where: { id: m.id, lookBackSentAt: null }, data: { lookBackSentAt: now } });
     if (!claimed.count) return;
     const when = (m.occurredAt ?? m.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-    const words = m.title || plainText(m.body).slice(0, 120) || (m.kind === "audio" ? "A voice note" : m.kind === "video" ? "A video" : m.kind === "photo" ? "Photos" : "A moment");
+    // Its words are sealed (only the person's devices can read them), so the note says what kind it is and when.
+    const words = m.kind === "audio" ? "A voice note" : m.kind === "video" ? "A video" : m.kind === "photo" ? "Photos" : "Something you wrote";
     try {
       const made = await notify({ userId: m.userId, kind: "moment", key: `moment:${m.id}`, title: "A moment is back", body: `${words} · from ${when}`, url: `/expressions/${m.id}` });
       if (made) sent.moments++;
@@ -88,21 +88,23 @@ export async function GET(req: NextRequest) {
 
   // ---- Birthdays (from the morning, local time; gone the day after)
   const people = await db.person.findMany({
-    where: { birthday: { not: null }, user: { status: "APPROVED" } },
-    select: { id: true, name: true, userId: true, birthday: true, user: { select: { timeZone: true, features: { where: { feature: "people" } } } } },
+    where: { OR: [{ birthdayMD: { not: null } }, { birthday: { not: null } }], user: { status: "APPROVED" } },
+    select: { id: true, userId: true, birthday: true, birthdayMD: true, user: { select: { timeZone: true, features: { where: { feature: "people" } } } } },
   });
   await inParallel(people, async (p) => {
     const f = p.user.features[0];
     if (f && (!f.allowed || !f.enabled)) return;
     const local = zonedParts(now, p.user.timeZone);
     if (local.hour < BIRTHDAY_HOUR) return;
-    if (p.birthday!.getUTCMonth() + 1 !== local.month || p.birthday!.getUTCDate() !== local.day) return;
+    const [bm, bd] = p.birthdayMD ? p.birthdayMD.split("-").map(Number) : [p.birthday!.getUTCMonth() + 1, p.birthday!.getUTCDate()];
+    if (bm !== local.month || bd !== local.day) return;
+    // Names are sealed: the note opens their page, where the device shows who.
     const made = await notify({
       userId: p.userId,
       kind: "birthday",
       key: `birthday:${p.id}:${local.year}`,
-      title: `${p.name}'s birthday`,
-      body: `It's ${p.name}'s birthday today.`,
+      title: "A birthday today",
+      body: "Someone in your journal has a birthday today.",
       url: `/people/${p.id}`,
       expiresAt: new Date(now.getTime() + (48 - local.hour) * 60 * 60 * 1000),
     });

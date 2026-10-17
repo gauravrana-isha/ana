@@ -19,6 +19,7 @@ import type { Moment, MomentKind } from "@/lib/moment-types";
 import { timeAgo } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "@/components/ui/Busy";
+import { deletePerson, fetchPerson } from "@/lib/journal";
 
 export default function PersonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -27,10 +28,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
   const { toast } = useToast();
   const { data: person, isPending: isLoading } = useQuery({
     queryKey: ["person", id],
-    queryFn: async (): Promise<PersonDetail | null> => {
-      const res = await fetch(`/api/people/${id}`);
-      return res.ok ? res.json() : null;
-    },
+    queryFn: () => fetchPerson<PersonDetail>(id),
   });
   const moments = useMoments({ person: id });
   const list = moments.data?.pages.flatMap((p) => p.items) ?? [];
@@ -41,11 +39,13 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
   async function remove() {
     if (!person || !confirm(`Remove ${person.name}? Your moments stay; they just won't mention ${person.name} any more.`)) return;
     setRemoving(true);
-    const res = await fetch(`/api/people/${id}`, { method: "DELETE" });
-    if (!res.ok) {
+    try {
+      await deletePerson(id);
+    } catch {
       setRemoving(false);
       return toast("Couldn't remove. Please try again.", "error");
     }
+    qc.setQueryData<{ id: string }[]>(["people"], (old) => old?.filter((p) => p.id !== id));
     qc.invalidateQueries({ queryKey: ["people"] });
     qc.invalidateQueries({ queryKey: ["moments"] });
     router.replace("/people");

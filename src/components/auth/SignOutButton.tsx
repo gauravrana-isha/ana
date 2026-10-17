@@ -2,23 +2,28 @@
 
 import { useState } from "react";
 import { SignOut } from "@phosphor-icons/react";
-import { clear } from "idb-keyval";
+import { clear, get } from "idb-keyval";
 import { signOutAction } from "@/app/actions";
 import { dropPushSubscription } from "@/lib/push-client";
+import { dropMediaCache } from "@/lib/vault/files";
 import { ButtonLoader } from "@/components/ui/Loader";
 import { cn } from "@/lib/utils";
 
 /**
- * Signs out and leaves nothing behind on the device: offline page and API caches, the
- * pending offline queue and session state are cleared first, and this device stops getting
- * the person's notifications (phones and laptops are shared).
+ * Signs out and leaves nothing behind on the device: the journal key, offline page and API
+ * caches, opened photos, the pending offline saves and session state are cleared first, and
+ * this device stops getting the person's notifications (phones and laptops are shared).
  */
 export function SignOutButton({ className, withIcon = true, labelClassName }: { className?: string; withIcon?: boolean; labelClassName?: string }) {
   const [busy, setBusy] = useState(false);
 
   async function signOut() {
+    // Saves made offline that haven't gone yet would be lost: say so first.
+    const waiting = (await get<unknown[]>("ana-outbox").catch(() => undefined))?.length ?? 0;
+    if (waiting && !confirm(`${waiting} ${waiting === 1 ? "change hasn't" : "changes haven't"} been sent yet (made offline). Sign out anyway and lose ${waiting === 1 ? "it" : "them"}?`)) return;
     setBusy(true);
     try {
+      dropMediaCache();
       await dropPushSubscription();
       if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
       await clear().catch(() => {});

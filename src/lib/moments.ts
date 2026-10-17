@@ -2,6 +2,7 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { db } from "./db";
+import { sealed } from "./sealed";
 
 /** What the client gets for a moment: its people (with photo ids) and its media. */
 export const momentInclude = {
@@ -21,7 +22,8 @@ export function serializeMoment(m: Row) {
     kind: m.kind,
     body: m.body,
     place: m.place,
-    stamps: (m.stamps as string[] | null) ?? [],
+    // Sealed on the device (a string the client opens into the list).
+    stamps: (m.stamps as string | string[] | null) ?? [],
     lookBackOn: m.lookBackOn?.toISOString().slice(0, 10) ?? null,
     lookBackAt: m.lookBackAt?.toISOString() ?? null,
     // Older entries only had a date; show them at noon so they sort sensibly.
@@ -35,13 +37,16 @@ export function serializeMoment(m: Row) {
 
 export type MomentDTO = ReturnType<typeof serializeMoment>;
 
+/** A moment as the device sends it: words, place and stamps sealed; times and links plain. */
 export const MomentSchema = z.object({
-  title: z.string().trim().max(150).default(""),
+  /** Made on the device, so a save retried after a dropped connection isn't doubled. */
+  id: z.string().regex(/^[a-z0-9]{20,40}$/).optional(),
+  title: sealed(4_000),
   kind: z.enum(["writing", "moment", "audio", "video", "photo"]),
-  body: z.string().max(20000).default(""),
+  body: sealed(200_000),
   occurredAt: z.string().datetime({ offset: true }),
-  place: z.string().trim().max(120).optional().nullable(),
-  stamps: z.array(z.string().max(30)).max(9).default([]),
+  place: sealed(2_000).optional().nullable(),
+  stamps: sealed(2_000),
   lookBackOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   /** The exact time to bring it back; `lookBackOn` is its date where the person is. */
   lookBackAt: z.string().datetime({ offset: true }).optional().nullable(),

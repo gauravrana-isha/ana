@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { TimeField } from "@/components/ui/pickers";
 import { keys } from "@/lib/queries";
+import { deletePractice, editPractice, mergeFields } from "@/lib/journal";
 import { DEFAULT_SCALE, SCALE_KEYS, specFor, type FieldSpec } from "@/lib/practiceSpec";
 import { describeTracking } from "@/lib/practiceCatalog";
 import type { Practice } from "@/lib/types";
@@ -47,13 +48,9 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
   async function save() {
     if (!practice || !spec || !name.trim()) return;
     setSaving("save");
-    const fields = Object.fromEntries(spec.fields.map((f) => [f.key, { kind: f.kind, ...draft[f.key] }]));
-    const res = await fetch("/api/practices", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: practice.id, name: name.trim(), fields }),
-    });
-    if (!res.ok) {
+    try {
+      await editPractice(practice.id, { name: name.trim(), fields: mergeFields(practice.fields, spec.fields, draft) });
+    } catch {
       setSaving(null);
       return toast("Couldn't save. Please try again.", "error");
     }
@@ -66,8 +63,9 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
   async function remove() {
     if (!practice || !confirm(`Remove ${practice.name}? Days you've already logged stay as they are.`)) return;
     setSaving("remove");
-    const res = await fetch("/api/practices", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: practice.id }) });
-    if (!res.ok) {
+    try {
+      await deletePractice(practice.id);
+    } catch {
       setSaving(null);
       return toast("Couldn't remove. Please try again.", "error");
     }

@@ -13,6 +13,8 @@ import { Loader } from "@/components/ui/Loader";
 import { dayHeading } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { CrossMark, PlusMark } from "@/components/art/PenMarks";
+import { fetchSearchIndex } from "@/lib/journal";
+import { searchIndex } from "@/lib/compute/search";
 
 interface Results {
   moments: { id: string; title: string; kind: string; at: string; snippet: string }[];
@@ -90,14 +92,19 @@ export function SearchDialog() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const { data, isFetching } = useQuery({
-    queryKey: ["search", debounced],
-    enabled: debounced.length >= 2,
-    queryFn: async (): Promise<Results> => (await fetch(`/api/search?q=${encodeURIComponent(debounced)}`)).json(),
-    staleTime: 10_000,
+  // Words are sealed, so the search runs here, over an index fetched once while the box is open.
+  const { data: index, isFetching } = useQuery({
+    queryKey: ["search-index"],
+    enabled: open && debounced.length >= 2,
+    queryFn: fetchSearchIndex,
+    staleTime: 60_000,
   });
 
   const { data: me } = useMe();
+  const data = useMemo<Results | undefined>(
+    () => (index && debounced.length >= 2 ? searchIndex(index, debounced, (f) => !!me?.features.includes(f as never)) : undefined),
+    [index, debounced, me]
+  );
   // Pages you can open (and a few quick actions), matched by name or description.
   const pages = useMemo(() => {
     const all = [

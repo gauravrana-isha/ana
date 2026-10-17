@@ -27,6 +27,7 @@ import type { Practice } from "@/lib/types";
 
 import { PaintedTile, PracticeIcon } from "./PracticeIcon";
 import { PlusMark } from "@/components/art/PenMarks";
+import { createPractice, deletePractice } from "@/lib/journal";
 
 const ICON_OPTIONS = [
   "Leaf", "Flower", "FlowerLotus", "Sun", "SunHorizon", "Moon", "Star", "Sparkle",
@@ -153,24 +154,8 @@ function LibraryTab() {
     setBusyId(entry.id);
     try {
       const existing = owned.get(entry.id);
-      const res = existing
-        ? await fetch("/api/practices", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: existing }),
-          })
-        : await fetch("/api/practices", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: entry.name,
-              iconName: entry.icon,
-              catalogId: entry.id,
-              hasDoneToggle: entry.hasDoneToggle,
-              fields: entry.fields,
-            }),
-          });
-      if (!res.ok) throw new Error();
+      if (existing) await deletePractice(existing);
+      else await createPractice({ name: entry.name, iconName: entry.icon, catalogId: entry.id, hasDoneToggle: entry.hasDoneToggle, fields: entry.fields });
       await qc.invalidateQueries({ queryKey: keys.practices() });
       toast(existing ? `${entry.name} removed` : `${entry.name} added`, "success", 1800);
     } catch {
@@ -197,12 +182,7 @@ function CustomTab({ onDone }: { onDone: () => void }) {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/practices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), iconName, hasDoneToggle: track.hasDoneToggle, fields: track.fields }),
-      });
-      if (!res.ok) throw new Error();
+      await createPractice({ name: name.trim(), iconName, hasDoneToggle: track.hasDoneToggle, fields: track.fields });
       await qc.invalidateQueries({ queryKey: keys.practices() });
       toast(`${name.trim()} added`, "success", 1800);
       onDone();
@@ -308,9 +288,12 @@ function YoursTab({ onAdd }: { onAdd: () => void }) {
   async function remove(p: Practice) {
     if (!confirm(`Remove ${p.name}? Days you've already logged stay as they are.`)) return;
     setBusyId(p.id);
-    const res = await fetch("/api/practices", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id }) });
-    if (!res.ok) toast("Couldn't remove. Please try again.", "error");
-    else toast(`${p.name} removed`, "success", 1600);
+    try {
+      await deletePractice(p.id);
+      toast(`${p.name} removed`, "success", 1600);
+    } catch {
+      toast("Couldn't remove. Please try again.", "error");
+    }
     await qc.invalidateQueries({ queryKey: keys.practices() });
     setBusyId(null);
   }

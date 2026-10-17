@@ -10,11 +10,12 @@ import { MomentBadge } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { MomentComposer } from "@/components/moments/MomentComposer";
-import { AudioPlayer } from "@/components/moments/Media";
+import { StoredAudio, StoredImg, StoredVideo } from "@/components/moments/StoredMedia";
+import { useMediaSrc } from "@/lib/vault/files";
 import { RichText, plainText } from "@/components/moments/RichText";
 import { lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
+import { fetchMoment } from "@/lib/journal";
 import { MomentPageSkeleton } from "@/components/skeletons/ScreenSkeletons";
-import { mediaUrl } from "@/lib/media-client";
 import type { Moment } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 import { Portal } from "@/components/ui/Portal";
@@ -37,10 +38,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
 
   const { data: moment, isPending } = useQuery({
     queryKey: ["moments", "one", id],
-    queryFn: async (): Promise<Moment | null> => {
-      const res = await fetch(`/api/expressions/${id}`);
-      return res.ok ? res.json() : null;
-    },
+    queryFn: () => fetchMoment(id),
   });
 
   if (isPending) return <MomentPageSkeleton />;
@@ -104,20 +102,19 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
       {(photos.length > 0 || videos.length > 0 || audios.length > 0) && (
         <div className="mt-6 flex flex-col gap-3">
           {videos.map((v) => (
-            <video key={v.id} src={mediaUrl(v.id)} controls playsInline preload="metadata" className="w-full max-h-[70vh] rounded-[18px] bg-black" />
+            <StoredVideo key={v.id} id={v.id} controls playsInline preload="metadata" className="w-full max-h-[70vh] rounded-[18px] bg-black" />
           ))}
           {photos.length > 0 && (
             <div className={cn("grid gap-2", photos.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
               {photos.map((p, i) => (
                 <button key={p.id} type="button" onClick={() => setViewer(i)} aria-label={`Open photo ${i + 1} of ${photos.length}`} className={cn("press overflow-hidden rounded-[16px] bg-surface-2", photos.length === 3 && i === 0 && "col-span-2")}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={mediaUrl(p.id)} alt="" decoding="async" className={cn("w-full object-cover", photos.length === 1 ? "max-h-[70vh]" : "aspect-square")} />
+                  <StoredImg id={p.id} decoding="async" className={cn("w-full object-cover", photos.length === 1 ? "max-h-[70vh]" : "aspect-square")} />
                 </button>
               ))}
             </div>
           )}
           {audios.map((a) => (
-            <AudioPlayer key={a.id} src={mediaUrl(a.id)} duration={a.durationSec} />
+            <StoredAudio key={a.id} id={a.id} duration={a.durationSec} />
           ))}
         </div>
       )}
@@ -151,7 +148,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
         </footer>
       )}
 
-      <PhotoViewer photos={photos.map((p) => mediaUrl(p.id))} index={viewer} onIndex={setViewer} />
+      <PhotoViewer photos={photos.map((p) => p.id)} index={viewer} onIndex={setViewer} />
       <MomentComposer open={editing} moment={moment} defaultKind={moment.kind} onClose={() => setEditing(false)} />
     </article>
   );
@@ -159,6 +156,24 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
 
 /** The round back, Edit and Delete buttons, on a soft blur so they read over photos and text. */
 const FLOAT = "press grid place-items-center w-10 h-10 rounded-full bg-bg/90 backdrop-blur-xl border border-line/70 text-ink-soft shadow-[0_1px_3px_rgb(0_0_0/0.06)] hover:text-ink hover:bg-surface";
+
+/** One photo in the viewer, opened on the device; fades in once it's ready. */
+function ViewerPhoto({ id }: { id: string }) {
+  const src = useMediaSrc(id);
+  if (!src) return <span className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" />;
+  return (
+    <motion.img
+      src={src}
+      alt=""
+      draggable={false}
+      className="max-w-full max-h-full object-contain select-none"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
+    />
+  );
+}
 
 /** Photos fullscreen: swipe or use the arrows to move between them; Escape or ✕ closes. */
 function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: number | null; onIndex: (i: number | null) => void }) {
@@ -200,18 +215,7 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
           }}
         >
           <AnimatePresence mode="wait" initial={false}>
-            { }
-            <motion.img
-              key={index}
-              src={photos[index]}
-              alt=""
-              draggable={false}
-              className="max-w-full max-h-full object-contain select-none"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-            />
+            <ViewerPhoto key={index} id={photos[index]} />
           </AnimatePresence>
           <CloseButton onClick={() => onIndex(null)} onDark className="absolute top-[max(14px,env(safe-area-inset-top))] right-4" />
           {photos.length > 1 && (

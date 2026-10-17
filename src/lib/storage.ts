@@ -58,6 +58,20 @@ export function allowedType(kind: MediaKind, contentType: string) {
   return MEDIA_RULES[kind].types.includes(baseType(contentType));
 }
 
+/** Files encrypted on the device arrive as opaque bytes; their real type is recorded alongside. */
+export const SEALED_TYPE = "application/octet-stream";
+
+/**
+ * Room left for one upload. Re-uploading a file in encrypted form (moving a journal to its
+ * own key) replaces the original, so it may use the original's size even on a full account.
+ */
+export async function roomFor(userId: string, replacing?: string | null) {
+  const left = USER_QUOTA_BYTES - (await bytesUsed(userId));
+  if (!replacing) return left;
+  const old = await db.attachment.findFirst({ where: { id: replacing, userId, sealed: false }, select: { size: true } });
+  return old ? Math.max(left, old.size + 64 * 1024) : left;
+}
+
 export async function bytesUsed(userId: string) {
   const agg = await db.attachment.aggregate({ where: { userId }, _sum: { size: true } });
   return agg._sum.size ?? 0;

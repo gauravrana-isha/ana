@@ -1,39 +1,32 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { WifiSlash, ArrowsClockwise } from "@phosphor-icons/react";
-import { getQueueSize } from "@/lib/offlineQueue";
+import { usePendingCount } from "@/lib/outbox";
 
+/** A small pill at the top while offline, or while saves made offline are still being sent. */
 export function ConnectivityIndicator() {
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
-  const [queueSize, setQueueSize] = useState(0);
+  const pending = usePendingCount();
 
-  useEffect(() => {
-    // Check queue size periodically
-    const interval = setInterval(async () => {
-      const size = await getQueueSize();
-      setQueueSize(size);
-    }, 5000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
-
-  if (online && queueSize === 0) return null;
+  if (online && pending === 0) return null;
 
   return (
-    <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-line shadow-lg">
-      {!online && (
+    <div
+      role="status"
+      className="fixed top-[max(8px,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 h-8 px-3.5 rounded-full bg-surface border border-line shadow-[var(--shadow-lift)]"
+    >
+      {!online ? (
         <>
-          <WifiSlash size={14} weight="thin" className="text-accent" />
-          <span className="font-ui text-[11px] text-ink-soft">Offline</span>
+          <WifiSlash size={14} className="text-accent" />
+          <span className="font-ui text-[12px] text-ink-soft">
+            Offline{pending ? ` · ${pending} ${pending === 1 ? "save" : "saves"} waiting` : " · saves will wait"}
+          </span>
         </>
-      )}
-      {online && queueSize > 0 && (
+      ) : (
         <>
-          <ArrowsClockwise size={14} weight="thin" className="text-accent animate-spin" />
-          <span className="font-ui text-[11px] text-ink-soft">Syncing {queueSize}</span>
+          <ArrowsClockwise size={14} className="text-accent animate-spin" />
+          <span className="font-ui text-[12px] text-ink-soft">Saving {pending}…</span>
         </>
       )}
     </div>

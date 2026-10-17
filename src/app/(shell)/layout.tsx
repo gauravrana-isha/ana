@@ -8,6 +8,8 @@ import { NavProgress } from "@/components/shell/NavProgress";
 import { TapFeedback } from "@/components/shell/TapFeedback";
 import type { NavItem } from "@/components/shell/nav";
 import { requireAppUser } from "@/lib/session";
+import { storageMode } from "@/lib/storage";
+import { VaultGate } from "@/components/vault/VaultGate";
 import { featureByKey } from "@/lib/features";
 
 export default async function ShellLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +25,10 @@ export default async function ShellLayout({ children }: { children: React.ReactN
     user.role === "ADMIN" ? { key: "admin", label: "Access", href: "/admin" } : null;
 
   return (
+    <VaultGate
+      user={{ id: user.id, name: user.name ?? "", email: user.email ?? "", storage: storageMode() }}
+      vault={{ set: !!user.vaultAt, check: user.vaultCheck, sealed: !!user.vaultSealedAt }}
+    >
     <div className="flex min-h-dvh">
       <Sidebar
         items={features}
@@ -44,5 +50,6 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       <NavProgress />
       <TapFeedback />
     </div>
+    </VaultGate>
   );
 }

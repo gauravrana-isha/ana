@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { resolveNotifications } from "@/lib/notify";
 import { resolveUser } from "@/lib/session";
 import { commitmentDue } from "@/lib/commitment";
+import { MUST_SEAL, sealed } from "@/lib/sealed";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +30,32 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await resolveUser("commitment");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = z.object({ body: z.string().trim().min(1).max(8000), revisit: Revisit.default("monthly") }).safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  const parsed = z
+    .object({
+      id: z.string().regex(/^[a-z0-9]{20,40}$/).optional(),
+      body: sealed(60_000),
+      revisit: Revisit.default("monthly"),
+      /** From an import: an earlier letter, kept in the history with its own dates. */
+      history: z.object({ createdAt: z.string().datetime({ offset: true }), revisitedAt: z.string().datetime({ offset: true }).nullable(), supersededAt: z.string().datetime({ offset: true }) }).optional(),
+    })
+    .safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
+  // Sent again after a dropped connection: already kept.
+  if (parsed.data.id) {
+    const existing = await db.commitment.findFirst({ where: { id: parsed.data.id, userId: user.id } });
+    if (existing) return NextResponse.json(dto(existing));
+  }
+  const h = parsed.data.history;
+  if (h) {
+    const old = await db.commitment.create({
+      data: { ...(parsed.data.id ? { id: parsed.data.id } : {}), userId: user.id, body: parsed.data.body, revisit: parsed.data.revisit, createdAt: new Date(h.createdAt), revisitedAt: h.revisitedAt ? new Date(h.revisitedAt) : null, supersededAt: new Date(h.supersededAt) },
+    });
+    return NextResponse.json(dto(old), { status: 201 });
+  }
   const now = new Date();
   const [, created] = await db.$transaction([
     db.commitment.updateMany({ where: { userId: user.id, supersededAt: null }, data: { supersededAt: now } }),
-    db.commitment.create({ data: { userId: user.id, body: parsed.data.body, revisit: parsed.data.revisit, revisitedAt: now } }),
+    db.commitment.create({ data: { ...(parsed.data.id ? { id: parsed.data.id } : {}), userId: user.id, body: parsed.data.body, revisit: parsed.data.revisit, revisitedAt: now } }),
   ]);
   // A fresh letter: any "read it again" note about the old one is done with.
   await resolveNotifications("commitment:", user.id);

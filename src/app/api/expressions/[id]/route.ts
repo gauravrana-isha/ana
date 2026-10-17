@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
 import { MomentSchema, lookBackData, momentInclude, ownedIds, serializeMoment } from "@/lib/moments";
 import { removeStored } from "@/lib/storage";
+import { MUST_SEAL } from "@/lib/sealed";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -27,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const parsed = MomentSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
   const d = parsed.data;
   const [owned, current] = await Promise.all([
     ownedIds(user.id, d.personIds, d.attachmentIds),

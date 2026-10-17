@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CameraRotate, Images, Pause, Play, Stop, UploadSimple, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { formatDuration, mediaUrl, type AttachmentDTO } from "@/lib/media-client";
+import { formatDuration, type AttachmentDTO } from "@/lib/media-client";
 import { useRecorder } from "./useRecorder";
 import { prefersNativeCapture, useCamera } from "./useCamera";
 import { MomentBadge, MomentGlyph } from "@/components/art/MomentIcon";
 import type { UploadState } from "./useEagerUploads";
 import { TickMark } from "@/components/tracker/FieldInput";
 import { CrossMark } from "@/components/art/PenMarks";
+import { StoredAudio, StoredImg, StoredVideo } from "./StoredMedia";
 
 // ---------------------------------------------------------------- playback
 
@@ -68,11 +69,11 @@ export function MediaView({ attachments, compact = false }: { attachments: Attac
     <div className="flex flex-col gap-2">
       {others.map((a) =>
         a.kind === "audio" ? (
-          <AudioPlayer key={a.id} src={mediaUrl(a.id)} duration={a.durationSec} />
+          <StoredAudio key={a.id} id={a.id} duration={a.durationSec} />
         ) : (
-          <video
+          <StoredVideo
             key={a.id}
-            src={mediaUrl(a.id)}
+            id={a.id}
             controls
             playsInline
             preload="metadata"
@@ -83,16 +84,9 @@ export function MediaView({ attachments, compact = false }: { attachments: Attac
       {photos.length > 0 && (
         <div className={cn("grid gap-1.5", photos.length === 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3")}>
           {photos.map((a) => (
-            <a key={a.id} href={mediaUrl(a.id)} target="_blank" rel="noopener" className="block overflow-hidden rounded-[12px] bg-surface-2">
-              {/* Private files are served through our own API, so a plain img is right here. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={mediaUrl(a.id)}
-                alt=""
-                loading="lazy"
-                className={cn("w-full object-cover", photos.length === 1 ? "max-h-[420px]" : "aspect-square")}
-              />
-            </a>
+            <span key={a.id} className="block overflow-hidden rounded-[12px] bg-surface-2">
+              <StoredImg id={a.id} className={cn("w-full object-cover", photos.length === 1 ? "max-h-[420px]" : "aspect-square")} />
+            </span>
           ))}
         </div>
       )}
@@ -114,11 +108,11 @@ export function MediaPreview({ attachments }: { attachments: AttachmentDTO[] }) 
       {visual && (
         <div className="relative h-[150px] sm:h-[180px] overflow-hidden rounded-[14px] bg-surface-2">
           {visual.kind === "photo" ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={mediaUrl(visual.id)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+            <StoredImg id={visual.id} decoding="async" className="w-full h-full object-cover" />
           ) : (
             <>
-              <video src={`${mediaUrl(visual.id)}#t=0.1`} preload="metadata" muted playsInline className="w-full h-full object-cover bg-black" />
+              {/* A video is opened only on its moment's page (it may be large); here, a quiet frame. */}
+              <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-ink/80 to-ink/60" />
               <span className="absolute inset-0 grid place-items-center">
                 <span className="grid place-items-center w-11 h-11 rounded-full bg-black/45 text-white"><Play size={18} weight="fill" /></span>
               </span>

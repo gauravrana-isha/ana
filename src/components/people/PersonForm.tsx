@@ -11,6 +11,7 @@ import { shrinkPhoto, uploadMedia } from "@/lib/media-client";
 import { PersonAvatar } from "./People";
 import { DateField } from "@/components/ui/pickers";
 import { today } from "@/lib/dates";
+import { savePerson } from "@/lib/journal";
 
 export interface PersonDetail {
   id: string;
@@ -63,22 +64,21 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
     try {
       let photoId: string | undefined;
       if (photo) photoId = (await uploadMedia(await shrinkPhoto(photo.blob), "photo", { userId: me.id, storage: me.storage })).id;
-      const body = {
+      const saved = await savePerson(person ?? null, {
         name: name.trim(),
         relation: relation.trim() || null,
         howMet: howMet.trim() || null,
         birthday: birthday || null,
         notes: notes.trim() || null,
         ...(photoId ? { photoId } : {}),
-      };
-      const res = await fetch(person ? `/api/people/${person.id}` : "/api/people", {
-        method: person ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error();
-      const saved = person ? { id: person.id } : await res.json();
-      await Promise.all([qc.invalidateQueries({ queryKey: ["people"] }), qc.invalidateQueries({ queryKey: ["person"] })]);
+      if (saved.queued) {
+        // Offline: show them now; they're saved when the connection is back.
+        const summary = { id: saved.id, name: name.trim(), relation: relation.trim() || null, photoId: person?.photoId ?? null, momentCount: 0, lastMomentAt: null };
+        qc.setQueryData<{ id: string; name: string }[]>(["people"], (old = []) => [...old.filter((p) => p.id !== saved.id), summary].sort((a, b) => a.name.localeCompare(b.name)));
+      } else {
+        await Promise.all([qc.invalidateQueries({ queryKey: ["people"] }), qc.invalidateQueries({ queryKey: ["person"] })]);
+      }
       toast(person ? "Saved" : `${name.trim()} added`, "success", 1800);
       onSaved?.(saved.id);
       onClose();

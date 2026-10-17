@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/Button";
 import { LazyMomentComposer } from "@/components/moments/LazyMomentComposer";
 import { MomentCard, MomentTimeline } from "@/components/moments/MomentCard";
 import { useMoments } from "@/lib/moments-client";
+import { fetchMoment } from "@/lib/journal";
 import type { Moment, MomentKind } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 import { CrossMark, PlusMark } from "@/components/art/PenMarks";
@@ -44,10 +45,7 @@ function ExpressionsContent() {
   const { data: pinned } = useQuery({
     queryKey: ["moments", "one", openId],
     enabled: !!openId,
-    queryFn: async (): Promise<Moment | null> => {
-      const res = await fetch(`/api/expressions/${openId}`);
-      return res.ok ? res.json() : null;
-    },
+    queryFn: () => fetchMoment(openId!),
   });
   const [kind, setKind] = usePersistentState("moments.filter", "", ["", "writing", "audio", "video", "photo"] as const);
   const [sort, setSort] = usePersistentState("moments.sort", "newest", ["newest", "oldest"] as const);

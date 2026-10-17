@@ -1,6 +1,8 @@
 "use client";
 
 import { upload } from "@vercel/blob/client";
+import { encryptFile } from "./vault/files";
+import { isUnlocked } from "./vault/vault";
 
 export type MediaKind = "audio" | "video" | "photo";
 
@@ -30,33 +32,38 @@ export function mediaUrl(id: string) {
 }
 
 /**
- * Upload a recording or photo and register it. Goes straight to the private Blob store in
- * production (so large videos never touch our server), or to the dev server's disk locally.
+ * Store a file: encrypted on the device first (once the journal has a key), then straight to
+ * the private Blob store in production (so large videos never touch our server), or to the
+ * dev server's disk locally. Returns where it landed.
  */
-export async function uploadMedia(
+export async function storeFile(
   file: Blob,
   kind: MediaKind,
-  opts: { userId: string; storage: "blob" | "local"; durationSec?: number; onProgress?: (pct: number) => void }
-): Promise<AttachmentDTO> {
+  opts: { userId: string; storage: "blob" | "local"; onProgress?: (pct: number) => void; replacing?: string }
+) {
   const contentType = (file.type || "application/octet-stream").split(";")[0];
   if (file.size > MAX_BYTES[kind]) throw new Error(`That file is too large (up to ${MAX_BYTES[kind] / 1024 / 1024} MB).`);
+  const sealed = isUnlocked();
+  const body = sealed ? await encryptFile(file) : file;
+  const ext = EXT[contentType] ?? "bin";
 
   let pathname: string;
   if (opts.storage === "blob") {
-    const ext = EXT[contentType] ?? "bin";
-    const res = await upload(`u/${opts.userId}/${kind}/${Date.now()}.${ext}`, file, {
+    const res = await upload(`u/${opts.userId}/${kind}/${Date.now()}.${ext}`, body, {
       access: "private",
       handleUploadUrl: "/api/uploads",
-      clientPayload: JSON.stringify({ kind }),
-      contentType,
-      multipart: file.size > 16 * 1024 * 1024,
+      clientPayload: JSON.stringify({ kind, replacing: opts.replacing }),
+      contentType: body.type || contentType,
+      multipart: body.size > 16 * 1024 * 1024,
       onUploadProgress: (e) => opts.onProgress?.(Math.round(e.percentage)),
     });
     pathname = res.pathname;
   } else {
     const form = new FormData();
     form.set("kind", kind);
-    form.set("file", new File([file], `upload.${EXT[contentType] ?? "bin"}`, { type: contentType }));
+    form.set("type", contentType);
+    if (opts.replacing) form.set("replacing", opts.replacing);
+    form.set("file", new File([body], `upload.${ext}`, { type: body.type || contentType }));
     opts.onProgress?.(10);
     const res = await fetch("/api/uploads/local", { method: "POST", body: form });
     const data = await res.json();
@@ -64,11 +71,20 @@ export async function uploadMedia(
     pathname = data.pathname;
     opts.onProgress?.(100);
   }
+  return { pathname, contentType, sealed };
+}
 
+/** Upload a recording or photo (encrypted, once the journal has a key) and register it. */
+export async function uploadMedia(
+  file: Blob,
+  kind: MediaKind,
+  opts: { userId: string; storage: "blob" | "local"; durationSec?: number; onProgress?: (pct: number) => void }
+): Promise<AttachmentDTO> {
+  const { pathname, contentType, sealed } = await storeFile(file, kind, opts);
   const reg = await fetch("/api/attachments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kind, pathname, contentType, durationSec: opts.durationSec }),
+    body: JSON.stringify({ kind, pathname, contentType, durationSec: opts.durationSec, sealed }),
   });
   const data = await reg.json();
   if (!reg.ok) throw new Error(data.error ?? "Couldn't save the upload");

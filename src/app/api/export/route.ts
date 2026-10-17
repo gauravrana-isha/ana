@@ -34,7 +34,8 @@ export async function GET() {
     format: 2,
     app: "ana",
     exportedAt: new Date().toISOString(),
-    user: { name: user.name, email: user.email, theme: user.theme, intention: user.intention },
+    // Sealed values stay sealed here; the device opens them before saving the file.
+    user: { name: user.name, email: user.email, theme: user.theme, intention: user.intention, place: user.place, birthday: user.birthday, birthdaySealed: user.birthdaySealed },
     practices: practices.map((p) => strip(p)),
     dayLogs: dayLogs.map((l) => strip(l)),
     dailyReflections: dailyReflections.map((r) => strip(r)),

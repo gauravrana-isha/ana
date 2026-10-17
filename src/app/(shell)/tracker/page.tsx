@@ -35,6 +35,7 @@ import { usePractices, useDayLog, useUpdateDayLog } from "@/lib/queries";
 import { today, addDays, weekStart } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { DayLogEntry, DayLogEntries, Practice } from "@/lib/types";
+import { fetchWeek, reorderPractices, saveDay } from "@/lib/journal";
 
 export default function TrackerPage() {
   const [date, setDate] = useState(today());
@@ -60,10 +61,7 @@ export default function TrackerPage() {
   // Fetch all 7 days for weekly view
   const { data: weekData, isFetching: weekFetching } = useQuery({
     queryKey: ["week", currentWeekStart],
-    queryFn: async () => {
-      const res = await fetch(`/api/days/week/${currentWeekStart}`);
-      return res.json() as Promise<Record<string, DayLogEntries>>;
-    },
+    queryFn: () => fetchWeek(currentWeekStart),
     enabled: view === "weekly",
   });
   const weekLogs: Record<string, DayLogEntries> = (weekData ?? {}) as Record<string, DayLogEntries>;
@@ -105,17 +103,8 @@ export default function TrackerPage() {
 
     // Save the new order; the list stays locked until it's stored.
     setSavingOrder(true);
-    fetch("/api/practices", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        reorder: newOrder.map((id, i) => ({ id, order: i })),
-      }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return qc.invalidateQueries({ queryKey: ["practices"] });
-      })
+    reorderPractices(newOrder)
+      .then(() => qc.invalidateQueries({ queryKey: ["practices"] }))
       .catch(() => toast("Couldn't save the new order. Please try again.", "error"))
       .finally(() => setSavingOrder(false));
   }
@@ -215,12 +204,15 @@ export default function TrackerPage() {
               date={weeklyModal.date}
               entry={weekLogs[weeklyModal.date]?.[weeklyModal.practice.id]}
               onSave={async (practiceId, entry) => {
-                const res = await fetch(`/api/days/${weeklyModal.date}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ entries: { [practiceId]: entry } }),
-                });
-                if (!res.ok) throw new Error("save failed");
+                const res = await saveDay(weeklyModal.date, { [practiceId]: entry as DayLogEntry });
+                if (res.queued) {
+                  // Offline: show it in the grid now; it's sent when the connection is back.
+                  qc.setQueryData(["week", currentWeekStart], (old: Record<string, DayLogEntries> | undefined) => ({
+                    ...(old ?? {}),
+                    [weeklyModal.date]: { ...(old?.[weeklyModal.date] ?? {}), [practiceId]: entry as DayLogEntry },
+                  }));
+                  return;
+                }
                 await Promise.all([
                   qc.invalidateQueries({ queryKey: ["week", currentWeekStart] }),
                   qc.invalidateQueries({ queryKey: ["day"] }),

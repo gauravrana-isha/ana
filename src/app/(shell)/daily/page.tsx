@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
 import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
+import { fetchDaily, saveDaily } from "@/lib/journal";
 
 const DAILY_PROMPTS = [
   { key: "1", q: "How many times a day am I doing the Inner Engineering Crash Course?", hint: undefined },
@@ -52,10 +53,7 @@ function DailyContent() {
   const { data: quoteData } = useQuote(date);
   const { data: reflection, isPending: isLoading } = useQuery({
     queryKey: ["daily", date],
-    queryFn: async () => {
-      const res = await fetch(`/api/daily/${date}`);
-      return res.json();
-    },
+    queryFn: () => fetchDaily(date),
   });
 
   const serverAnswers: Record<string, string> = reflection?.answers ?? {};
@@ -80,17 +78,8 @@ function DailyContent() {
   // finishes the reflection; otherwise it's a quiet save between questions.
   const mutation = useMutation({
     mutationFn: async ({ version }: { close: boolean; version: number }) => {
-      const res = await fetch(`/api/daily/${date}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          answers: localAnswers,
-          stamps: localStamps,
-          moodKey: localMood,
-        }),
-      });
-      if (!res.ok) throw new Error("Couldn't save");
-      return { saved: await res.json(), version };
+      const saved = await saveDaily(date, { answers: localAnswers, stamps: localStamps, moodKey: localMood });
+      return { saved, version };
     },
     onSuccess: ({ saved, version }, { close }) => {
       // The reply is the saved reflection: keep it as the cached copy without re-reading it

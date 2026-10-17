@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
+import { MUST_SEAL, sealed } from "@/lib/sealed";
 
 const PatchSchema = z.object({
-  answers: z.record(z.string(), z.string()).optional(),
-  stamps: z.record(z.string(), z.array(z.string())).optional(),
-  moodKey: z.string().nullable().optional(),
+  // Each answer and each question's stamps sealed on the device (keys are prompt keys).
+  answers: z.record(z.string().max(60), sealed(60_000)).optional(),
+  stamps: z.record(z.string().max(60), sealed(2_000)).optional(),
+  moodKey: sealed(500).nullable().optional(),
 });
 
 export async function GET(
@@ -34,9 +36,7 @@ export async function PATCH(
   const { date } = await params;
   const body = await req.json();
   const parsed = PatchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
 
   const existing = await db.dailyReflection.findUnique({
     where: { userId_date: { userId: user.id, date: new Date(date) } },
@@ -44,7 +44,7 @@ export async function PATCH(
 
   const data = {
     answers: { ...(existing?.answers as Record<string, string> ?? {}), ...(parsed.data.answers ?? {}) },
-    stamps: { ...(existing?.stamps as Record<string, string[]> ?? {}), ...(parsed.data.stamps ?? {}) },
+    stamps: { ...(existing?.stamps as Record<string, string> ?? {}), ...(parsed.data.stamps ?? {}) },
     moodKey: parsed.data.moodKey !== undefined ? parsed.data.moodKey : (existing?.moodKey ?? null),
   };
 

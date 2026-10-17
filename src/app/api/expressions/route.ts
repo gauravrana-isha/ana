@@ -2,48 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
 import { MomentSchema, lookBackData, momentInclude, ownedIds, serializeMoment } from "@/lib/moments";
+import { MUST_SEAL } from "@/lib/sealed";
 
-export async function GET(req: NextRequest) {
+/** All of the caller's moments, newest first. Words are sealed, so searching and filtering happen on the device. */
+export async function GET() {
   const user = await resolveUser("expressions");
   if (!user) return NextResponse.json({ items: [], hasMore: false });
 
-  const sp = req.nextUrl.searchParams;
-  const limit = 20;
-  const cursor = sp.get("cursor");
-  const personId = sp.get("person");
-  const kind = sp.get("kind");
-  const q = sp.get("q")?.trim();
-  const stamp = sp.get("stamp");
-  const dir = sp.get("sort") === "oldest" ? "asc" : "desc";
-
-  const where = {
-    userId: user.id,
-    ...(personId ? { people: { some: { personId } } } : {}),
-    ...(kind ? { kind: kind === "writing" ? { in: ["writing", "moment"] } : kind } : {}),
-    ...(stamp ? { stamps: { array_contains: [stamp] } } : {}),
-    ...(q
-      ? {
-          OR: [
-            { title: { contains: q, mode: "insensitive" as const } },
-            { body: { contains: q, mode: "insensitive" as const } },
-            { place: { contains: q, mode: "insensitive" as const } },
-          ],
-        }
-      : {}),
-  };
-
   const rows = await db.expression.findMany({
-    where,
+    where: { userId: user.id },
     relationLoadStrategy: "join",
     include: momentInclude,
-    orderBy: [{ occurredAt: { sort: dir, nulls: "last" } }, { date: dir }, { createdAt: dir }],
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    orderBy: [{ occurredAt: { sort: "desc", nulls: "last" } }, { date: "desc" }, { createdAt: "desc" }],
   });
-
-  const hasMore = rows.length > limit;
-  const items = rows.slice(0, limit).map(serializeMoment);
-  return NextResponse.json({ items, hasMore, nextCursor: hasMore ? items[items.length - 1].id : null });
+  return NextResponse.json({ items: rows.map(serializeMoment), hasMore: false, nextCursor: null });
 }
 
 export async function POST(req: NextRequest) {
@@ -51,10 +23,13 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = MomentSchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
   const d = parsed.data;
-  if (!d.body.trim() && !d.title.trim() && d.attachmentIds.length === 0) {
-    return NextResponse.json({ error: "Write something or add a recording" }, { status: 400 });
+
+  // Sent again after a dropped connection: it's already here.
+  if (d.id) {
+    const existing = await db.expression.findFirst({ where: { id: d.id, userId: user.id }, relationLoadStrategy: "join", include: momentInclude });
+    if (existing) return NextResponse.json(serializeMoment(existing), { status: 200 });
   }
 
   const owned = await ownedIds(user.id, d.personIds, d.attachmentIds);
@@ -62,6 +37,7 @@ export async function POST(req: NextRequest) {
 
   const moment = await db.expression.create({
     data: {
+      ...(d.id ? { id: d.id } : {}),
       userId: user.id,
       title: d.title,
       kind: d.kind,

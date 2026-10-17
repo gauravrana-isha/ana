@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { resolveUser } from "@/lib/session";
-import { MEDIA_RULES, USER_QUOTA_BYTES, bytesUsed, isMediaKind, storageMode, userPrefix } from "@/lib/storage";
+import { MEDIA_RULES, SEALED_TYPE, isMediaKind, roomFor, storageMode, userPrefix } from "@/lib/storage";
 
 /**
  * Issues short-lived tokens so the browser can upload straight to the private Blob store
@@ -21,16 +21,16 @@ export async function POST(req: NextRequest) {
       body,
       request: req,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
-        const { kind } = JSON.parse(clientPayload ?? "{}");
+        const { kind, replacing } = JSON.parse(clientPayload ?? "{}");
         if (!isMediaKind(kind)) throw new Error("Unknown media kind");
         if (!pathname.startsWith(`${userPrefix(user.id)}${kind}/`)) throw new Error("Wrong folder");
         const rules = MEDIA_RULES[kind];
         // Each upload may use up to the smaller of the kind's limit and the room left in the
         // account; Blob enforces that size during the upload, so the quota can't be passed.
-        const room = USER_QUOTA_BYTES - (await bytesUsed(user.id));
+        const room = await roomFor(user.id, typeof replacing === "string" ? replacing : null);
         if (room < 64 * 1024) throw new Error("Storage is full for this account");
         return {
-          allowedContentTypes: rules.types.flatMap((t) => [t, `${t};*`]),
+          allowedContentTypes: [...rules.types.flatMap((t) => [t, `${t};*`]), SEALED_TYPE],
           maximumSizeInBytes: Math.min(rules.maxBytes, room),
           addRandomSuffix: true,
           validUntil: Date.now() + 30 * 60 * 1000,

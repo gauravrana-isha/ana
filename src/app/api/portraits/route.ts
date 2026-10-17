@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
 import { resolveNotifications } from "@/lib/notify";
 import { MAX_WORDS, type PortraitDTO } from "@/lib/portrait";
+import { MUST_SEAL, sealed } from "@/lib/sealed";
 
 type Row = { id: string; bodyWords: string[]; bodyNote: string | null; mindWords: string[]; mindNote: string | null; emotionWords: string[]; emotionNote: string | null; weights: unknown; createdAt: Date };
 
@@ -13,13 +14,15 @@ function dto(p: Row): PortraitDTO {
     body: { words: p.bodyWords, note: p.bodyNote },
     mind: { words: p.mindWords, note: p.mindNote },
     emotion: { words: p.emotionWords, note: p.emotionNote },
-    weights: (p.weights as Record<string, number> | null) ?? {},
+    // Sealed on the device; opened into the word weights there.
+    weights: ((p.weights ?? {}) as PortraitDTO["weights"]),
     createdAt: p.createdAt.toISOString(),
   };
 }
 
-const Ring = z.object({ words: z.array(z.string().trim().min(1).max(24)).max(MAX_WORDS), note: z.string().trim().max(240).nullable().optional() });
-const Create = z.object({ body: Ring, mind: Ring, emotion: Ring, weights: z.record(z.string().max(24), z.number().min(-1).max(1)).optional() });
+// Each word, each ring's line and the weights arrive sealed.
+const Ring = z.object({ words: z.array(sealed(400)).max(MAX_WORDS), note: sealed(2_000).nullable().optional() });
+const Create = z.object({ body: Ring, mind: Ring, emotion: Ring, weights: sealed(4_000).optional() });
 
 /** Your portraits, newest first. */
 export async function GET() {
@@ -34,11 +37,8 @@ export async function POST(req: NextRequest) {
   const user = await resolveUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = Create.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  const { body, mind, emotion } = parsed.data;
-  // Keep weights only for words actually in this portrait.
-  const used = new Set([...body.words, ...mind.words, ...emotion.words]);
-  const weights = Object.fromEntries(Object.entries(parsed.data.weights ?? {}).filter(([w]) => used.has(w)));
+  if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
+  const { body, mind, emotion, weights } = parsed.data;
   if (![body, mind, emotion].some((r) => r.words.length || r.note)) {
     return NextResponse.json({ error: "Choose a word or write a line for at least one ring" }, { status: 400 });
   }
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       bodyWords: body.words, bodyNote: body.note || null,
       mindWords: mind.words, mindNote: mind.note || null,
       emotionWords: emotion.words, emotionNote: emotion.note || null,
-      ...(Object.keys(weights).length ? { weights } : {}),
+      ...(weights ? { weights } : {}),
     },
   });
   await resolveNotifications("portrait:", user.id);

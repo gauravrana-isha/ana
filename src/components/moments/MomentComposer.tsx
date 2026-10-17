@@ -14,6 +14,7 @@ import { PeoplePicker } from "@/components/people/People";
 import { useMe } from "@/lib/me";
 import { type AttachmentDTO, type MediaKind } from "@/lib/media-client";
 import type { Moment, MomentKind } from "@/lib/moment-types";
+import { saveMoment } from "@/lib/journal";
 import { toLocalInput } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { DateField, DateTimeField, TimeField } from "@/components/ui/pickers";
@@ -174,12 +175,17 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
         personIds,
         attachmentIds: [...kept, ...uploaded].map((a) => a.id),
       };
-      const res = await fetch(moment ? `/api/expressions/${moment.id}` : "/api/expressions", {
-        method: moment ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Couldn't save the moment");
+      const known = qc.getQueryData<Moment["people"]>(["people"]) ?? moment?.people ?? [];
+      const { moment: saved, queued } = await saveMoment(moment ?? null, payload, { people: known, attachments: [...kept, ...uploaded] });
+      // Show it at once (offline it only exists here until the connection is back).
+      qc.setQueryData(["moments", "one", saved.id], saved);
+      qc.setQueryData<Moment[]>(["moments", "all"], (list) => (list ? [saved, ...list.filter((m) => m.id !== saved.id)] : list));
+      if (queued) {
+        toast("Kept on this device. It's saved when you're back online.", "success", 2600);
+        uploads.settle();
+        onClose();
+        return;
+      }
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["moments"] }),
         qc.invalidateQueries({ queryKey: ["people"] }),

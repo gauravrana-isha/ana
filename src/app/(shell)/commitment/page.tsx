@@ -16,15 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
-
-interface Letter {
-  id: string;
-  body: string;
-  revisit: "monthly" | "quarterly" | "never";
-  revisitedAt: string | null;
-  createdAt: string;
-  supersededAt: string | null;
-}
+import { fetchCommitment, saveCommitment, type Letter } from "@/lib/journal";
 
 const REVISIT = [
   { id: "monthly", label: "Every month" },
@@ -48,7 +40,7 @@ export default function CommitmentPage() {
   const { data: me } = useMe();
   const { data, isPending: isLoading } = useQuery({
     queryKey: ["commitment"],
-    queryFn: async (): Promise<{ current: Letter | null; due: boolean; history: Letter[] }> => (await fetch("/api/commitment")).json(),
+    queryFn: fetchCommitment,
   });
   const [writing, setWriting] = useState(false);
   const [draft, setDraft] = useState("");
@@ -76,13 +68,23 @@ export default function CommitmentPage() {
   async function save() {
     if (!draft.trim()) return;
     setSaving(true);
-    const res = await fetch("/api/commitment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: draft.trim(), revisit }),
-    });
+    let queued = false;
+    try {
+      queued = (await saveCommitment(draft.trim(), revisit)).queued;
+    } catch {
+      setSaving(false);
+      return toast("Couldn't save. Please try again.", "error");
+    }
     setSaving(false);
-    if (!res.ok) return toast("Couldn't save. Please try again.", "error");
+    if (queued) {
+      // Offline: the new letter shows now and is kept when the connection is back.
+      const now = new Date().toISOString();
+      qc.setQueryData(["commitment"], (old: { current: Letter | null; history: Letter[] } | undefined) => ({
+        current: { id: "pending", body: draft.trim(), revisit, revisitedAt: now, createdAt: now, supersededAt: null },
+        due: false,
+        history: [...(old?.current ? [{ ...old.current, supersededAt: now }] : []), ...(old?.history ?? [])],
+      }));
+    }
     toast(current ? "Your new letter is kept" : "Your letter is kept", "success", 2000);
     setWriting(false);
     qc.invalidateQueries({ queryKey: ["commitment"] });

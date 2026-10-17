@@ -15,6 +15,7 @@ import { StampChip } from "@/components/art/StampIcon";
 import { BusyBar } from "@/components/ui/Busy";
 import { plainText } from "./RichText";
 import { DotsMark } from "@/components/art/PenMarks";
+import { deleteMoment } from "@/lib/journal";
 
 export const STAMP_LABEL: Record<string, string> = {
   growth: "Growth", struggle: "Struggle", insight: "Insight", stillness: "Stillness", devotion: "Devotion",
@@ -45,11 +46,13 @@ export function useDeleteMoment() {
   const { toast } = useToast();
   return async (moment: Moment) => {
     if (!confirm("Delete this moment? Its recordings and photos are deleted too.")) return false;
-    const res = await fetch(`/api/expressions/${moment.id}`, { method: "DELETE" });
-    if (!res.ok) {
+    try {
+      await deleteMoment(moment.id);
+    } catch {
       toast("Couldn't delete. Please try again.", "error");
       return false;
     }
+    qc.setQueryData<Moment[]>(["moments", "all"], (list) => list?.filter((m) => m.id !== moment.id));
     toast("Moment deleted", "success", 1800);
     qc.invalidateQueries({ queryKey: ["moments"] });
     qc.invalidateQueries({ queryKey: ["people"] });
