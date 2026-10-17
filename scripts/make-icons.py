@@ -73,7 +73,8 @@ for n, im in (("light", L), ("dark", D)):
     im.resize((1024, 1024), Image.LANCZOS).save(f"{pub}/brand/mark-{n}.png", optimize=True)
 solid(F, TEAL).resize((1024, 1024), Image.LANCZOS).save(f"{pub}/brand/mark-flat.png", optimize=True)
 
-# Link preview, 1200 x 630: the mark on the base card (name and line already on it).
+# Link preview, 1200 x 630: the mark above the name, both inside the middle square, because
+# WhatsApp and others show a square cut from the middle (the line under it is in the text).
 def ground(w, h, bg, glow, strength):
     g = Image.new("RGB", (w, h), bg)
     halo = Image.new("L", (w, h), 0)
@@ -84,7 +85,7 @@ def ground(w, h, bg, glow, strength):
 
 og = Image.open(f"{src}/og-base.png").convert("RGB")
 og = og.convert("RGBA")
-og.alpha_composite(L.resize((190, 190), Image.LANCZOS), ((1200 - 190) // 2, 125))
+og.alpha_composite(L.resize((230, 230), Image.LANCZOS), ((1200 - 230) // 2, 108))
 save(og.convert("RGB"), f"{pub}/og.png")
 
 # iPhone / iPad launch screens (home-screen app), light and dark: the splash's own ground
