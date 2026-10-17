@@ -55,14 +55,15 @@ export function PracticeIcon({
 }
 
 /** A warm painted tile with a cream icon, in the spirit of the practice illustrations. */
-export function PaintedTile({ icon, size = 36, className }: { icon: string; size?: number; className?: string }) {
+/** `fill`: take the size of the box it sits in (a grid cell) instead of a fixed size. */
+export function PaintedTile({ icon, size = 36, fill = false, className }: { icon: string; size?: number; fill?: boolean; className?: string }) {
   const [from, to] = TONES[toneIndex(icon)];
   return (
     <span
-      className={cn("rounded-[10px] grid place-items-center shrink-0 text-[#fdf6e7] shadow-[inset_0_-8px_16px_rgba(0,0,0,0.12)]", className)}
-      style={{ width: size, height: size, background: `radial-gradient(120% 100% at 50% 30%, ${from}, ${to})` }}
+      className={cn("rounded-[10px] grid place-items-center shrink-0 text-[#fdf6e7] shadow-[inset_0_-8px_16px_rgba(0,0,0,0.12)]", fill && "w-full h-full", className)}
+      style={{ ...(fill ? {} : { width: size, height: size }), background: `radial-gradient(120% 100% at 50% 30%, ${from}, ${to})` }}
     >
-      <PracticeGlyph name={icon} size={Math.round(size * 0.6)} strokeWidth={2.4} />
+      <PracticeGlyph name={icon} size={fill ? "56%" : Math.round(size * 0.6)} strokeWidth={2.4} />
     </span>
   );
 }

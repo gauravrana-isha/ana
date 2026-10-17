@@ -23,10 +23,12 @@ import { ButtonLoader } from "@/components/ui/Loader";
 import type { Practice } from "@/lib/types";
 
 import { PaintedTile, PracticeIcon } from "./PracticeIcon";
-import { CountMark, DeleteMark, DoneMark, MinutesMark, PlusMark, ScaleMark, TimeMark } from "@/components/art/PenMarks";
+import { TickMark } from "./FieldInput";
+import { CountMark, DeleteMark, DoneMark, MinutesMark, PlusMark, ScaleMark, TimeMark, TimesMark } from "@/components/art/PenMarks";
 import { createPractice, deletePractice } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Segmented } from "@/components/ui/Segmented";
+import { Switch } from "@/components/ui/Switch";
 import { lockScroll } from "@/lib/scroll-lock";
 
 const ICON_OPTIONS = [
@@ -38,6 +40,7 @@ const ICON_OPTIONS = [
 
 const TRACK_OPTIONS: { id: string; label: string; hint: string; icon: string; hasDoneToggle: boolean; fields: PracticeField[] }[] = [
   { id: "done", label: "Just done", hint: "A single tick", icon: "CheckCircle", hasDoneToggle: true, fields: [] },
+  { id: "times", label: "Times a day", hint: "1×, 2× or 3×", icon: "CheckCircle", hasDoneToggle: true, fields: [{ key: "times", kind: "COUNT", max: 3, label: "times", fill: 1 }] },
   { id: "minutes", label: "Minutes", hint: "Tick, and how long", icon: "Timer", hasDoneToggle: true, fields: [{ key: "min", kind: "MINUTES" }] },
   { id: "count", label: "Count", hint: "Tick, and how many", icon: "Hash", hasDoneToggle: true, fields: [{ key: "count", kind: "COUNT" }] },
   { id: "time", label: "Time of day", hint: "When it happened", icon: "Clock", hasDoneToggle: false, fields: [{ key: "time", kind: "TIME" }] },
@@ -46,7 +49,7 @@ const TRACK_OPTIONS: { id: string; label: string; hint: string; icon: string; ha
 
 /** Each way of tracking, in the pen-drawn hand of the app's other marks. */
 function TrackMark({ id }: { id: string }) {
-  const Mark = { done: DoneMark, minutes: MinutesMark, count: CountMark, time: TimeMark, scale: ScaleMark }[id] ?? DoneMark;
+  const Mark = { done: DoneMark, times: TimesMark, minutes: MinutesMark, count: CountMark, time: TimeMark, scale: ScaleMark }[id] ?? DoneMark;
   return <Mark size={20} />;
 }
 
@@ -126,6 +129,7 @@ function LibraryTab() {
   const { toast } = useToast();
   const { data: practices = [] } = usePractices();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
 
   // Which catalog entries this person already has, and the practice id for each.
   const owned = useMemo(() => {
@@ -153,7 +157,13 @@ function LibraryTab() {
     }
   }
 
-  return <PracticeLibrary chosen={new Set(owned.keys())} onToggle={toggle} busyId={busyId} />;
+  const editingPractice = practices.find((p) => p.id === editing) ?? null;
+  return (
+    <>
+      <PracticeLibrary chosen={new Set(owned.keys())} onToggle={toggle} busyId={busyId} onEdit={(entry) => setEditing(owned.get(entry.id) ?? null)} />
+      <PracticeEditor practice={editingPractice} open={!!editingPractice} onClose={() => setEditing(null)} />
+    </>
+  );
 }
 
 function CustomTab({ onDone }: { onDone: () => void }) {
@@ -162,15 +172,22 @@ function CustomTab({ onDone }: { onDone: () => void }) {
   const [name, setName] = useState("");
   const [iconName, setIconName] = useState<string>("Leaf");
   const [trackId, setTrackId] = useState("minutes");
+  // A second thing to track alongside the first: a number with its own name (kapalbhati, rounds…).
+  const [extra, setExtra] = useState(false);
+  const [extraName, setExtraName] = useState("");
   const [saving, setSaving] = useState(false);
   const track = TRACK_OPTIONS.find((t) => t.id === trackId)!;
+  const fields: PracticeField[] = [
+    ...track.fields,
+    ...(extra ? [{ key: "num", kind: "COUNT" as const, label: extraName.trim().toLowerCase() || "count" }] : []),
+  ];
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await createPractice({ name: name.trim(), iconName, hasDoneToggle: track.hasDoneToggle, fields: track.fields });
+      await createPractice({ name: name.trim(), iconName, hasDoneToggle: track.hasDoneToggle, fields });
       await qc.invalidateQueries({ queryKey: keys.practices() });
       toast(`${name.trim()} added`, "success", 1800);
       onDone();
@@ -198,7 +215,8 @@ function CustomTab({ onDone }: { onDone: () => void }) {
 
       <fieldset>
         <legend className="font-ui text-[13px] font-semibold text-ink mb-2">Icon</legend>
-        <div className="grid grid-cols-8 gap-1.5 sm:gap-2.5">
+        {/* Six across on phones (room to tap), eight from tablets up. Each tile fills its cell. */}
+        <div className="grid grid-cols-6 sm:grid-cols-8 gap-2.5 sm:gap-3">
           {ICON_OPTIONS.map((ico) => {
             const on = iconName === ico;
             return (
@@ -208,14 +226,15 @@ function CustomTab({ onDone }: { onDone: () => void }) {
                 aria-label={ico}
                 aria-pressed={on}
                 onClick={() => setIconName(ico)}
-                // Chosen: in full colour while the others fade back. The tiles never change size
-                // or edge (and nothing sits on them), so the grid stays perfectly even.
-                className={cn(
-                  "press relative aspect-square rounded-[14px] grid place-items-center transition-opacity duration-200",
-                  on ? "opacity-100" : "opacity-40 hover:opacity-80"
-                )}
+                className="press relative aspect-square rounded-[14px]"
               >
-                <PaintedTile icon={ico} size={44} className="rounded-[12px] w-full h-full" />
+                <PaintedTile icon={ico} fill className="rounded-[14px]" />
+                {/* Chosen: a small green tick tucked into the corner, ringed in the page colour. */}
+                {on && (
+                  <span className="absolute -bottom-1 -right-1 grid place-items-center w-5 h-5 rounded-full bg-accent text-bg ring-2 ring-bg">
+                    <TickMark size={11} />
+                  </span>
+                )}
               </button>
             );
           })}
@@ -248,13 +267,35 @@ function CustomTab({ onDone }: { onDone: () => void }) {
         </div>
       </fieldset>
 
+      {/* A second thing to track: a number of its own, beside the first (like kapalbhati in
+          Shakti Chalana, beside how many times). */}
+      <div className="rounded-[14px] bg-surface p-3">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <span className="grid place-items-center w-9 h-9 rounded-[10px] shrink-0 bg-bg text-ink-soft"><CountMark size={20} /></span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-ui text-[14px] font-semibold text-ink">Add a number too</span>
+            <span className="block font-ui text-[12.5px] text-ink-soft">Rounds, pages, breaths…</span>
+          </span>
+          <Switch checked={extra} onChange={setExtra} label="Add a number too" />
+        </label>
+        {extra && (
+          <input
+            value={extraName}
+            onChange={(e) => setExtraName(e.target.value.slice(0, 24))}
+            placeholder="What it counts, e.g. kapalbhati"
+            aria-label="What the number counts"
+            className="mt-3 w-full h-11 px-4 rounded-[12px] bg-surface-2 text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/80"
+          />
+        )}
+      </div>
+
       <div>
         <span className="font-ui text-[13px] font-semibold text-ink">Preview</span>
         <div className="mt-2 flex items-center gap-3 p-3 rounded-[16px] bg-surface">
           <PracticeIcon name={name || "New practice"} iconName={iconName} />
           <span className="flex-1 min-w-0">
             <span className="block font-serif text-[16px] text-ink truncate">{name.trim() || "Your practice"}</span>
-            <span className="block font-ui text-[12.5px] text-ink-soft">{describeTracking(track.fields, track.hasDoneToggle)}</span>
+            <span className="block font-ui text-[12.5px] text-ink-soft">{describeTracking(fields, track.hasDoneToggle) || "done"}</span>
           </span>
         </div>
       </div>

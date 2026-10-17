@@ -74,7 +74,7 @@ export function hasPracticeIcon(name: string) {
 }
 
 /** A practice icon by its saved name (a leaf for anything unknown). */
-export function PracticeGlyph({ name, size = 20, className, strokeWidth = 2.6 }: { name: string; size?: number; className?: string; strokeWidth?: number }) {
+export function PracticeGlyph({ name, size = 20, className, strokeWidth = 2.6 }: { name: string; size?: number | string; className?: string; strokeWidth?: number }) {
   return (
     <svg
       width={size}
