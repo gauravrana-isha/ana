@@ -1,12 +1,13 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
+import { BACK_PATH } from "@/components/art/PenMarks";
 
-/** Chevrons and arrows drawn like the reference journal: 24-grid, 2px round strokes. */
+/** Chevrons, pen-drawn like the tick and the cross: the back mark, turned to face each way. */
 export function Chevron({ dir = "right", size = 16, className }: { dir?: "left" | "right" | "up" | "down"; size?: number; className?: string }) {
-  const d = { left: "M15 5L8 12L15 19", right: "M9 5L16 12L9 19", up: "M5 15L12 8L19 15", down: "M5 9L12 16L19 9" }[dir];
+  const turn = { left: "", right: "scale(-1 1) translate(-24 0)", up: "rotate(90 12 12)", down: "rotate(-90 12 12)" }[dir];
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
-      <path d={d} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+      <path d={BACK_PATH} transform={turn || undefined} />
     </svg>
   );
 }

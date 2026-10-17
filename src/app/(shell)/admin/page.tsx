@@ -5,7 +5,7 @@ import { usePersistentState } from "@/lib/persist";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarBlank, CaretDown, Check, Clock, Crown, HardDrives, HourglassMedium } from "@phosphor-icons/react";
+import { CalendarBlank, Check, Clock, Crown, HardDrives, HourglassMedium } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Avatar } from "@/components/shell/Sidebar";
 import { NavIcon } from "@/components/shell/NavIcon";
@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { FEATURES, type FeatureKey } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/ui/Confirm";
+import { Chevron } from "@/components/ui/Arrows";
 
 type Status = "PENDING" | "APPROVED" | "SUSPENDED";
 
@@ -174,7 +175,7 @@ export default function AdminPage() {
                   aria-label={open ? "Hide details" : "Show details"}
                   className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:bg-surface-2"
                 >
-                  <CaretDown size={18} className={cn("transition-transform duration-300", open && "rotate-180")} />
+                  <Chevron dir="down" size={19} className={cn("transition-transform duration-300", open && "rotate-180")} />
                 </button>
               </div>
 

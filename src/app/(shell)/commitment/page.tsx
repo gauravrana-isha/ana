@@ -6,7 +6,7 @@ import { Busy, BusyBar } from "@/components/ui/Busy";
 import { useEffect, useState } from "react";
 import { HELP_EVENT } from "@/components/shell/Topbar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CaretDown } from "@phosphor-icons/react";
+
 import { Sheet } from "@/components/ui/Sheet";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { usePersistentState } from "@/lib/persist";
@@ -18,6 +18,7 @@ import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 import { fetchCommitment, saveCommitment, type Letter } from "@/lib/journal";
 import { EditMark } from "@/components/art/PenMarks";
+import { Chevron } from "@/components/ui/Arrows";
 
 const REVISIT = [
   { id: "monthly", label: "Every month" },
@@ -178,7 +179,7 @@ export default function CommitmentPage() {
       {data.history.length > 0 && (
         <section>
           <button type="button" onClick={() => setShowHistory((s) => !s)} aria-expanded={showHistory} className="press inline-flex items-center gap-2 h-10 px-1 font-ui text-[14px] font-semibold text-ink-soft hover:text-ink">
-            <CaretDown size={16} className={cn("transition-transform", showHistory && "rotate-180")} />
+            <Chevron dir="down" size={17} className={cn("transition-transform", showHistory && "rotate-180")} />
             Earlier letters ({data.history.length})
           </button>
           {showHistory && (

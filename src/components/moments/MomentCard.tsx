@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowCounterClockwise, CaretDown, CaretRight, MapPin } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, MapPin } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { useToast } from "@/components/ui/Toast";
@@ -17,6 +17,7 @@ import { plainText } from "./RichText";
 import { DeleteMark, DotsMark, EditMark } from "@/components/art/PenMarks";
 import { deleteMoment } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
+import { Chevron } from "@/components/ui/Arrows";
 
 export const STAMP_LABEL: Record<string, string> = {
   growth: "Growth", struggle: "Struggle", insight: "Insight", stillness: "Stillness", devotion: "Devotion",
@@ -147,7 +148,7 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
             {[timeOf(moment), moment.place, people.map((p) => p.name).join(", "), media > 1 ? `${media} files` : null].filter(Boolean).join(" · ")}
           </span>
         </span>
-        <CaretRight size={16} className="shrink-0 text-ink-soft group-hover:text-ink" />
+        <Chevron dir="right" size={17} className="shrink-0 text-ink-soft group-hover:text-ink" />
       </Link>
     );
   }
@@ -250,7 +251,7 @@ export function MomentTimeline({ moments, onEdit, hidePersonId, folded = false, 
               <span className="font-display text-[19px] font-semibold text-ink">{month.label}</span>
               <span className="font-ui text-[12.5px] text-ink-soft tabular">{month.count}</span>
               <span className="flex-1 h-px bg-line ml-1" />
-              <CaretDown size={16} className={cn("text-ink-soft transition-transform group-hover:text-ink", closed && "-rotate-90")} />
+              <Chevron dir="down" size={17} className={cn("text-ink-soft transition-transform group-hover:text-ink", closed && "-rotate-90")} />
             </button>}
             {!closed && (
               <div className="flex flex-col gap-5">
