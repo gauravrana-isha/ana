@@ -32,11 +32,15 @@ export async function POST(req: NextRequest) {
   if (!allowedType(kind, contentType)) return NextResponse.json({ error: "Unsupported type" }, { status: 415 });
 
   const storage = storageMode();
-  const size = await uploadedSize(storage, pathname);
+  // Both files and the room left, checked at once (each is a round trip).
+  const [size, thumbSize, room] = await Promise.all([
+    uploadedSize(storage, pathname),
+    thumbPathname ? uploadedSize(storage, thumbPathname) : null,
+    roomFor(user.id),
+  ]);
   if (size === null) return NextResponse.json({ error: "Upload not found" }, { status: 404 });
-  const thumbSize = thumbPathname ? await uploadedSize(storage, thumbPathname) : null;
-  // Blob enforces the size while uploading; a signed R2 link can't, so check it here.
-  if (storage === "r2" && (size > MEDIA_RULES[kind].maxBytes || size > (await roomFor(user.id)))) {
+  // A signed R2 link can't limit the size, so check it here.
+  if (storage === "r2" && (size > MEDIA_RULES[kind].maxBytes || size > room)) {
     await removeStored(storage, pathname);
     return NextResponse.json({ error: "That file is too large for the space left." }, { status: 413 });
   }
