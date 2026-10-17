@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { PracticeGlyph } from "./practiceIcons";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { keys, usePractices } from "@/lib/queries";
@@ -25,7 +24,7 @@ import { ButtonLoader } from "@/components/ui/Loader";
 import type { Practice } from "@/lib/types";
 
 import { PaintedTile, PracticeIcon } from "./PracticeIcon";
-import { DeleteMark, PlusMark } from "@/components/art/PenMarks";
+import { CountMark, DeleteMark, DoneMark, MinutesMark, PlusMark, ScaleMark, TimeMark } from "@/components/art/PenMarks";
 import { createPractice, deletePractice } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Segmented } from "@/components/ui/Segmented";
@@ -45,6 +44,12 @@ const TRACK_OPTIONS: { id: string; label: string; hint: string; icon: string; ha
   { id: "time", label: "Time of day", hint: "When it happened", icon: "Clock", hasDoneToggle: false, fields: [{ key: "time", kind: "TIME" }] },
   { id: "scale", label: "3-level scale", hint: "Low, medium, high", icon: "ChartBar", hasDoneToggle: false, fields: [{ key: "level", kind: "ICONSCALE" }] },
 ];
+
+/** Each way of tracking, in the pen-drawn hand of the app's other marks. */
+function TrackMark({ id }: { id: string }) {
+  const Mark = { done: DoneMark, minutes: MinutesMark, count: CountMark, time: TimeMark, scale: ScaleMark }[id] ?? DoneMark;
+  return <Mark size={20} />;
+}
 
 
 interface AddPracticeDialogProps {
@@ -178,7 +183,9 @@ function CustomTab({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={save}>
-      <Busy busy={saving} className="flex flex-col gap-6">
+      <Busy busy={saving}>
+      {/* The sections, spaced (Busy wraps its children in a box of its own). */}
+      <div className="flex flex-col gap-6">
       <label className="block">
         <span className="font-ui text-[13px] font-semibold text-ink">Name</span>
         <input
@@ -202,14 +209,16 @@ function CustomTab({ onDone }: { onDone: () => void }) {
                 aria-label={ico}
                 aria-pressed={on}
                 onClick={() => setIconName(ico)}
+                // Chosen: a ring drawn inside the tile's own square and the tile drawn a little
+                // smaller within it, so nothing spills into the neighbours or shifts the grid.
                 className={cn(
-                  "press relative aspect-square rounded-[14px] grid place-items-center transition-all duration-200",
-                  on ? "ring-[2.5px] ring-accent ring-offset-2 ring-offset-bg" : "opacity-85 hover:opacity-100"
+                  "press relative aspect-square rounded-[14px] grid place-items-center transition-[opacity,box-shadow] duration-200",
+                  on ? "shadow-[inset_0_0_0_2.5px_var(--accent)]" : "opacity-85 hover:opacity-100"
                 )}
               >
-                <PaintedTile icon={ico} size={44} className="rounded-[12px] w-full h-full" />
+                <PaintedTile icon={ico} size={44} className={cn("rounded-[12px] w-full h-full transition-transform duration-200", on && "scale-[0.8] rounded-[10px]")} />
                 {on && (
-                  <span className="absolute -top-1.5 -right-1.5 grid place-items-center w-5 h-5 rounded-full bg-accent text-bg shadow"><TickMark size={12} /></span>
+                  <span className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 grid place-items-center w-[18px] h-[18px] rounded-full bg-accent text-bg"><TickMark size={11} /></span>
                 )}
               </button>
             );
@@ -232,7 +241,7 @@ function CustomTab({ onDone }: { onDone: () => void }) {
               )}
             >
               <span className={cn("grid place-items-center w-9 h-9 rounded-[10px] shrink-0", trackId === t.id ? "bg-accent text-bg" : "bg-bg text-ink-soft")}>
-                <PracticeGlyph name={t.icon} size={18} />
+                <TrackMark id={t.id} />
               </span>
               <span>
                 <span className="block font-ui text-[14px] font-semibold text-ink">{t.label}</span>
@@ -252,6 +261,7 @@ function CustomTab({ onDone }: { onDone: () => void }) {
             <span className="block font-ui text-[12.5px] text-ink-soft">{describeTracking(track.fields, track.hasDoneToggle)}</span>
           </span>
         </div>
+      </div>
       </div>
 
       </Busy>
