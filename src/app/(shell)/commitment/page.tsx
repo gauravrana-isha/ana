@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 import { fetchCommitment, saveCommitment, type Letter } from "@/lib/journal";
-import { EditMark } from "@/components/art/PenMarks";
+import { EditMark, InfoMark } from "@/components/art/PenMarks";
 import { Chevron } from "@/components/ui/Arrows";
 
 const REVISIT = [
@@ -112,6 +112,7 @@ export default function CommitmentPage() {
           )}
           <div className="relative rounded-[22px] bg-surface px-5 py-5 sm:px-8 sm:py-7 overflow-hidden">
             <BusyBar show={saving} className="absolute top-0 inset-x-6" />
+            <AboutButton onClick={() => setIntroAsked(true)} />
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value.slice(0, 8000))}
@@ -125,7 +126,7 @@ export default function CommitmentPage() {
               }}
               placeholder="Dear me,"
               aria-label="Your commitment"
-              className="w-full bg-transparent resize-none outline-none focus-visible:outline-none font-serif text-[18px] leading-[1.75] text-ink placeholder:text-ink-soft/60 placeholder:italic"
+              className="w-full pr-9 bg-transparent resize-none outline-none focus-visible:outline-none font-serif text-[18px] leading-[1.75] text-ink placeholder:text-ink-soft/60 placeholder:italic"
             />
           </div>
           <div>
@@ -148,6 +149,7 @@ export default function CommitmentPage() {
       ) : (
         <section>
           <article className="relative rounded-[22px] bg-surface px-6 py-7 sm:px-10 sm:py-10 overflow-hidden">
+            <AboutButton onClick={() => setIntroAsked(true)} />
             <Ornament name="vine" width={150} className="text-accent/60 mb-6" />
             <p className="font-ui text-[13px] text-ink-soft tabular mb-4">{longDate(current.createdAt)}</p>
             <div className="font-serif text-[18.5px] sm:text-[19.5px] leading-[1.8] text-ink whitespace-pre-line max-w-[62ch]">{current.body}</div>
@@ -220,5 +222,20 @@ export default function CommitmentPage() {
         </div>
       </Sheet>
     </div>
+  );
+}
+
+/** The ⓘ for "what is this letter?", sitting inside the card's top corner. */
+function AboutButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="About your commitment"
+      title="About your commitment"
+      className="press absolute z-10 top-3 right-3 sm:top-4 sm:right-4 grid place-items-center w-9 h-9 rounded-full text-ink-soft/60 hover:text-ink hover:bg-bg/70 transition-colors"
+    >
+      <InfoMark size={20} />
+    </button>
   );
 }

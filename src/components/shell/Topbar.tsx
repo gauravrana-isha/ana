@@ -5,7 +5,7 @@ import { BARE_PAGES, PAGE_TITLES } from "./nav";
 import { InfoMark } from "@/components/art/PenMarks";
 
 /** Pages that explain themselves on request: the ⓘ asks the page to open its help. */
-const HELP_PAGES = ["/commitment"];
+const HELP_PAGES: string[] = [];
 export const HELP_EVENT = "ana:page-help";
 
 /**
