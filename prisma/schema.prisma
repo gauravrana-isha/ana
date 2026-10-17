@@ -278,6 +278,9 @@ model Attachment {
   durationSec  Float?
   /// The stored bytes are encrypted on the device (lib/vault/files).
   sealed       Boolean     @default(false)
+  /// Photos: a small copy for lists and grids (same storage, also encrypted).
+  thumbPathname String?    @unique
+  thumbSize     Int?
   createdAt    DateTime    @default(now())
   personPhoto  Person?     @relation("PersonPhoto")
   userPhoto    User?       @relation("UserPhoto")

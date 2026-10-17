@@ -92,7 +92,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
             <div className={cn("grid gap-2", photos.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
               {photos.map((p, i) => (
                 <button key={p.id} type="button" onClick={() => setViewer(i)} aria-label={`Open photo ${i + 1} of ${photos.length}`} className={cn("press overflow-hidden rounded-[16px] bg-surface-2", photos.length === 3 && i === 0 && "col-span-2")}>
-                  <StoredImg id={p.id} decoding="async" className={cn("w-full object-cover", photos.length === 1 ? "max-h-[70vh]" : "aspect-square")} />
+                  <StoredImg id={p.id} thumb={photos.length > 1} decoding="async" className={cn("w-full object-cover", photos.length === 1 ? "max-h-[70vh]" : "aspect-square")} />
                 </button>
               ))}
             </div>

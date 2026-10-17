@@ -66,7 +66,7 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
     setSaving(true);
     try {
       let photoId: string | undefined;
-      if (photo) photoId = (await uploadMedia(photo.blob, "photo", { userId: me.id, storage: me.storage })).id;
+      if (photo) photoId = (await uploadMedia(photo.blob, "photo", { userId: me.id, storage: me.storage, thumbnail: false })).id;
       const saved = await savePerson(person ?? null, {
         name: name.trim(),
         relation: relation.trim() || null,

@@ -60,7 +60,7 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
     setSaving(true);
     try {
       let photoId: string | null | undefined = undefined;
-      if (photo instanceof Blob) photoId = (await uploadMedia(photo, "photo", { userId: me.id, storage: me.storage })).id;
+      if (photo instanceof Blob) photoId = (await uploadMedia(photo, "photo", { userId: me.id, storage: me.storage, thumbnail: false })).id;
       else if (photo === null) photoId = null;
       const personal = await sealFields(
         { intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null },

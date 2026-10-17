@@ -120,17 +120,30 @@ function putWithProgress(url: string, body: Blob, type: string, onProgress?: (pc
   });
 }
 
-/** Upload a recording or photo (encrypted, once the journal has a key) and register it. */
+/** Photos are stored at most this size on their longest side, plus a small copy for lists. */
+const PHOTO_MAX = 2048;
+const THUMB_MAX = 720;
+
+/**
+ * Upload a recording or photo (encrypted, once the journal has a key) and register it. A photo
+ * is scaled down to PHOTO_MAX first and gets a small copy for lists and grids, unless
+ * `thumbnail: false` (profile and people pictures are already small).
+ */
 export async function uploadMedia(
   file: Blob,
   kind: MediaKind,
-  opts: { userId: string; storage: Storage; durationSec?: number; onProgress?: (pct: number) => void }
+  opts: { userId: string; storage: Storage; durationSec?: number; onProgress?: (pct: number) => void; thumbnail?: boolean }
 ): Promise<AttachmentDTO> {
-  const { pathname, contentType, sealed } = await storeFile(file, kind, opts);
+  const photo = kind === "photo" && file.type !== "image/gif";
+  const full = photo ? await scalePhoto(file, PHOTO_MAX) : file;
+  const small = photo && opts.thumbnail !== false ? await scalePhoto(file, THUMB_MAX, 0.8) : null;
+
+  const stored = await storeFile(full ?? file, kind, opts);
+  const thumb = small ? await storeFile(small, kind, { ...opts, onProgress: undefined }).catch(() => null) : null;
   const reg = await fetch("/api/attachments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kind, pathname, contentType, durationSec: opts.durationSec, sealed }),
+    body: JSON.stringify({ kind, pathname: stored.pathname, contentType: stored.contentType, durationSec: opts.durationSec, sealed: stored.sealed, thumbPathname: thumb?.pathname }),
   });
   const data = await reg.json();
   if (!reg.ok) throw new Error(data.error ?? "Couldn't save the upload");
@@ -144,23 +157,25 @@ export function formatDuration(sec: number | null | undefined) {
 }
 
 /**
- * Scale a portrait photo down before upload (longest side `max` px, JPEG). Avatars show at
- * 80px at most, so a phone camera's 4000px original is wasted on every load. If the browser
- * can't decode the format (e.g. HEIC outside Safari), the original is sent unchanged.
+ * A photo scaled down to `max` px on its longest side, as JPEG (turned upright, as the camera
+ * meant it). Null when the browser can't open the format (e.g. HEIC outside Safari): the
+ * original is then stored as it is, without a small copy.
  */
-export async function shrinkPhoto(file: Blob, max = 640): Promise<Blob> {
+async function scalePhoto(file: Blob, max: number, quality = 0.86): Promise<Blob | null> {
   try {
-    const bitmap = await createImageBitmap(file);
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
     const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
-    if (scale === 1 && file.size < 400_000) return file;
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close();
-    const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
-    return out && out.size < file.size ? out : file;
+    const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    // Already small enough: keep the original rather than a larger re-encode.
+    return out && (scale < 1 || out.size < file.size) ? out : file;
   } catch {
-    return file;
+    return null;
   }
 }

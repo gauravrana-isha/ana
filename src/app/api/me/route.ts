@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { resolveNotifications } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/session";
 import { FEATURE_KEYS, isFeatureKey } from "@/lib/features";
-import { removeStored, storageMode } from "@/lib/storage";
+import { removeAttachmentFiles, storageMode } from "@/lib/storage";
 import { MUST_SEAL, sealed } from "@/lib/sealed";
 
 export async function GET() {
@@ -61,13 +61,13 @@ export async function PATCH(req: NextRequest) {
   const { name, intention, features, preferredName, birthday, place, photoId, portraitEveryMonths } = parsed.data;
 
   // A new photo must be yours and a photo; the old one is removed for good.
-  let oldPhoto: { id: string; storage: string; pathname: string } | null = null;
+  let oldPhoto: { id: string; storage: string; pathname: string; thumbPathname: string | null } | null = null;
   if (photoId !== undefined && photoId !== user.photoId) {
     if (photoId) {
       const ok = await db.attachment.findFirst({ where: { id: photoId, userId: user.id, kind: "photo" }, select: { id: true } });
       if (!ok) return NextResponse.json({ error: "Photo not found" }, { status: 400 });
     }
-    if (user.photoId) oldPhoto = await db.attachment.findUnique({ where: { id: user.photoId }, select: { id: true, storage: true, pathname: true } });
+    if (user.photoId) oldPhoto = await db.attachment.findUnique({ where: { id: user.photoId }, select: { id: true, storage: true, pathname: true, thumbPathname: true } });
   }
 
   const ops = [];
@@ -94,7 +94,7 @@ export async function PATCH(req: NextRequest) {
   await db.$transaction(ops);
   if (oldPhoto) {
     await db.attachment.delete({ where: { id: oldPhoto.id } }).catch(() => {});
-    await removeStored(oldPhoto.storage, oldPhoto.pathname);
+    await removeAttachmentFiles(oldPhoto);
   }
   // A new "look again" setting: any pending reminder about it is done with.
   if (portraitEveryMonths === 0) await resolveNotifications("portrait:", user.id);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resolveAdmin } from "@/lib/session";
-import { copyBlobToR2, removeStored, storageMode, uploadedSize } from "@/lib/storage";
+import { copyBlobToR2, removeAttachmentFiles, storageMode, uploadedSize } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -25,7 +25,7 @@ export async function POST() {
 
   const files = await db.attachment.findMany({
     where: { storage: "blob" },
-    select: { id: true, pathname: true, contentType: true, sealed: true },
+    select: { id: true, pathname: true, contentType: true, sealed: true, thumbPathname: true },
     orderBy: { createdAt: "asc" },
     take: BATCH,
   });
@@ -33,10 +33,14 @@ export async function POST() {
   let failed = 0;
   for (const file of files) {
     try {
-      const bytes = await copyBlobToR2(file.pathname, file.sealed ? "application/octet-stream" : file.contentType);
-      if ((await uploadedSize("r2", file.pathname)) !== bytes) throw new Error("Copy incomplete");
+      const type = file.sealed ? "application/octet-stream" : file.contentType;
+      for (const pathname of [file.pathname, file.thumbPathname]) {
+        if (!pathname) continue;
+        const bytes = await copyBlobToR2(pathname, type);
+        if ((await uploadedSize("r2", pathname)) !== bytes) throw new Error("Copy incomplete");
+      }
       await db.attachment.update({ where: { id: file.id }, data: { storage: "r2" } });
-      await removeStored("blob", file.pathname);
+      await removeAttachmentFiles({ storage: "blob", pathname: file.pathname, thumbPathname: file.thumbPathname });
     } catch {
       failed++;
     }

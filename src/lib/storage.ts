@@ -76,8 +76,8 @@ export async function roomFor(userId: string, replacing?: string | null) {
 }
 
 export async function bytesUsed(userId: string) {
-  const agg = await db.attachment.aggregate({ where: { userId }, _sum: { size: true } });
-  return agg._sum.size ?? 0;
+  const agg = await db.attachment.aggregate({ where: { userId }, _sum: { size: true, thumbSize: true } });
+  return (agg._sum.size ?? 0) + (agg._sum.thumbSize ?? 0);
 }
 
 /** Every file a person uploads lives under their own prefix. */
@@ -173,6 +173,11 @@ export async function removeStored(storage: string, pathname: string) {
   } catch {
     /* already gone */
   }
+}
+
+/** Delete an attachment's stored file, and its small copy if it has one. */
+export async function removeAttachmentFiles(a: { storage: string; pathname: string; thumbPathname?: string | null }) {
+  await Promise.all([removeStored(a.storage, a.pathname), a.thumbPathname ? removeStored(a.storage, a.thumbPathname) : null]);
 }
 
 /**

@@ -85,7 +85,7 @@ export function MediaView({ attachments, compact = false }: { attachments: Attac
         <div className={cn("grid gap-1.5", photos.length === 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3")}>
           {photos.map((a) => (
             <span key={a.id} className="block overflow-hidden rounded-[12px] bg-surface-2">
-              <StoredImg id={a.id} className={cn("w-full object-cover", photos.length === 1 ? "max-h-[420px]" : "aspect-square")} />
+              <StoredImg id={a.id} thumb className={cn("w-full object-cover", photos.length === 1 ? "max-h-[420px]" : "aspect-square")} />
             </span>
           ))}
         </div>
@@ -108,7 +108,7 @@ export function MediaPreview({ attachments }: { attachments: AttachmentDTO[] }) 
       {visual && (
         <div className="relative h-[150px] sm:h-[180px] overflow-hidden rounded-[14px] bg-surface-2">
           {visual.kind === "photo" ? (
-            <StoredImg id={visual.id} decoding="async" className="w-full h-full object-cover" />
+            <StoredImg id={visual.id} thumb decoding="async" className="w-full h-full object-cover" />
           ) : (
             <>
               {/* A video is opened only on its moment's page (it may be large); here, a quiet frame. */}

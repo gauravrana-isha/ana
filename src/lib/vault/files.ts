@@ -60,12 +60,18 @@ export async function decryptFile(data: ArrayBuffer, type: string): Promise<Blob
 
 const urls = new Map<string, Promise<string>>();
 
-/** A displayable URL for a stored file: decrypted on the device when it was encrypted. */
-export function mediaSrc(id: string): Promise<string> {
-  let p = urls.get(id);
+export type MediaVariant = "full" | "thumb";
+
+/**
+ * A displayable URL for a stored file: decrypted on the device when it was encrypted.
+ * "thumb" is a photo's small copy (the server sends the photo itself when there's none).
+ */
+export function mediaSrc(id: string, variant: MediaVariant = "full"): Promise<string> {
+  const key = variant === "thumb" ? `${id}:thumb` : id;
+  let p = urls.get(key);
   if (!p) {
     p = (async () => {
-      const res = await fetch(`/api/media/${id}`);
+      const res = await fetch(variant === "thumb" ? `/api/media/${id}?v=thumb` : `/api/media/${id}`);
       if (!res.ok) throw new Error("Couldn't load");
       const type = res.headers.get("content-type") ?? "application/octet-stream";
       const data = await res.arrayBuffer();
@@ -74,8 +80,8 @@ export function mediaSrc(id: string): Promise<string> {
         : new Blob([data], { type });
       return URL.createObjectURL(blob);
     })();
-    p.catch(() => urls.delete(id));
-    urls.set(id, p);
+    p.catch(() => urls.delete(key));
+    urls.set(key, p);
   }
   return p;
 }
@@ -87,17 +93,18 @@ export function dropMediaCache() {
 }
 
 /** React: the src for a stored file, once ready (null until then, or without an id). */
-export function useMediaSrc(id: string | null | undefined) {
-  const [src, setSrc] = useState<{ id: string; url: string } | null>(null);
+export function useMediaSrc(id: string | null | undefined, variant: MediaVariant = "full") {
+  const key = id ? `${id}:${variant}` : null;
+  const [src, setSrc] = useState<{ key: string; url: string } | null>(null);
   useEffect(() => {
-    if (!id) return;
+    if (!id || !key) return;
     let live = true;
-    mediaSrc(id)
-      .then((url) => live && setSrc({ id, url }))
+    mediaSrc(id, variant)
+      .then((url) => live && setSrc({ key, url }))
       .catch(() => {});
     return () => {
       live = false;
     };
-  }, [id]);
-  return id && src?.id === id ? src.url : null;
+  }, [id, key, variant]);
+  return key && src?.key === key ? src.url : null;
 }

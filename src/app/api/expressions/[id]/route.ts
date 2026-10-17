@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
 import { MomentSchema, lookBackData, momentInclude, ownedIds, serializeMoment } from "@/lib/moments";
-import { removeStored } from "@/lib/storage";
+import { removeAttachmentFiles } from "@/lib/storage";
 import { MUST_SEAL } from "@/lib/sealed";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const d = parsed.data;
   const [owned, current] = await Promise.all([
     ownedIds(user.id, d.personIds, d.attachmentIds),
-    db.attachment.findMany({ where: { expressionId: id, userId: user.id }, select: { id: true, storage: true, pathname: true } }),
+    db.attachment.findMany({ where: { expressionId: id, userId: user.id }, select: { id: true, storage: true, pathname: true, thumbPathname: true } }),
   ]);
   const occurredAt = new Date(d.occurredAt);
 
@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   ]);
   const [full] = await Promise.all([
     db.expression.findUniqueOrThrow({ where: { id }, relationLoadStrategy: "join", include: momentInclude }),
-    ...dropped.map((a) => removeStored(a.storage, a.pathname)),
+    ...dropped.map(removeAttachmentFiles),
   ]);
   return NextResponse.json(serializeMoment(full));
 }
@@ -72,6 +72,6 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   const files = await db.attachment.findMany({ where: { expressionId: id, userId: user.id } });
   const removed = await db.expression.deleteMany({ where: { id, userId: user.id } });
   if (removed.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  await Promise.all(files.map((a) => removeStored(a.storage, a.pathname)));
+  await Promise.all(files.map(removeAttachmentFiles));
   return NextResponse.json({ ok: true });
 }

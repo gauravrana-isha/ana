@@ -11,8 +11,9 @@ import { AudioPlayer } from "./Media";
  * its place.
  */
 
-export function StoredImg({ id, alt = "", className, ...rest }: { id: string } & Omit<ImgHTMLAttributes<HTMLImageElement>, "src">) {
-  const src = useMediaSrc(id);
+/** `thumb`: the photo's small copy, for lists and grids. */
+export function StoredImg({ id, thumb = false, alt = "", className, ...rest }: { id: string; thumb?: boolean } & Omit<ImgHTMLAttributes<HTMLImageElement>, "src">) {
+  const src = useMediaSrc(id, thumb ? "thumb" : "full");
   if (!src) return <span aria-hidden="true" className={cn("block bg-surface-2 min-h-24 animate-pulse", className)} />;
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt={alt} className={className} {...rest} />;

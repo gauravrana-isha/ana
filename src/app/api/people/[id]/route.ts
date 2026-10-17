@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
-import { removeStored } from "@/lib/storage";
+import { removeAttachmentFiles } from "@/lib/storage";
 import { MUST_SEAL, sealed } from "@/lib/sealed";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -86,7 +86,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const old = await db.attachment.findUnique({ where: { id: person.photoId } });
     if (old) {
       await db.attachment.delete({ where: { id: old.id } });
-      await removeStored(old.storage, old.pathname);
+      await removeAttachmentFiles(old);
     }
   }
   return NextResponse.json({ ok: true });
@@ -104,7 +104,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     const photo = await db.attachment.findUnique({ where: { id: person.photoId } });
     if (photo) {
       await db.attachment.delete({ where: { id: photo.id } });
-      await removeStored(photo.storage, photo.pathname);
+      await removeAttachmentFiles(photo);
     }
   }
   return NextResponse.json({ ok: true });
