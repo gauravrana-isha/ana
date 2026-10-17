@@ -219,8 +219,8 @@ export function SearchDialog() {
     const all = [
       ...FEATURES.filter((f) => me?.features.includes(f.key)).map((f) => ({ key: f.key, label: f.label, hint: f.description, href: f.href, icon: "badge" as const })),
       ...(me?.features.includes("expressions") ? [{ key: "new-moment", label: "New moment", hint: "Write, record or add a photo", href: "/expressions?new=1", icon: "plus" as const }] : []),
-      { key: "profile", label: "Profile & settings", hint: "Theme, sections, practices, data", href: "/profile", icon: "profile" as const },
-      ...(me?.role === "ADMIN" ? [{ key: "admin", label: "People & access", hint: "Approve sign-ups, manage access", href: "/admin", icon: "admin" as const }] : []),
+      { key: "profile", label: "Profile & settings", short: "Settings", hint: "Theme, sections, practices, data", href: "/profile", icon: "profile" as const },
+      ...(me?.role === "ADMIN" ? [{ key: "admin", label: "People & access", short: "Access", hint: "Approve sign-ups, manage access", href: "/admin", icon: "admin" as const }] : []),
     ];
     const q = query.trim().toLowerCase();
     return q ? all.filter((p) => p.label.toLowerCase().includes(q) || p.hint.toLowerCase().includes(q) || p.key.includes(q)) : all;
@@ -340,24 +340,33 @@ export function SearchDialog() {
       )}
 
       {shownPages.length > 0 && <Group title={query.trim() ? "Go to" : "Jump to"} />}
-      {shownPages.map((p) => {
-        const i = ++idx;
-        return (
-          <button key={p.key} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(p.href)} className={row(i)}>
-            {p.icon === "badge" ? (
-              <FeatureBadge k={p.key} size={36} />
-            ) : (
-              <span className="grid place-items-center w-9 h-9 rounded-[11px] bg-surface-2 text-accent shrink-0">
-                {p.icon === "plus" ? <PlusMark size={18} /> : p.icon === "admin" ? <Glyph k="shield" size={18} /> : <Glyph k="person" size={19} />}
-              </span>
-            )}
-            <span className="min-w-0 flex-1">
-              <span className="block font-ui text-[14.5px] font-semibold text-ink truncate">{p.label}</span>
-              <span className="block font-ui text-[12.5px] text-ink-soft truncate">{p.hint}</span>
-            </span>
-          </button>
-        );
-      })}
+      {shownPages.length > 0 && (
+        // One row of round icons with short names, scrolling sideways.
+        <div className="flex gap-1 overflow-x-auto no-scrollbar -mx-4 px-3 lg:-mx-1 lg:px-0 pb-1">
+          {shownPages.map((p) => {
+            const i = ++idx;
+            return (
+              <button
+                key={p.key}
+                type="button"
+                title={p.hint}
+                onMouseEnter={() => setActive(i)}
+                onClick={() => go(p.href)}
+                className={cn("press shrink-0 w-[82px] flex flex-col items-center gap-1.5 py-2 rounded-[16px] transition-colors", i === active ? "bg-surface" : "hover:bg-surface")}
+              >
+                {p.icon === "badge" ? (
+                  <FeatureBadge k={p.key} size={48} />
+                ) : (
+                  <span className="grid place-items-center w-12 h-12 rounded-[14px] bg-surface-2 text-accent">
+                    {p.icon === "plus" ? <PlusMark size={22} /> : p.icon === "admin" ? <Glyph k="shield" size={22} /> : <Glyph k="person" size={23} />}
+                  </span>
+                )}
+                <span className="w-full px-1 font-ui text-[12px] font-semibold text-ink text-center truncate">{"short" in p && p.short ? p.short : p.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {people.length > 0 && <Group title="People" />}
       {people.map((p) => {
