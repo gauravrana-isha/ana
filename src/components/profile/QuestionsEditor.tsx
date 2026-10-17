@@ -245,7 +245,7 @@ function QuestionSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title={question ? "Question" : "New question"}
+      title={question ? "Edit question" : "New question"}
       footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
