@@ -170,11 +170,6 @@ export function ReflectionStepSkeleton() {
 export function ReflectionReadSkeleton() {
   return (
     <Skeleton>
-      <div className="flex flex-col gap-2.5 mb-8">
-        <TextBone w="94%" h={17} />
-        <TextBone w="70%" h={17} />
-      </div>
-      <TextBone w={110} h={18} className="mb-4" />
       <div className="flex flex-col gap-3.5">
         {[0, 1, 2].map((i) => (
           <SkeletonCard key={i} className="rounded-16 p-5 flex gap-3">

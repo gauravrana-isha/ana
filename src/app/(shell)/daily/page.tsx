@@ -1,6 +1,5 @@
 "use client";
 
-import { Ornament } from "@/components/art/Ornament";
 
 import { useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -14,7 +13,6 @@ import { StampChip } from "@/components/art/StampIcon";
 import { Busy } from "@/components/ui/Busy";
 import { Button } from "@/components/ui/Button";
 import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
-import { useQuote } from "@/lib/queries";
 import { formatDateHand, today } from "@/lib/dates";
 import { fetchDaily, saveDaily } from "@/lib/journal";
 import { EditMark } from "@/components/art/PenMarks";
@@ -51,7 +49,6 @@ function DailyContent() {
   const [localStamps, setLocalStamps] = useState<Record<string, string[]>>({});
   const [localMood, setLocalMood] = useState<string | null>(null);
 
-  const { data: quoteData } = useQuote(date);
   const { data: reflection, isPending: isLoading } = useQuery({
     queryKey: ["daily", date],
     queryFn: () => fetchDaily(date),
@@ -127,24 +124,13 @@ function DailyContent() {
 
   return (
     <div className="pb-20">
-      {/* Which day this is (the page has no header; a past day can be opened from search). */}
-      <p className="mb-3 inline-flex items-center gap-1.5 font-ui text-[13px] font-medium text-ink-soft tabular">
-        <span className="w-1.5 h-1.5 rounded-full bg-saffron" aria-hidden="true" />
-        {date === today() ? `Today, ${formatDateHand(date).replace(" · ", " ")}` : formatDateHand(date).replace(" · ", ", ")}
-      </p>
-      {/* Quote */}
-      {/* Quote and heading frame the read-back; while answering, the question has the room. */}
-      {showSavedView && quoteData?.quote && (
-        <div className="mb-4">
-          <p className="font-serif italic text-lg leading-[1.6] text-ink">
-            &ldquo;{quoteData.quote}&rdquo;
-          </p>
-          <Ornament name="divider" width={220} className="mx-auto my-6 text-ink-soft/40" />
-        </div>
+      {/* A past day (opened from search) says which day it is; today needs no label. */}
+      {date !== today() && (
+        <p className="mb-4 inline-flex items-center gap-1.5 font-ui text-[13px] font-medium text-ink-soft tabular">
+          <span className="w-1.5 h-1.5 rounded-full bg-saffron" aria-hidden="true" />
+          {formatDateHand(date).replace(" · ", ", ")}
+        </p>
       )}
-
-      {/* Title */}
-      {showSavedView && <h2 className="font-display text-[19px] font-semibold text-ink mb-4">Reflection</h2>}
 
       {showSavedView ? (
         /* Saved view — show answers as read-only cards with edit button */
