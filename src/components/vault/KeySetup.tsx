@@ -159,38 +159,34 @@ function Intro({ firstTime }: { firstTime: boolean }) {
       />
       <ul className="mt-6 flex flex-col gap-4">
         {points.map((p, i) => (
-          <li key={i} className="flex gap-3.5 items-start font-ui text-[15px] leading-[1.55]">
-            {/* The icon sits centred on the first line of its text, whatever the font size. */}
-            <span className="flex items-center h-[1.55em] shrink-0">
-              <span className="grid place-items-center w-9 h-9 rounded-[11px] bg-accent-soft text-accent">{p.icon}</span>
-            </span>
-            <span className="text-ink">{p.text}</span>
+          <li key={i} className="flex gap-3.5 items-center">
+            <span className="grid place-items-center w-9 h-9 rounded-[11px] bg-accent-soft text-accent shrink-0">{p.icon}</span>
+            <span className="font-ui text-[15px] leading-[1.55] text-ink">{p.text}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-6 font-ui text-[13px] leading-[1.55] text-ink-soft">
-        What stays visible to the people who run ana: your name and email, when you joined and were last here, how much you&rsquo;ve stored, and the dates of entries. Never their words, photos or recordings.
-      </p>
     </div>
   );
 }
 
-/** A padlock with a lotus for its keyhole, in soft rings: the page's single picture. */
+/** A padlock with a lotus for its keyhole, in soft rings: it clicks shut, the lotus opens, the rings breathe. */
 function LockArt() {
   return (
     <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">
-      <circle cx="75" cy="78" r="62" fill="var(--accent-soft)" />
+      <circle className="lock-breathe" cx="75" cy="78" r="62" fill="var(--accent-soft)" />
       <circle cx="75" cy="78" r="46" fill="var(--accent-soft)" />
       <ellipse cx="75" cy="127" rx="30" ry="4" fill="var(--ink)" opacity=".07" />
-      <path className="ana-draw" d="M56 70V56a19 19 0 0 1 38 0v14" fill="none" stroke="var(--accent)" strokeWidth="9" strokeLinecap="round" />
-      <path d="M63 66V56.5a12 12 0 0 1 9-11.6" fill="none" stroke="var(--bg)" strokeWidth="2.4" strokeLinecap="round" opacity=".5" />
+      <g className="lock-shackle">
+        <path d="M56 70V56a19 19 0 0 1 38 0v14" fill="none" stroke="var(--accent)" strokeWidth="9" strokeLinecap="round" />
+        <path d="M63 66V56.5a12 12 0 0 1 9-11.6" fill="none" stroke="var(--bg)" strokeWidth="2.4" strokeLinecap="round" opacity=".5" />
+      </g>
       <rect x="41" y="66" width="68" height="58" rx="17" fill="var(--accent)" />
-      <g fill="var(--bg)">
+      <g className="lock-lotus" fill="var(--bg)">
         <path d="M75 79.5c5.4 5.6 8 10.8 8 15.6 0 4.4-2.8 8.2-8 10.8-5.2-2.6-8-6.4-8-10.8 0-4.8 2.6-10 8-15.6z" />
         <path d="M60 93c5.2-.5 9.4 1.4 12.4 5.9.8 1.2 1.4 2.5 1.8 4-4.5 1-8.7.5-11.6-2-1.9-1.6-2.8-4.2-2.6-7.9z" opacity=".72" />
         <path d="M90 93c-5.2-.5-9.4 1.4-12.4 5.9-.8 1.2-1.4 2.5-1.8 4 4.5 1 8.7.5 11.6-2 1.9-1.6 2.8-4.2 2.6-7.9z" opacity=".72" />
       </g>
-      <g fill="var(--accent)" opacity=".45">
+      <g className="lock-dots" fill="var(--accent)" opacity=".45">
         <circle cx="118" cy="44" r="2.6" />
         <circle cx="30" cy="96" r="2" />
         <circle cx="124" cy="106" r="1.6" />
