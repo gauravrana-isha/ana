@@ -36,10 +36,33 @@ export function mediaUrl(id: string) {
  * private storage (R2, or Blob for older setups) in production, so large videos never touch our server, or to the
  * dev server's disk locally. Returns where it landed.
  */
+type Storage = "r2" | "blob" | "local";
+
+/** Where uploads go right now, straight from the server (the app's copy can be out of date). */
+async function currentStorage(): Promise<Storage | null> {
+  const res = await fetch("/api/me", { cache: "no-store" }).catch(() => null);
+  return res?.ok ? ((await res.json()).storage ?? null) : null;
+}
+
 export async function storeFile(
   file: Blob,
   kind: MediaKind,
-  opts: { userId: string; storage: "r2" | "blob" | "local"; onProgress?: (pct: number) => void; replacing?: string }
+  opts: { userId: string; storage: Storage; onProgress?: (pct: number) => void; replacing?: string }
+): Promise<{ pathname: string; contentType: string; sealed: boolean }> {
+  try {
+    return await storeAt(file, kind, opts);
+  } catch (err) {
+    // If storage moved (say, to R2) since the app loaded, go where it is now.
+    const now = await currentStorage();
+    if (now && now !== opts.storage) return storeAt(file, kind, { ...opts, storage: now });
+    throw err;
+  }
+}
+
+async function storeAt(
+  file: Blob,
+  kind: MediaKind,
+  opts: { userId: string; storage: Storage; onProgress?: (pct: number) => void; replacing?: string }
 ) {
   const contentType = (file.type || "application/octet-stream").split(";")[0];
   if (file.size > MAX_BYTES[kind]) throw new Error(`That file is too large (up to ${MAX_BYTES[kind] / 1024 / 1024} MB).`);
@@ -101,7 +124,7 @@ function putWithProgress(url: string, body: Blob, type: string, onProgress?: (pc
 export async function uploadMedia(
   file: Blob,
   kind: MediaKind,
-  opts: { userId: string; storage: "r2" | "blob" | "local"; durationSec?: number; onProgress?: (pct: number) => void }
+  opts: { userId: string; storage: Storage; durationSec?: number; onProgress?: (pct: number) => void }
 ): Promise<AttachmentDTO> {
   const { pathname, contentType, sealed } = await storeFile(file, kind, opts);
   const reg = await fetch("/api/attachments", {

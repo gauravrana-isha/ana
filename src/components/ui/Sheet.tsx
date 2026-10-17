@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useDragControls, useReducedMotion, type PanInfo } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "./Busy";
 import { CloseButton } from "@/components/ui/CloseButton";
@@ -27,6 +27,16 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
   const reduce = useReducedMotion();
   const area = useVisibleArea(open);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const drag = useDragControls();
+
+  // Phones: pull the sheet down by its handle or title to close it; a short pull springs back.
+  const startDrag = (e: React.PointerEvent) => {
+    if (busy || e.pointerType === "mouse" || (e.target as Element).closest("button, a, input, [role=tab]")) return;
+    drag.start(e);
+  };
+  const endDrag = (_: unknown, info: PanInfo) => {
+    if (info.offset.y > 110 || info.velocity.y > 600) onClose();
+  };
 
   // Keep what you're typing in view. With the keyboard up the sheet is short, and iOS doesn't
   // always scroll the sheet's own body to the field or the cursor, so it could sit hidden
@@ -104,10 +114,18 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
             animate={{ y: 0, opacity: 1 }}
             exit={reduce ? { opacity: 0 } : { y: 40, opacity: 0 }}
             transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+            drag="y"
+            dragListener={false}
+            dragControls={drag}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.9 }}
+            onDragEnd={endDrag}
           >
             <BusyBar show={busy} className="absolute top-0 inset-x-6 z-10" />
-            <span className="sm:hidden mx-auto mt-2.5 w-10 h-1 rounded-full bg-line shrink-0" aria-hidden="true" />
-            <header className="shrink-0 px-5 sm:px-6 pt-4 sm:pt-6">
+            <div onPointerDown={startDrag} className="sm:hidden shrink-0 pt-2.5 pb-1 -mb-1 touch-none" aria-hidden="true">
+              <span className="block mx-auto w-10 h-1 rounded-full bg-line" />
+            </div>
+            <header onPointerDown={startDrag} className="shrink-0 px-5 sm:px-6 pt-4 sm:pt-6 max-sm:touch-none">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-display text-[24px] font-semibold tracking-[-0.015em] text-ink">{title}</h2>
                 <CloseButton onClick={onClose} disabled={busy} />

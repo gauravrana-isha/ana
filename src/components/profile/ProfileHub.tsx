@@ -12,7 +12,6 @@ import { WhoAmICard } from "@/components/profile/WhoAmI";
 import { mediaUrl } from "@/lib/media-client";
 import { useMe, type Me } from "@/lib/me";
 import { NotificationSettings } from "@/components/push/Notifications";
-import { usePush } from "@/lib/push-client";
 import { usePractices, keys } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
 import { Avatar } from "@/components/shell/Sidebar";
@@ -34,7 +33,7 @@ import type { Practice } from "@/lib/types";
 import { deletePractice, fetchProfileStats } from "@/lib/journal";
 import { exportJournal, importJournal } from "@/lib/importer";
 import { PrivacySettings } from "@/components/vault/PrivacySettings";
-import { BellMark, DeleteMark, EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
+import { DeleteMark, EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
@@ -47,13 +46,12 @@ import { BackButton } from "@/components/ui/DetailBar";
  * back); on wider screens the list sits on the left and the open part on the right.
  */
 
-export type SectionKey = "sections" | "practices" | "appearance" | "notifications" | "privacy" | "data";
+export type SectionKey = "sections" | "practices" | "device" | "privacy" | "data";
 
 const TITLES: Record<SectionKey, string> = {
   sections: "Sections",
   practices: "Practices",
-  appearance: "Appearance",
-  notifications: "Notifications",
+  device: "Theme & notifications",
   privacy: "Privacy & keys",
   data: "Your data",
 };
@@ -127,14 +125,12 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 function Rows({ me, active }: { me: Me; active?: SectionKey }) {
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as ThemeName);
   const { data: practices } = usePractices();
-  const push = usePush();
   const tracker = me.features.includes("tracker");
 
   const rows: { k: SectionKey; icon: React.ReactNode; status: string }[] = [
     { k: "sections", icon: <Glyph k="cards" size={19} />, status: `${me.features.length} on` },
     ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} />, status: practices ? `${practices.length} ${practices.length === 1 ? "practice" : "practices"}` : "" }] : []),
-    { k: "appearance", icon: theme === "dark" ? <MoonMark size={19} /> : <SunMark size={19} />, status: theme === "dark" ? "Dark" : "Light" },
-    { k: "notifications", icon: <BellMark size={19} />, status: push.state === "on" ? "On" : push.state === "off" ? "Off" : "" },
+    { k: "device", icon: theme === "dark" ? <MoonMark size={19} /> : <SunMark size={19} />, status: theme === "dark" ? "Dark" : "Light" },
     { k: "privacy", icon: <Glyph k="lock" size={19} />, status: "" },
     { k: "data", icon: <Glyph k="download" size={19} />, status: "" },
   ];
@@ -174,10 +170,8 @@ function Panel({ k, me }: { k: SectionKey; me: Me }) {
       return <SectionsPanel me={me} />;
     case "practices":
       return <PracticesPanel />;
-    case "appearance":
-      return <AppearancePanel />;
-    case "notifications":
-      return <NotificationSettings bare />;
+    case "device":
+      return <DevicePanel />;
     case "privacy":
       return <PrivacySettings bare />;
     case "data":
@@ -225,6 +219,22 @@ function SectionsPanel({ me }: { me: Me }) {
           </label>
         );
       })}
+    </div>
+  );
+}
+
+/** Both are this device's own: its theme, and whether it shows notifications. */
+function DevicePanel() {
+  return (
+    <div className="flex flex-col gap-7">
+      <section>
+        <h3 className="mb-3 font-ui text-[14px] font-semibold text-ink">Theme</h3>
+        <AppearancePanel />
+      </section>
+      <section>
+        <h3 className="mb-3 font-ui text-[14px] font-semibold text-ink">Notifications</h3>
+        <NotificationSettings bare />
+      </section>
     </div>
   );
 }
