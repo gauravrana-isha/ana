@@ -248,7 +248,8 @@ export function MomentTimeline({ moments, onEdit, hidePersonId, folded = false, 
               type="button"
               onClick={() => toggle(month.key)}
               aria-expanded={!closed}
-              className="press group -mx-1 mb-3 flex w-[calc(100%+0.5rem)] items-center gap-2 rounded-[12px] px-1 py-1.5 text-left"
+              // Stays at the top while its month scrolls by (below the status bar on phones).
+              className="press group sticky top-[var(--safe-top)] lg:top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-3 mb-3 flex w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] lg:w-[calc(100%+1.5rem)] items-center gap-2 px-4 sm:px-6 lg:px-3 py-2 text-left bg-bg/95 backdrop-blur-md"
             >
               <span className="font-display text-[19px] font-semibold text-ink">{month.label}</span>
               <span className="font-ui text-[12.5px] text-ink-soft tabular">{month.count}</span>
