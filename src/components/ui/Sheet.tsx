@@ -5,6 +5,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "./Busy";
+import { Portal } from "./Portal";
+import { useVisibleArea } from "@/lib/visual-viewport";
 
 interface SheetProps {
   open: boolean;
@@ -23,6 +25,7 @@ interface SheetProps {
 /** Bottom sheet on phones, centred dialog on larger screens. */
 export function Sheet({ open, onClose, title, children, footer, header, size = "md", busy = false }: SheetProps) {
   const reduce = useReducedMotion();
+  const area = useVisibleArea(open);
 
   useEffect(() => {
     if (!open) return;
@@ -37,13 +40,14 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
   }, [open, onClose, busy]);
 
   return (
+    <Portal>
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6" style={area} role="dialog" aria-modal="true" aria-label={title}>
           <motion.div className="absolute inset-0 bg-[rgba(24,22,15,0.36)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !busy && onClose()} />
           <motion.div
             className={cn(
-              "relative w-full max-h-[94dvh] sm:max-h-[88dvh] flex flex-col bg-bg rounded-t-[24px] sm:rounded-[24px] shadow-[var(--shadow-lift)] overflow-hidden",
+              "relative w-full max-h-[94%] sm:max-h-[88%] flex flex-col bg-bg rounded-t-[24px] sm:rounded-[24px] shadow-[var(--shadow-lift)] overflow-hidden",
               size === "lg" ? "sm:max-w-[680px]" : "sm:max-w-[560px]"
             )}
             initial={reduce ? { opacity: 0 } : { y: 40, opacity: 0 }}
@@ -72,5 +76,6 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }

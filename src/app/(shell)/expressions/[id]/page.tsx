@@ -17,6 +17,7 @@ import { MomentPageSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { mediaUrl } from "@/lib/media-client";
 import type { Moment } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
+import { Portal } from "@/components/ui/Portal";
 
 /**
  * One moment, in full: its media at full size (photos open fullscreen), the whole text, the
@@ -175,6 +176,7 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
   }, [index, photos.length, onIndex]);
 
   return (
+    <Portal>
     <AnimatePresence>
       {index !== null && (
         <motion.div
@@ -222,5 +224,6 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
         </motion.div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }

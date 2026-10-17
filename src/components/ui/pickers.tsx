@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CalendarBlank, Clock, X } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { Portal } from "./Portal";
+import { useVisibleArea } from "@/lib/visual-viewport";
 import { toISODate, today } from "@/lib/dates";
 import { Chevron, RoundArrowButton } from "./Arrows";
 
@@ -20,6 +22,7 @@ const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 /** Bottom sheet on phones, small centred dialog on larger screens; always above other sheets. */
 export function PickerPanel({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; footer?: React.ReactNode }) {
   const reduce = useReducedMotion();
+  const area = useVisibleArea(open);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -33,9 +36,10 @@ export function PickerPanel({ open, onClose, title, children, footer }: { open: 
   }, [open, onClose]);
 
   return (
+    <Portal>
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-6" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-6" style={area} role="dialog" aria-modal="true" aria-label={title}>
           <motion.div className="absolute inset-0 bg-[rgba(24,22,15,0.3)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
           <motion.div
             className="relative w-full sm:w-[344px] bg-bg rounded-t-[24px] sm:rounded-[22px] shadow-[var(--shadow-lift)] px-5 pt-3 sm:pt-5 pb-[max(18px,env(safe-area-inset-bottom))] sm:pb-5"
@@ -57,6 +61,7 @@ export function PickerPanel({ open, onClose, title, children, footer }: { open: 
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }
 

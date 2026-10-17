@@ -406,8 +406,10 @@ html.kb-open .ana-fab {
 @keyframes ana-skeleton-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* Each screen eases in when it replaces its skeleton. */
-.ana-page-in { animation: ana-page-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
-@keyframes ana-page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* Opacity only, and no fill: a transform here would make the page the frame for every
+   "fixed" thing inside it (sheets, buttons), and misplace them. */
+.ana-page-in { animation: ana-page-in 0.24s ease-out; }
+@keyframes ana-page-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* The loader: a line lotus drawn stroke by stroke, then let go, on a loop. */
 .ana-draw path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ana-draw 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
