@@ -532,3 +532,18 @@ html { overscroll-behavior-y: none; }
 
 /* A page in full (a moment, the reflection editor): no tab bar under it. */
 body:has([data-bare]) .ana-tabbar { display: none; }
+
+/* The loader: the splash's coiled snake, turning around its coil, in the accent colour. */
+.ana-coil {
+  background: currentColor;
+  color: var(--accent);
+  -webkit-mask: url("/splash/splash-snake.webp") center / contain no-repeat;
+  mask: url("/splash/splash-snake.webp") center / contain no-repeat;
+  transform-origin: 44.7% 59.47%;
+  animation: ana-coil 2.4s linear infinite;
+}
+@keyframes ana-coil { to { transform: rotate(360deg); } }
+@keyframes ana-coil-fade { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .ana-coil { animation: ana-coil-fade 2.4s ease-in-out infinite; }
+}

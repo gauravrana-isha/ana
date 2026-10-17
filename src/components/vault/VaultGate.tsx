@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
-import { LotusDraw } from "@/components/ui/Loader";
+import { SnakeLoader } from "@/components/ui/Loader";
 import { useToast } from "@/components/ui/Toast";
 import { configureOutbox, flush } from "@/lib/outbox";
 import { fetchStatus, start, useVault, type VaultStatus } from "@/lib/vault/vault";
@@ -92,7 +92,7 @@ export function VaultGate({
 function Waiting() {
   return (
     <div className="min-h-dvh grid place-items-center bg-bg" role="status" aria-label="Opening your journal">
-      <LotusDraw size={56} />
+      <SnakeLoader size={56} />
     </div>
   );
 }
@@ -143,7 +143,7 @@ function Sealing({ me, first, onDone }: { me: { id: string; storage: "r2" | "loc
   return (
     <VaultScreen step="sealing">
       <div className="pt-6">
-        <LotusDraw size={64} />
+        <SnakeLoader size={64} />
         <ScreenTitle
           className="mt-6"
           title={first ? "Locking your journal" : "Finishing locking your journal"}

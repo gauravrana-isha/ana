@@ -8,7 +8,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { Chevron } from "@/components/ui/Arrows";
 import { Lotus } from "@/components/art/Lotus";
-import { LotusDraw } from "@/components/ui/Loader";
+import { SnakeLoader } from "@/components/ui/Loader";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
@@ -122,7 +122,7 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
   if (keyStage && lock.status === "unlocked" && !error) {
     return (
       <div className="min-h-dvh grid place-items-center bg-bg" role="status" aria-label="Setting up your journal">
-        <LotusDraw size={56} />
+        <SnakeLoader size={56} />
       </div>
     );
   }
