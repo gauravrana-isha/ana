@@ -529,3 +529,6 @@ html { overscroll-behavior-y: none; }
 .ana-zoom::-moz-range-thumb { width: 22px; height: 22px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 0.35); }
 .ana-zoom:focus-visible { outline: none; }
 .ana-zoom:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgb(255 255 255 / 0.3); }
+
+/* A page in full (a moment, the reflection editor): no tab bar under it. */
+body:has([data-bare]) .ana-tabbar { display: none; }

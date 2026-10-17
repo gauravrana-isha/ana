@@ -37,6 +37,8 @@ function DailyContent() {
   // null: reading. "first": a day with nothing saved, answered one question at a time.
   // A prompt key (or "mood"): changing a saved day, in the full editor, scrolled to that item.
   const [editing, setEditing] = useState<null | "first" | string>(null);
+  // The question tapped to open the editor: its answer gets the cursor.
+  const [focusKey, setFocusKey] = useState<string | null>(null);
   const edits = useRef(0);
   const [dirty, setDirty] = useState(false);
   const [localAnswers, setLocalAnswers] = useState<Record<string, string>>({});
@@ -134,7 +136,7 @@ function DailyContent() {
             const stamps = serverStamps[prompt.key] ?? [];
             if (!answer && stamps.length === 0) return null;
             return (
-              <button type="button" key={prompt.key} onClick={() => setEditing(prompt.key)} aria-label={prompt.q ? `Edit: ${prompt.q}` : "Edit reflection"} className="press block w-full text-left rounded-16 p-5 mb-3.5 bg-surface hover:bg-surface-2 transition-colors relative">
+              <button type="button" key={prompt.key} onClick={() => { setFocusKey(prompt.key); setEditing(prompt.key); }} aria-label={prompt.q ? `Edit: ${prompt.q}` : "Edit reflection"} className="press block w-full text-left rounded-16 p-5 mb-3.5 bg-surface hover:bg-surface-2 transition-colors relative">
                 <div className="flex gap-3 items-start">
                   <span className="font-ui text-[13px] font-semibold leading-[1.9] text-ink-soft/70 shrink-0 min-w-[22px] tabular">
                     {prompt.number}
@@ -172,7 +174,7 @@ function DailyContent() {
 
           {/* Edit button */}
           <button
-            onClick={() => setEditing(prompts[0].key)}
+            onClick={() => { setFocusKey(null); setEditing(prompts[0].key); }}
             className="ana-fab fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8
                        w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
                        shadow-[0_6px_16px_var(--accent-soft)] z-20"
@@ -198,12 +200,16 @@ function DailyContent() {
           onDone={() => save(true)}
         />
         ) : (
-        /* Changing a saved day: every question on one page, opened at the one tapped */
+        /* Changing a saved day: a page of its own (no tab bar), every question on it, opened at
+           the one tapped (with the cursor in it), and Cancel / Save pinned at the bottom. */
+        <div data-bare className="pb-24 lg:pb-0">
         <Busy busy={mutation.isPending}>
-          {prompts.map((prompt, i) => (
-            <div key={prompt.key} ref={editing === prompt.key ? scrollIntoView : undefined}>
+          {/* The questions asked now, then any others this day has answers for (hidden or removed since). */}
+          {readingQuestions("daily", me.questions, [...Object.keys(serverAnswers), ...Object.keys(serverStamps)]).map((prompt) => (
+            <div key={prompt.key} ref={editing === prompt.key && focusKey !== prompt.key ? scrollIntoView : undefined}>
               <PromptCard
-                number={String(i + 1)}
+                focus={focusKey === prompt.key}
+                number={prompt.number}
                 question={prompt.q}
                 hint={prompt.hint}
                 answer={localAnswers[prompt.key] ?? ""}
@@ -216,11 +222,14 @@ function DailyContent() {
           <div className="mt-4" ref={editing === "mood" ? scrollIntoView : undefined}>
             <MoodPicker value={localMood} onChange={handleMoodChange} />
           </div>
-          <div className="mt-6 flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => { setEditing(null); setSyncedFrom(null); }} disabled={mutation.isPending}>Cancel</Button>
-            <Button onClick={() => save(true)} loading={mutation.isPending}>Save</Button>
-          </div>
         </Busy>
+          <div className="fixed lg:sticky inset-x-0 bottom-0 z-30 mt-6 bg-bg/95 backdrop-blur-md border-t border-line lg:border lg:rounded-[18px] lg:bottom-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] lg:pb-3">
+            <div className="max-w-[860px] mx-auto px-4 sm:px-6 lg:px-4 flex justify-end gap-3">
+              <Button variant="secondary" className="flex-1 sm:flex-none" onClick={() => { setEditing(null); setSyncedFrom(null); }} disabled={mutation.isPending}>Cancel</Button>
+              <Button className="flex-1 sm:flex-none" onClick={() => save(true)} loading={mutation.isPending}>Save</Button>
+            </div>
+          </div>
+        </div>
         )
       )}
     </div>

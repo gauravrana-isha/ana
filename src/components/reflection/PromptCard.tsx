@@ -10,6 +10,14 @@ interface PromptCardProps {
   stamps: string[];
   onAnswerChange: (val: string) => void;
   onStampToggle: (stamp: string) => void;
+  /** Put the cursor here (at the end of the answer) when the card opens: the question that was tapped. */
+  focus?: boolean;
+}
+
+/** The box fits its text: on opening (a long saved answer shows whole) and as it's typed. */
+function fit(el: HTMLTextAreaElement) {
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
 }
 
 export function PromptCard({
@@ -20,6 +28,7 @@ export function PromptCard({
   stamps,
   onAnswerChange,
   onStampToggle,
+  focus = false,
 }: PromptCardProps) {
   return (
     <div className="rounded-16 p-4 sm:p-5 mb-3.5 bg-surface">
@@ -43,11 +52,18 @@ export function PromptCard({
           value={answer}
           onChange={(e) => onAnswerChange(e.target.value)}
           rows={1}
-          onInput={(e) => {
-            const target = e.target as HTMLTextAreaElement;
-            target.style.height = "auto";
-            target.style.height = target.scrollHeight + "px";
+          aria-label={question}
+          ref={(el) => {
+            if (!el) return;
+            fit(el);
+            if (focus && !el.dataset.focused) {
+              el.dataset.focused = "1";
+              el.focus({ preventScroll: true });
+              el.setSelectionRange(el.value.length, el.value.length);
+              requestAnimationFrame(() => el.scrollIntoView({ block: "center", behavior: "smooth" }));
+            }
           }}
+          onInput={(e) => fit(e.currentTarget)}
         />
       </div>
       <div className="sm:ml-[34px]">
