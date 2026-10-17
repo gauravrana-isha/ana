@@ -96,7 +96,7 @@ export async function PATCH(req: NextRequest) {
     await db.attachment.delete({ where: { id: oldPhoto.id } }).catch(() => {});
     await removeAttachmentFiles(oldPhoto);
   }
-  // A new "look again" setting: any pending reminder about it is done with.
+  // A new "reflect again" setting: any pending reminder about it is done with.
   if (portraitEveryMonths === 0) await resolveNotifications("portrait:", user.id);
   return NextResponse.json({ ok: true });
 }

@@ -87,8 +87,10 @@ export async function GET(req: NextRequest) {
   });
 
   // ---- Birthdays (from the morning, local time; gone the day after)
+  // Only birthdays that fall today somewhere: local dates run from UTC-12 to UTC+14.
+  const todays = [...new Set([-12, 0, 14].map((h) => new Date(now.getTime() + h * 3_600_000).toISOString().slice(5, 10)))];
   const people = await db.person.findMany({
-    where: { OR: [{ birthdayMD: { not: null } }, { birthday: { not: null } }], user: { status: "APPROVED" } },
+    where: { OR: [{ birthdayMD: { in: todays } }, { birthday: { not: null }, birthdayMD: null }], user: { status: "APPROVED" } },
     select: { id: true, userId: true, birthday: true, birthdayMD: true, user: { select: { timeZone: true, features: { where: { feature: "people" } } } } },
   });
   await inParallel(people, async (p) => {
@@ -126,7 +128,7 @@ export async function GET(req: NextRequest) {
       kind: "portrait",
       key: `portrait:${last.id}`,
       title: "Who are you now?",
-      body: `It's been ${u.portraitEveryMonths === 12 ? "a year" : `${u.portraitEveryMonths} months`} since you last looked. Look at the three layers again.`,
+      body: `It's been ${u.portraitEveryMonths === 12 ? "a year" : `${u.portraitEveryMonths} months`} since you last reflected. Take a few minutes with body, mind and emotion again.`,
       url: "/profile/who",
     });
     if (made) sent.portraits++;

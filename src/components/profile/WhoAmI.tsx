@@ -33,7 +33,7 @@ export function WhoAmICard() {
           {latest ? (
             <>
               <p className="font-serif italic text-[17px] leading-[1.55] text-ink">Body, mind, emotion, as you last saw them.</p>
-              <p className="font-ui text-[13px] text-ink-soft mt-1.5 tabular">Looked on {longDate(latest.createdAt)}</p>
+              <p className="font-ui text-[13px] text-ink-soft mt-1.5 tabular">Last reflected on {longDate(latest.createdAt)}</p>
             </>
           ) : (
             <>
@@ -42,7 +42,7 @@ export function WhoAmICard() {
             </>
           )}
           <span className="mt-3 inline-flex items-center gap-1.5 font-ui text-[14px] font-semibold text-accent">
-            {latest ? "Look again" : "Begin"} <Arrow size={15} className="transition-transform group-hover:translate-x-0.5" />
+            {latest ? "Reflect again" : "Begin"} <Arrow size={15} className="transition-transform group-hover:translate-x-0.5" />
           </span>
         </div>
       </Link>

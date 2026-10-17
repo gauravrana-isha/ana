@@ -5,11 +5,12 @@ import { useEffect, useState } from "react";
 import { usePersistentState } from "@/lib/persist";
 import { usePrefetchScreen } from "@/lib/prefetch";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 import { NavIcon } from "./NavIcon";
 import { BARE_PAGES, type NavItem } from "./nav";
 import { cn } from "@/lib/utils";
+import { Sheet } from "@/components/ui/Sheet";
 import { Glyph } from "@/components/art/Glyphs";
 
 const MAX_TABS = 5;
@@ -63,35 +64,21 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
         </div>
       </nav>
 
-      <AnimatePresence>
-        {more && (
-          <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="More">
-            <motion.div className="absolute inset-0 bg-[rgba(24,22,15,0.3)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMore(false)} />
-            <motion.div
-              className="absolute inset-x-0 bottom-0 rounded-t-[24px] bg-bg shadow-[var(--shadow-lift)] px-4 pt-3 pb-[calc(80px+env(safe-area-inset-bottom))]"
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <span className="block mx-auto w-10 h-1 rounded-full bg-line mb-3" aria-hidden="true" />
-              <ul className="flex flex-col gap-1">
-                {overflow.map((item) => {
-                  const active = pathname.startsWith(item.href);
-                  return (
-                    <li key={item.key}>
-                      <Link href={item.href} {...prefetch(item.href)} onClick={() => setMore(false)} aria-current={active ? "page" : undefined} className={cn("press flex items-center gap-3 h-12 px-3 rounded-[14px] font-ui text-[15px] font-semibold", active ? "bg-accent-soft text-accent" : "text-ink hover:bg-surface")}>
-                        <NavIcon k={item.key} size={21} weight={active ? "fill" : "regular"} />
-                        {item.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <Sheet open={more} onClose={() => setMore(false)} title="More">
+        <ul className="flex flex-col gap-1 -mx-2">
+          {overflow.map((item) => {
+            const active = pathname.startsWith(item.href);
+            return (
+              <li key={item.key}>
+                <Link href={item.href} {...prefetch(item.href)} onClick={() => setMore(false)} aria-current={active ? "page" : undefined} className={cn("press flex items-center gap-3 h-12 px-3 rounded-[14px] font-ui text-[15px] font-semibold", active ? "bg-accent-soft text-accent" : "text-ink hover:bg-surface")}>
+                  <NavIcon k={item.key} size={21} weight={active ? "fill" : "regular"} />
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </Sheet>
     </>
   );
 }

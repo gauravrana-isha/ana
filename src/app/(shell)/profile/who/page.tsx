@@ -193,7 +193,7 @@ export default function WhoAmIPage() {
             </div>
           ))}
           <div className="pt-1">
-            <Button onClick={() => { setDraft(EMPTY); setComposing(true); window.scrollTo({ top: 0 }); }}>Look again</Button>
+            <Button onClick={() => { setDraft(EMPTY); setComposing(true); window.scrollTo({ top: 0 }); }}>Reflect again</Button>
           </div>
         </div>
       </section>
@@ -233,8 +233,8 @@ export default function WhoAmIPage() {
       )}
 
       <section>
-        <h2 className="font-display text-[19px] font-semibold text-ink mb-1">Ask me again</h2>
-        <p className="font-ui text-[13px] text-ink-soft mb-3">A note in your bell when it&rsquo;s time to look again.</p>
+        <h2 className="font-display text-[19px] font-semibold text-ink mb-1">Remind me to reflect again</h2>
+        <p className="font-ui text-[13px] text-ink-soft mb-3">A gentle note in your bell when it&rsquo;s time.</p>
         <div inert={savingRevisit} className={cn("flex flex-wrap gap-1.5 transition-opacity", savingRevisit && "opacity-60")}>
           {REVISIT_CHOICES.map((c) => (
             <button key={c.months} type="button" aria-pressed={me?.portraitEveryMonths === c.months} onClick={() => setRevisit(c.months)} className={cn("press h-9 px-3.5 rounded-full font-ui text-[13px] font-semibold border transition-colors", me?.portraitEveryMonths === c.months ? "bg-accent text-bg border-accent" : "border-line text-ink-soft hover:text-ink")}>

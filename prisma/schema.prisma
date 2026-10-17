@@ -251,6 +251,7 @@ model Person {
   moments        ExpressionPerson[]
 
   @@index([userId, name])
+  @@index([birthdayMD])
 }
 
 model ExpressionPerson {
