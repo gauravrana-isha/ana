@@ -34,7 +34,6 @@ import type { Practice } from "@/lib/types";
 import { deletePractice, fetchProfileStats } from "@/lib/journal";
 import { exportJournal, importJournal } from "@/lib/importer";
 import { PrivacySettings } from "@/components/vault/PrivacySettings";
-import { fetchStatus } from "@/lib/vault/vault";
 import { BellMark, DeleteMark, EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Glyph } from "@/components/art/Glyphs";
@@ -129,19 +128,15 @@ function Rows({ me, active }: { me: Me; active?: SectionKey }) {
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as ThemeName);
   const { data: practices } = usePractices();
   const push = usePush();
-  const { data: vault } = useQuery({ queryKey: ["vault-status"], queryFn: fetchStatus, staleTime: 30_000 });
   const tracker = me.features.includes("tracker");
 
-  const ways = vault
-    ? [vault.keys.some((k) => k.kind === "passkey") && "Passkey", vault.keys.some((k) => k.kind === "passphrase") && "Passphrase", "recovery words"].filter(Boolean).join(" · ")
-    : "";
   const rows: { k: SectionKey; icon: React.ReactNode; status: string }[] = [
     { k: "sections", icon: <Glyph k="cards" size={19} />, status: `${me.features.length} on` },
     ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} />, status: practices ? `${practices.length} ${practices.length === 1 ? "practice" : "practices"}` : "" }] : []),
     { k: "appearance", icon: theme === "dark" ? <MoonMark size={19} /> : <SunMark size={19} />, status: theme === "dark" ? "Dark" : "Light" },
     { k: "notifications", icon: <BellMark size={19} />, status: push.state === "on" ? "On" : push.state === "off" ? "Off" : "" },
-    { k: "privacy", icon: <Glyph k="lock" size={19} />, status: ways },
-    { k: "data", icon: <Glyph k="download" size={19} />, status: "Download or import" },
+    { k: "privacy", icon: <Glyph k="lock" size={19} />, status: "" },
+    { k: "data", icon: <Glyph k="download" size={19} />, status: "" },
   ];
 
   return (
@@ -159,8 +154,8 @@ function Rows({ me, active }: { me: Me; active?: SectionKey }) {
                 className={cn("press flex items-center gap-3 px-2.5 py-2.5 rounded-[13px] transition-colors", on ? "bg-bg shadow-[var(--shadow-soft)]" : "hover:bg-bg/60")}
               >
                 <span className={cn("grid place-items-center w-9 h-9 rounded-[11px] shrink-0 transition-colors", on ? "bg-accent text-bg" : "bg-accent-soft text-accent")}>{r.icon}</span>
-                <span className="flex-1 min-w-0 font-ui text-[15px] font-semibold text-ink truncate">{TITLES[r.k]}</span>
-                {r.status && <span className="font-ui text-[13px] text-ink-soft truncate max-w-[45%]">{r.status}</span>}
+                <span className="flex-1 font-ui text-[15px] font-semibold text-ink whitespace-nowrap">{TITLES[r.k]}</span>
+                {r.status && <span className="min-w-0 font-ui text-[13px] text-ink-soft truncate">{r.status}</span>}
                 <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
               </Link>
             </li>
