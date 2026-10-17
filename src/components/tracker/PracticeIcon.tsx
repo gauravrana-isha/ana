@@ -1,14 +1,9 @@
 "use client";
 
-import { createElement } from "react";
 import Image from "next/image";
-import { practiceIcon } from "./practiceIcons";
-import type { IconProps } from "@phosphor-icons/react";
+import { PracticeGlyph } from "./practiceIcons";
 import { catalogFor, catalogImage } from "@/lib/practiceCatalog";
 import { cn } from "@/lib/utils";
-
-// Older practices saved icon names that aren't Phosphor exports.
-const iconFor = practiceIcon;
 
 const TONES: [string, string][] = [
   ["#8fae8a", "#5b7a58"],
@@ -67,7 +62,7 @@ export function PaintedTile({ icon, size = 36, className }: { icon: string; size
       className={cn("rounded-[10px] grid place-items-center shrink-0 text-[#fdf6e7] shadow-[inset_0_-8px_16px_rgba(0,0,0,0.12)]", className)}
       style={{ width: size, height: size, background: `radial-gradient(120% 100% at 50% 30%, ${from}, ${to})` }}
     >
-      {createElement(iconFor(icon), { size: Math.round(size * 0.52), weight: "duotone" })}
+      <PracticeGlyph name={icon} size={Math.round(size * 0.6)} strokeWidth={2.4} />
     </span>
   );
 }

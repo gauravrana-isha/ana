@@ -2,12 +2,11 @@
 
 import { Busy } from "@/components/ui/Busy";
 
-import { createElement, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { practiceIcon } from "./practiceIcons";
-import type { IconProps } from "@phosphor-icons/react";
+import { PracticeGlyph } from "./practiceIcons";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { keys, usePractices } from "@/lib/queries";
@@ -47,10 +46,6 @@ const TRACK_OPTIONS: { id: string; label: string; hint: string; icon: string; ha
   { id: "scale", label: "3-level scale", hint: "Low, medium, high", icon: "ChartBar", hasDoneToggle: false, fields: [{ key: "level", kind: "ICONSCALE" }] },
 ];
 
-function Icon({ name, ...props }: { name: string } & IconProps) {
-  const C = practiceIcon(name);
-  return createElement(C, props);
-}
 
 interface AddPracticeDialogProps {
   open: boolean;
@@ -237,7 +232,7 @@ function CustomTab({ onDone }: { onDone: () => void }) {
               )}
             >
               <span className={cn("grid place-items-center w-9 h-9 rounded-[10px] shrink-0", trackId === t.id ? "bg-accent text-bg" : "bg-bg text-ink-soft")}>
-                <Icon name={t.icon} size={18} />
+                <PracticeGlyph name={t.icon} size={18} />
               </span>
               <span>
                 <span className="block font-ui text-[14px] font-semibold text-ink">{t.label}</span>
