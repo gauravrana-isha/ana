@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { SignOut } from "@phosphor-icons/react";
 import { clear, get } from "idb-keyval";
 import { signOutAction } from "@/app/actions";
 import { dropPushSubscription } from "@/lib/push-client";
 import { dropMediaCache } from "@/lib/vault/files";
 import { ButtonLoader } from "@/components/ui/Loader";
 import { cn } from "@/lib/utils";
+import { SignOutMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
 
 /**
@@ -52,7 +52,7 @@ export function SignOutButton({ className, withIcon = true, labelClassName }: { 
       aria-label="Sign out"
       className={cn("press inline-flex items-center gap-1.5 h-9 px-3 rounded-[11px] font-ui text-[13px] font-semibold text-accent hover:bg-accent-soft", className)}
     >
-      {busy ? <ButtonLoader /> : withIcon && <SignOut size={16} />}
+      {busy ? <ButtonLoader /> : withIcon && <SignOutMark size={17} />}
       <span className={labelClassName}>Sign out</span>
     </button>
   );
