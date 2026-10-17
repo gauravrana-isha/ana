@@ -1,3 +1,4 @@
+import { allow } from "@/lib/ratelimit";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
@@ -103,6 +104,7 @@ const Update = z.object({
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user?.vaultAt) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await allow(`vault-legacy:${user.id}`, 120))) return NextResponse.json({ error: "Too many tries. Wait a minute and try again." }, { status: 429 });
   const parsed = Update.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Everything sent here must be encrypted." }, { status: 400 });
   const d = parsed.data;

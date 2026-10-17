@@ -1,3 +1,4 @@
+import { allow } from "@/lib/ratelimit";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
   if (!user || user.status === "SUSPENDED") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!(await allow(`onboard:${user.id}`, 10))) return NextResponse.json({ error: "Too many tries. Wait a minute and try again." }, { status: 429 });
   if (user.onboardedAt) return NextResponse.json({ ok: true, alreadyOnboarded: true });
 
   const parsed = OnboardSchema.safeParse(await req.json().catch(() => null));

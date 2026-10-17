@@ -11,6 +11,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const user = await getCurrentUser();
   if (!user || user.status !== "APPROVED") return new NextResponse("Not found", { status: 404 });
   const { id } = await params;
+  if (!/^[a-z0-9]{8,40}$/i.test(id)) return new NextResponse("Not found", { status: 404 });
   const file = await db.attachment.findFirst({
     where: { id, userId: user.id },
     select: { storage: true, pathname: true, contentType: true, size: true, thumbPathname: true, thumbSize: true },

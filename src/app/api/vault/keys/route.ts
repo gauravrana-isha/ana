@@ -1,3 +1,4 @@
+import { allow } from "@/lib/ratelimit";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -8,6 +9,7 @@ import { NewKey } from "@/lib/sealed";
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user?.vaultAt) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await allow(`vault-keys:${user.id}`, 20))) return NextResponse.json({ error: "Too many tries. Wait a minute and try again." }, { status: 429 });
   const parsed = NewKey.extend({ replace: z.array(z.string().max(40)).max(4).optional() }).safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   const { replace, ...k } = parsed.data;

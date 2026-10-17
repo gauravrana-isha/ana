@@ -3,6 +3,7 @@ import { generateAuthenticationOptions, verifyAuthenticationResponse } from "@si
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import type { AuthenticationResponseJSON } from "@simplewebauthn/types";
 import { db } from "@/lib/db";
+import { allow } from "@/lib/ratelimit";
 import { keepChallenge, relyingParty, startSession, takeChallenge } from "@/lib/passkeys";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { rpID, origin, secure } = relyingParty(req);
   const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
+  // Sign-in attempts per device, so a passkey can't be guessed at.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!(await allow(`passkey-login:${ip}`, 20))) return fail("Too many tries. Wait a minute and try again.", 429);
   const probe = NextResponse.json({});
   const challenge = takeChallenge(req, probe);
   const body = (await req.json().catch(() => null)) as { response?: AuthenticationResponseJSON } | null;

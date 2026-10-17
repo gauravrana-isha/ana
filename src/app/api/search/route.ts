@@ -1,3 +1,4 @@
+import { allow } from "@/lib/ratelimit";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await resolveUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await allow(`search:${user.id}`, 40))) return NextResponse.json({ error: "Too many tries. Wait a minute and try again." }, { status: 429 });
   const has = (f: Parameters<typeof user.effective.includes>[0]) => user.effective.includes(f);
 
   const [moments, people, daily, weekly] = await Promise.all([

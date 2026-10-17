@@ -1,3 +1,4 @@
+import { allow } from "@/lib/ratelimit";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
@@ -6,6 +7,7 @@ import { resolveUser } from "@/lib/session";
 export async function GET() {
   const user = await resolveUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await allow(`export:${user.id}`, 6))) return NextResponse.json({ error: "Too many tries. Wait a minute and try again." }, { status: 429 });
   const where = { userId: user.id };
 
   const [practices, dayLogs, dailyReflections, weeklyReflections, sevaEntries, expressions, people, commitments] = await Promise.all([

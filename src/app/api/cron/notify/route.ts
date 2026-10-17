@@ -135,6 +135,9 @@ export async function GET(req: NextRequest) {
   });
 
   sent.swept = await sweepNotifications(now);
+  // The error log keeps 30 days; rate-limit windows an hour.
+  await db.errorLog.deleteMany({ where: { at: { lt: new Date(now.getTime() - 30 * 24 * 3600_000) } } });
+  await db.rateLimit.deleteMany({ where: { window: { lt: new Date(now.getTime() - 3600_000) } } });
   return NextResponse.json({ ok: true, sent });
 }
 

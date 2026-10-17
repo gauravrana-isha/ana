@@ -1,3 +1,4 @@
+import { allow } from "@/lib/ratelimit";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -40,6 +41,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user || user.status === "SUSPENDED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await allow(`vault-setup:${user.id}`, 10))) return NextResponse.json({ error: "Too many tries. Wait a minute and try again." }, { status: 429 });
   const parsed = z.object({ check: z.string().max(400), keys: z.array(NewKey).min(1).max(4) }).safeParse(await req.json().catch(() => null));
   if (!parsed.success || !isSealed(parsed.data.check)) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   if (!parsed.data.keys.some((k) => k.kind === "phrase")) return NextResponse.json({ error: "A recovery phrase is needed" }, { status: 400 });
