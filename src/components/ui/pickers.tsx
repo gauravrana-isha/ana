@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { CalendarBlank, Clock, X } from "@phosphor-icons/react";
+import { CalendarBlank, Clock } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Portal } from "./Portal";
 import { CloseButton } from "./CloseButton";
 import { useVisibleArea } from "@/lib/visual-viewport";
 import { toISODate, today } from "@/lib/dates";
 import { Chevron, RoundArrowButton } from "./Arrows";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 /*
  * ana's own date and time pickers. Used everywhere instead of the browser/device pickers so
@@ -314,7 +315,7 @@ export function DateField({ value, onChange, placeholder = "Choose a date", min,
         </button>
         {clearable && value && (
           <button type="button" aria-label={`Clear ${label}`} onClick={() => onChange("")} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface">
-            <X size={14} />
+            <CrossMark size={16} />
           </button>
         )}
       </div>

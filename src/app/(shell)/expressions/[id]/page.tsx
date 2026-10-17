@@ -32,6 +32,8 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
   const [viewer, setViewer] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const back = () => (window.history.length > 1 ? router.back() : router.push("/expressions"));
+
   const { data: moment, isPending } = useQuery({
     queryKey: ["moments", "one", id],
     queryFn: async (): Promise<Moment | null> => {
@@ -64,9 +66,17 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <article inert={deleting} className={cn("pb-10 transition-opacity", deleting && "opacity-50")}>
+      {/* No page header here: back and ⋯ float at the top and stay in reach while reading. */}
+      <div className="sticky top-[max(12px,calc(env(safe-area-inset-top)+6px))] lg:top-6 z-20 -mx-1 mb-4 flex items-center justify-between pointer-events-none">
+        <button type="button" onClick={back} aria-label="Back to moments" className={cn(FLOAT, "pointer-events-auto")}>
+          <CaretLeft size={18} weight="bold" />
+        </button>
+        <MomentMenu onEdit={() => setEditing(true)} onDelete={remove} className="pointer-events-auto" buttonClassName={FLOAT} />
+      </div>
+
       <header className="flex items-start gap-3.5">
         <MomentBadge kind={moment.kind} size={44} className="mt-1" />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           {moment.title && <h1 className="font-display text-[26px] sm:text-[30px] font-semibold leading-[1.2] tracking-[-0.01em] text-ink text-balance">{moment.title}</h1>}
           <p className={cn("font-ui text-[13.5px] text-ink-soft tabular flex flex-wrap items-center gap-x-2.5 gap-y-1", moment.title && "mt-1.5")}>
             <span>
@@ -78,7 +88,6 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
             )}
           </p>
         </div>
-        <MomentMenu onEdit={() => setEditing(true)} onDelete={remove} className="shrink-0 -mr-1.5 mt-0.5" />
       </header>
 
       {(photos.length > 0 || videos.length > 0 || audios.length > 0) && (
@@ -136,6 +145,9 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
     </article>
   );
 }
+
+/** The round back and ⋯ buttons, on a soft blur so they read over photos and text. */
+const FLOAT = "press grid place-items-center w-10 h-10 rounded-full bg-bg/90 backdrop-blur-xl border border-line/70 text-ink-soft shadow-[0_1px_3px_rgb(0_0_0/0.06)] hover:text-ink hover:bg-surface";
 
 /** Photos fullscreen: swipe or use the arrows to move between them; Escape or ✕ closes. */
 function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: number | null; onIndex: (i: number | null) => void }) {

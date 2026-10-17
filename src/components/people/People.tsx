@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, X } from "@phosphor-icons/react";
+import { Plus } from "@phosphor-icons/react";
 import { mediaUrl } from "@/lib/media-client";
 import { cn } from "@/lib/utils";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 export interface PersonSummary {
   id: string;
@@ -162,7 +163,7 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
             <PersonAvatar person={p} size={24} />
             <span className="font-ui text-[13.5px] font-semibold text-ink">{p.name}</span>
             <button type="button" aria-label={`Remove ${p.name}`} onClick={() => onChange(value.filter((id) => id !== p.id))} className="grid place-items-center w-5 h-5 rounded-full text-ink-soft hover:text-ink hover:bg-surface">
-              <X size={11} weight="bold" />
+              <CrossMark size={14} />
             </button>
           </span>
         ))}

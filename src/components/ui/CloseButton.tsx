@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The close (✕) button for sheets, panels and viewers. A drawn cross (round-ended strokes,
- * inset so it reads light), in a quiet circle with a hairline edge that firms up on hover,
- * and a quarter turn on hover (devices that can hover). `onDark` is for photos and video.
+ * The close (✕) button for sheets, panels and viewers. A pen-drawn cross to match the tick
+ * (each stroke heavy where the pen lands, tapering off), in a quiet circle with a hairline edge
+ * that firms up on hover, where the cross gives a small ink-like turn and settles (devices that
+ * can hover). `onDark` is for photos and video.
  */
 export function CloseButton({
   onClick,
@@ -36,16 +37,19 @@ export function CloseButton({
       )}
       style={{ width: px, height: px }}
     >
-      <svg
-        width={size === "sm" ? 14 : 15}
-        height={size === "sm" ? 14 : 15}
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden="true"
-        className="transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:rotate-90"
-      >
-        <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-      </svg>
+      <CrossMark size={size === "sm" ? 16 : 18} className="ana-x" />
     </button>
+  );
+}
+
+/** The pen-drawn cross, as a drawing (in the current text colour). */
+export function CrossMark({ size = 16, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <path
+        fill="currentColor"
+        d="M5.4 5.2c1-.6 2-.2 2.8.5 3.1 2.8 6.4 6.9 10.3 12 .3.4 0 .8-.4.6-3.5-2.6-7.9-6.6-11.6-9.7-1.2-1-1.9-2.6-1.1-3.4zM18.9 5.1c.3.3.2.8-.1 1.1-4 3.9-7.6 7.9-10.8 12-.6.8-1.7.9-2.3.3-.5-.5-.4-1.3.1-1.8 3.7-3.8 8.2-7.9 12.4-11.6.2-.2.5-.2.7 0z"
+      />
+    </svg>
   );
 }

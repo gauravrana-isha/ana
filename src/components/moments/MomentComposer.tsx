@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import { X } from "@phosphor-icons/react";
+
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +21,7 @@ import { NotifyNudge } from "@/components/push/Notifications";
 import { AudioCapture, MediaView, PhotoCapture, UploadStrip, VideoCapture, type CapturedMedia } from "./Media";
 import { useEagerUploads } from "./useEagerUploads";
 import { plainText } from "./RichText";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 const KINDS: { id: MomentKind; label: string }[] = [
   { id: "writing", label: "Write" },
@@ -264,7 +265,7 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
                 <div className="flex flex-wrap gap-1.5">
                   {keptOfKind.map((a) => (
                     <button key={a.id} type="button" onClick={() => setKept((k) => k.filter((x) => x.id !== a.id))} className="press inline-flex items-center gap-1 h-8 px-2.5 rounded-full bg-surface font-ui text-[12.5px] font-semibold text-ink-soft hover:text-danger">
-                      <X size={12} weight="bold" /> Remove {a.kind}
+                      <CrossMark size={15} /> Remove {a.kind}
                     </button>
                   ))}
                 </div>

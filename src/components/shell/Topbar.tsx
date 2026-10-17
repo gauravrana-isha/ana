@@ -2,11 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Lotus } from "@/components/art/Lotus";
-import { BACK_TO, PAGE_TITLES } from "./nav";
+import { BARE_PAGES, PAGE_TITLES } from "./nav";
 import { formatDateHand, today } from "@/lib/dates";
-import { CaretLeft, Info } from "@phosphor-icons/react";
+import { Info } from "@phosphor-icons/react";
 import { SearchButton } from "./Search";
 import { NotificationBell } from "./NotificationBell";
 
@@ -21,10 +21,7 @@ export function Topbar() {
     Object.entries(PAGE_TITLES)
       .filter(([href]) => pathname.startsWith(href))
       .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ?? "";
-  const backTo = Object.entries(BACK_TO).find(([prefix]) => pathname.startsWith(prefix))?.[1];
-  const router = useRouter();
-  // Back to where they came from when that's in this tab's history, else to the list.
-  const goBack = () => (window.history.length > 1 ? router.back() : router.push(backTo!));
+  const bare = BARE_PAGES.some((p) => pathname.startsWith(p));
   const helpPage = HELP_PAGES.some((h) => pathname.startsWith(h));
   const headerRef = useRef<HTMLElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
@@ -44,10 +41,13 @@ export function Topbar() {
     return () => cancelAnimationFrame(id);
   }, [pathname]);
 
+  // Phones: a solid strip behind the status bar, so nothing scrolls under the clock.
+  const statusStrip = <div ref={statusRef} aria-hidden="true" className="lg:hidden fixed top-0 inset-x-0 z-30 h-[env(safe-area-inset-top)] bg-bg/95 backdrop-blur-md" />;
+  if (bare) return statusStrip;
+
   return (
     <div className="mb-6 lg:mb-8">
-    {/* Phones: a solid strip behind the status bar, so nothing scrolls under the clock. */}
-    <div ref={statusRef} aria-hidden="true" className="lg:hidden fixed top-0 inset-x-0 z-30 h-[env(safe-area-inset-top)] bg-bg/95 backdrop-blur-md" />
+    {statusStrip}
     {/* Phones: the logo row carries the bell at its far end. */}
     <div className="lg:hidden flex items-center justify-between mb-2 -mt-1">
       <Link href="/" className="flex items-center gap-1.5 text-accent w-fit" aria-label="ana home">
@@ -59,14 +59,7 @@ export function Topbar() {
     <header ref={headerRef} className="flex items-end justify-between gap-3 sm:gap-4">
       <div className="min-w-0">
         <h1 className="font-display text-[26px] min-[400px]:text-[28px] lg:text-[34px] font-semibold text-ink leading-[1.25] tracking-[-0.015em] truncate pb-0.5">
-          {backTo ? (
-            <button type="button" onClick={goBack} aria-label={`${title}, back`} className="press group inline-flex items-center gap-1 -ml-2 pl-1 pr-2 rounded-[12px] hover:bg-surface">
-              <CaretLeft weight="bold" className="w-[0.72em] h-[0.72em] text-ink-soft transition-transform group-hover:-translate-x-0.5 group-hover:text-ink" />
-              {title}
-            </button>
-          ) : (
-            title
-          )}
+          {title}
         </h1>
       </div>
       <div className="flex items-center gap-0.5 sm:gap-1 pb-0.5 shrink-0">

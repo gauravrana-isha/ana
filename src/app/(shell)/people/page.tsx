@@ -3,12 +3,13 @@
 import { ListSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { MagnifyingGlass, Plus, X } from "@phosphor-icons/react";
+import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PersonForm } from "@/components/people/PersonForm";
 import { timeAgo } from "@/lib/dates";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 export default function PeoplePage() {
   const { data: people = [], isPending: isLoading } = usePeople();
@@ -29,7 +30,7 @@ export default function PeoplePage() {
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${people.length || ""} people`.replace("  ", " ")} className="w-full h-11 pl-11 pr-10 rounded-[14px] bg-surface text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/80 [&::-webkit-search-cancel-button]:hidden" />
           {query && (
             <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface-2">
-              <X size={15} />
+              <CrossMark size={17} />
             </button>
           )}
         </label>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { CameraRotate, Images, Pause, Play, Stop, UploadSimple, X, ArrowCounterClockwise } from "@phosphor-icons/react";
+import { CameraRotate, Images, Pause, Play, Stop, UploadSimple, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatDuration, mediaUrl, type AttachmentDTO } from "@/lib/media-client";
 import { useRecorder } from "./useRecorder";
@@ -10,6 +10,7 @@ import { prefersNativeCapture, useCamera } from "./useCamera";
 import { MomentBadge, MomentGlyph } from "@/components/art/MomentIcon";
 import type { UploadState } from "./useEagerUploads";
 import { TickMark } from "@/components/tracker/FieldInput";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 // ---------------------------------------------------------------- playback
 
@@ -262,7 +263,6 @@ export function VideoCapture({ value, onChange }: { value: CapturedMedia | null;
   const nativeRef = useRef<HTMLInputElement>(null);
   const [native] = useState(prefersNativeCapture);
 
-
   useEffect(() => {
     if (rec.result) onChange(rec.result);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -295,7 +295,7 @@ export function VideoCapture({ value, onChange }: { value: CapturedMedia | null;
                 <span className="h-8 px-3 rounded-full bg-black/40 text-white/90 font-ui text-[12.5px] grid place-items-center">Up to 5 minutes</span>
               )}
               {!recording && (
-                <button type="button" onClick={rec.close} aria-label="Close camera" className="press grid place-items-center w-9 h-9 rounded-full bg-black/45 text-white"><X size={16} weight="bold" /></button>
+                <button type="button" onClick={rec.close} aria-label="Close camera" className="press grid place-items-center w-9 h-9 rounded-full bg-black/45 text-white"><CrossMark size={19} /></button>
               )}
             </div>
             <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-6">
@@ -357,7 +357,6 @@ export function PhotoCapture({ value, onChange, statusOf, onRetry }: { value: Ca
   const [flash, setFlash] = useState(0);
   const [dragging, setDragging] = useState(false);
   const room = 9 - value.length;
-
 
   const add = (files: (File | Blob)[]) => {
     const images = files.filter((f) => f.type.startsWith("image/")).slice(0, room);
@@ -445,7 +444,7 @@ export function PhotoCapture({ value, onChange, statusOf, onRetry }: { value: Ca
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.url} alt="" className="w-full h-full object-cover" />
                   <button type="button" aria-label="Remove photo" onClick={() => onChange(value.filter((x) => x.url !== p.url))} className="press absolute top-1.5 right-1.5 grid place-items-center w-7 h-7 rounded-full bg-black/55 text-white">
-                    <X size={13} weight="bold" />
+                    <CrossMark size={16} />
                   </button>
                   <UploadBadge state={statusOf?.(p.url)} onRetry={() => onRetry?.(p.url)} />
                 </motion.div>

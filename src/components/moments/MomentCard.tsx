@@ -60,7 +60,7 @@ export function useDeleteMoment() {
 export const momentHref = (m: Moment) => `/expressions/${m.id}`;
 
 /** The ⋯ menu for one moment (Edit, Delete), on its card and on its own page. */
-export function MomentMenu({ onEdit, onDelete, className }: { onEdit: () => void; onDelete: () => void; className?: string }) {
+export function MomentMenu({ onEdit, onDelete, className, buttonClassName }: { onEdit: () => void; onDelete: () => void; className?: string; buttonClassName?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -90,7 +90,7 @@ export function MomentMenu({ onEdit, onDelete, className }: { onEdit: () => void
 
   return (
     <div ref={ref} className={cn("relative", className)}>
-      <button type="button" aria-label="Moment options" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-ink/5">
+      <button type="button" aria-label="Moment options" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={cn("press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-ink/5", buttonClassName)}>
         <DotsThree size={22} weight="bold" />
       </button>
       {open && (

@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Check, MagnifyingGlass, Plus, X } from "@phosphor-icons/react";
+import { Check, MagnifyingGlass, Plus } from "@phosphor-icons/react";
 import { CATALOG, COMMON_IDS, KIND_LABEL, catalogImage, type CatalogPractice } from "@/lib/practiceCatalog";
 import { cn } from "@/lib/utils";
 import { ButtonLoader } from "@/components/ui/Loader";
 import { PracticeIcon } from "./PracticeIcon";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 interface PracticeLibraryProps {
   /** Catalog ids currently chosen / added. */
@@ -63,7 +64,7 @@ export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", classN
             aria-label="Clear search"
             className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface"
           >
-            <X size={16} />
+            <CrossMark size={18} />
           </button>
         )}
       </label>

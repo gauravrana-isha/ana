@@ -6,7 +6,7 @@ import { usePersistentState } from "@/lib/persist";
 import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Check, MagnifyingGlass, Plus, Cards, List, SlidersHorizontal, X } from "@phosphor-icons/react";
+import { Check, MagnifyingGlass, Plus, Cards, List, SlidersHorizontal } from "@phosphor-icons/react";
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { STAMP_GUIDE } from "@/components/reflection/StampRow";
@@ -19,6 +19,7 @@ import { MomentCard, MomentTimeline } from "@/components/moments/MomentCard";
 import { useMoments } from "@/lib/moments-client";
 import type { Moment, MomentKind } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 const FILTERS = [
   { id: "", label: "All" },
@@ -93,7 +94,7 @@ function ExpressionsContent() {
           />
           {query && (
             <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface-2">
-              <X size={15} />
+              <CrossMark size={17} />
             </button>
           )}
         </label>
@@ -269,7 +270,7 @@ function ExpressionsContent() {
 function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
   return (
     <button type="button" onClick={onClear} aria-label={`Remove filter: ${label}`} className="press inline-flex items-center gap-1.5 h-8 pl-3 pr-2 rounded-full bg-accent-soft text-accent font-ui text-[12.5px] font-semibold">
-      {label} <X size={12} weight="bold" />
+      {label} <CrossMark size={15} />
     </button>
   );
 }

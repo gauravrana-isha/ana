@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
-import { X, CheckCircle, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
+import { CheckCircle, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 type ToastType = "success" | "error" | "loading";
 
@@ -87,7 +88,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
       <span className="font-ui text-sm text-ink">{toast.message}</span>
       {toast.type !== "loading" && (
         <button onClick={onDismiss} className="text-ink-soft hover:text-ink ml-1">
-          <X size={14} weight="thin" />
+          <CrossMark size={16} />
         </button>
       )}
     </div>

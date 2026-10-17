@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarBlank, Camera, Feather, Microphone, Plus, ShieldCheck, SunHorizon, UserCircle, VideoCamera, X } from "@phosphor-icons/react";
+import { CalendarBlank, Camera, Feather, Microphone, Plus, ShieldCheck, SunHorizon, UserCircle, VideoCamera } from "@phosphor-icons/react";
 import { PersonAvatar } from "@/components/people/People";
 import { FeatureBadge, FeatureGlyph } from "@/components/art/FeatureBadge";
 import { FEATURES } from "@/lib/features";
@@ -12,6 +12,7 @@ import { useMe } from "@/lib/me";
 import { Loader } from "@/components/ui/Loader";
 import { dayHeading } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { CrossMark } from "@/components/ui/CloseButton";
 
 interface Results {
   moments: { id: string; title: string; kind: string; at: string; snippet: string }[];
@@ -159,7 +160,7 @@ export function SearchDialog() {
                 className="flex-1 h-full bg-transparent outline-none focus-visible:outline-none font-ui text-[16px] text-ink placeholder:text-ink-soft/80"
               />
               {isFetching ? <Loader size="sm" /> : query && (
-                <button type="button" aria-label="Clear" onClick={() => setQuery("")} className="grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface"><X size={15} /></button>
+                <button type="button" aria-label="Clear" onClick={() => setQuery("")} className="grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface"><CrossMark size={17} /></button>
               )}
             </div>
 

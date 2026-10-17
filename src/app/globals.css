@@ -429,6 +429,17 @@ html.kb-open .ana-fab {
 .ana-tick-reveal { animation: ana-tick-reveal 0.26s cubic-bezier(0.65, 0, 0.35, 1) 0.03s both; }
 @media (prefers-reduced-motion: reduce) { .ana-tick-reveal { animation: none; } }
 
+/* The close cross: on hover it turns a little, past and back, like ink settling. */
+@keyframes ana-x-settle {
+  0% { transform: rotate(0) scale(1); }
+  45% { transform: rotate(-14deg) scale(1.12); }
+  75% { transform: rotate(4deg) scale(1.03); }
+  100% { transform: rotate(0) scale(1.05); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .group:hover .ana-x { animation: ana-x-settle 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+}
+
 /* Stamps: each drawing acts once when chosen (.stamp-play is set on the freshly mounted
    icon), and lifts a touch on hover where hover exists. */
 .stamp-glyph { transition: transform 200ms var(--ease-out-expo); }
