@@ -4,7 +4,6 @@ import { usePersistentState } from "@/lib/persist";
 
 import { useState, useCallback, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { DotsSixVertical } from "@phosphor-icons/react";
 import {
   DndContext,
   closestCenter,
@@ -36,7 +35,8 @@ import { today, addDays, weekStart } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { DayLogEntry, DayLogEntries, Practice } from "@/lib/types";
 import { fetchWeek, reorderPractices, saveDay } from "@/lib/journal";
-import { EditMark } from "@/components/art/PenMarks";
+import { EditMark, GripMark, ReorderMark } from "@/components/art/PenMarks";
+import { TickMark } from "@/components/tracker/FieldInput";
 
 export default function TrackerPage() {
   const [date, setDate] = useState(today());
@@ -165,13 +165,12 @@ export default function TrackerPage() {
             }}
             disabled={savingOrder}
             className={cn(
-              "font-ui text-[11px] px-3 py-1.5 rounded-[20px] border transition-all",
-              reordering
-                ? "border-accent text-accent bg-accent-soft"
-                : "border-line text-ink-soft"
+              "press inline-flex items-center gap-1.5 h-9 pl-3 pr-4 rounded-full font-ui text-[13px] font-semibold transition-colors",
+              reordering ? "bg-accent text-bg shadow-[var(--shadow-soft)] hover:brightness-110" : "bg-surface text-ink-soft hover:text-ink hover:bg-surface-2"
             )}
           >
-            {savingOrder ? <ButtonLoader /> : reordering ? "Done" : "Reorder"}
+            {savingOrder ? <ButtonLoader /> : reordering ? <TickMark size={16} /> : <ReorderMark size={17} />}
+            {reordering ? "Done" : "Reorder"}
           </button>
         )}
       </div>
@@ -304,7 +303,7 @@ function SortablePracticeItem({ practice }: { practice: Practice }) {
         className="grid place-items-center w-9 h-9 -ml-1 rounded-[10px] text-ink-soft hover:text-ink hover:bg-surface-2 cursor-grab active:cursor-grabbing touch-none"
         aria-label={`Drag ${practice.name} to reorder`}
       >
-        <DotsSixVertical size={20} weight="bold" />
+        <GripMark size={20} />
       </button>
       <PracticeIcon name={practice.name} iconName={practice.iconName} catalogId={practice.catalogId} size={32} />
       <span className="font-serif text-base text-ink">{practice.name}</span>

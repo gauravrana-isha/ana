@@ -77,3 +77,29 @@ export function SunMark(props: MarkProps) {
 export function MoonMark(props: MarkProps) {
   return <Mark {...props}><path d="M10.48 3.83A8.6 8.6 0 1 0 19.57 14.36A7.0 7.0 0 0 1 10.48 3.83Z" /></Mark>;
 }
+
+/** Reorder: the back stroke turned up and down, one above the other. */
+export function ReorderMark(props: MarkProps) {
+  return (
+    <Mark {...props}>
+      <path d={BACK_PATH} transform="translate(0 -4.6) translate(12 12) scale(0.62) translate(-12 -12) rotate(90 12 12)" />
+      <path d={BACK_PATH} transform="translate(0 4.6) translate(12 12) scale(0.62) translate(-12 -12) rotate(-90 12 12)" />
+    </Mark>
+  );
+}
+
+/** A handle to drag by: six ink dots, two by three. */
+export function GripMark(props: MarkProps) {
+  const dots = [
+    [9, 5.6, -15], [15, 5.8, 10],
+    [9.1, 12, 12], [15.1, 12.1, -8],
+    [9, 18.3, -6], [15, 18.2, 14],
+  ];
+  return (
+    <Mark {...props}>
+      {dots.map(([x, y, r], i) => (
+        <ellipse key={i} cx={x} cy={y} rx="1.95" ry="1.75" transform={`rotate(${r} ${x} ${y})`} />
+      ))}
+    </Mark>
+  );
+}
