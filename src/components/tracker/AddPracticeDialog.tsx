@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { CloseButton } from "@/components/ui/CloseButton";
 import { Portal } from "@/components/ui/Portal";
 import { useVisibleArea } from "@/lib/visual-viewport";
-import { TickMark } from "./FieldInput";
 import { PracticeLibrary } from "./PracticeLibrary";
 import { PracticeEditor } from "./PracticeEditor";
 import { specFor } from "@/lib/practiceSpec";
@@ -209,17 +208,14 @@ function CustomTab({ onDone }: { onDone: () => void }) {
                 aria-label={ico}
                 aria-pressed={on}
                 onClick={() => setIconName(ico)}
-                // Chosen: a ring drawn inside the tile's own square and the tile drawn a little
-                // smaller within it, so nothing spills into the neighbours or shifts the grid.
+                // Chosen: in full colour while the others fade back. The tiles never change size
+                // or edge (and nothing sits on them), so the grid stays perfectly even.
                 className={cn(
-                  "press relative aspect-square rounded-[14px] grid place-items-center transition-[opacity,box-shadow] duration-200",
-                  on ? "shadow-[inset_0_0_0_2.5px_var(--accent)]" : "opacity-85 hover:opacity-100"
+                  "press relative aspect-square rounded-[14px] grid place-items-center transition-opacity duration-200",
+                  on ? "opacity-100" : "opacity-40 hover:opacity-80"
                 )}
               >
-                <PaintedTile icon={ico} size={44} className={cn("rounded-[12px] w-full h-full transition-transform duration-200", on && "scale-[0.8] rounded-[10px]")} />
-                {on && (
-                  <span className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 grid place-items-center w-[18px] h-[18px] rounded-full bg-accent text-bg"><TickMark size={11} /></span>
-                )}
+                <PaintedTile icon={ico} size={44} className="rounded-[12px] w-full h-full" />
               </button>
             );
           })}
