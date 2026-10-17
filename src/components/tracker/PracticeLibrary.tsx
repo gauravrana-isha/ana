@@ -7,7 +7,7 @@ import { CATALOG, COMMON_IDS, KIND_LABEL, catalogImage, type CatalogPractice } f
 import { cn } from "@/lib/utils";
 import { ButtonLoader } from "@/components/ui/Loader";
 import { PracticeIcon } from "./PracticeIcon";
-import { CrossMark, PlusMark } from "@/components/art/PenMarks";
+import { CrossMark, EditMark, PlusMark } from "@/components/art/PenMarks";
 import { FeatureGlyph } from "@/components/art/FeatureBadge";
 import { TickMark } from "./FieldInput";
 
@@ -19,6 +19,8 @@ interface PracticeLibraryProps {
   busyId?: string | null;
   /** "add" shows Add / Added buttons (tracker); "select" shows ticks (onboarding). */
   mode?: "add" | "select";
+  /** Change a practice already added (its name and usual values). */
+  onEdit?: (entry: CatalogPractice) => void;
   className?: string;
 }
 
@@ -26,7 +28,7 @@ function meta(e: CatalogPractice) {
   return [e.minutes ? `${e.minutes} min` : null, KIND_LABEL[e.kind]].filter(Boolean).join(" · ");
 }
 
-export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", className }: PracticeLibraryProps) {
+export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", onEdit, className }: PracticeLibraryProps) {
   const [query, setQuery] = useState("");
 
   const sections = useMemo(() => {
@@ -79,15 +81,13 @@ export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", classN
               const on = chosen.has(entry.id);
               const img = catalogImage(entry);
               return (
-                <li key={entry.id}>
+                <li key={entry.id} className={cn("flex items-center rounded-[16px] transition-colors", on ? "bg-accent-soft" : "bg-surface hover:bg-surface-2")}>
                   <button
                     type="button"
                     aria-pressed={on}
+                    aria-label={mode === "add" ? `${on ? "Remove" : "Add"} ${entry.name}` : entry.name}
                     onClick={() => onToggle(entry)}
-                    className={cn(
-                      "press w-full flex items-center gap-3 p-2.5 pr-3 rounded-[16px] text-left transition-colors",
-                      on ? "bg-accent-soft" : "bg-surface hover:bg-surface-2"
-                    )}
+                    className="press flex-1 min-w-0 flex items-center gap-3 p-2.5 pr-3 rounded-[16px] text-left"
                   >
                     {img ? (
                       <Image src={img} alt="" width={48} height={48} unoptimized={img.endsWith(".svg")} className="rounded-[12px] shrink-0 bg-surface-2" />
@@ -99,9 +99,11 @@ export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", classN
                       <span className="block font-ui text-[13px] text-ink-soft mt-0.5">{meta(entry)}</span>
                     </span>
                     {mode === "add" ? (
+                      // Phones: just the mark (+ or ✓); wider screens add the word.
                       <span
+                        aria-hidden="true"
                         className={cn(
-                          "inline-flex items-center justify-center gap-1 h-9 min-w-[84px] px-3 rounded-[11px] font-ui text-[13px] font-semibold transition-colors",
+                          "inline-flex items-center justify-center gap-1 h-9 w-9 sm:w-auto sm:min-w-[84px] sm:px-3 rounded-[11px] font-ui text-[13px] font-semibold transition-colors shrink-0",
                           on ? "bg-accent text-bg" : "border border-accent/40 text-accent"
                         )}
                       >
@@ -109,11 +111,11 @@ export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", classN
                           <ButtonLoader />
                         ) : on ? (
                           <>
-                            <TickMark size={15} /> Added
+                            <TickMark size={15} /> <span className="hidden sm:inline">Added</span>
                           </>
                         ) : (
                           <>
-                            <PlusMark size={16} /> Add
+                            <PlusMark size={16} /> <span className="hidden sm:inline">Add</span>
                           </>
                         )}
                       </span>
@@ -129,6 +131,12 @@ export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", classN
                       </span>
                     )}
                   </button>
+                  {/* Added: its name and usual values can be changed here too. */}
+                  {on && onEdit && mode === "add" && (
+                    <button type="button" aria-label={`Edit ${entry.name}`} onClick={() => onEdit(entry)} className="press grid place-items-center w-9 h-9 mr-2.5 shrink-0 rounded-[11px] text-ink-soft hover:text-ink hover:bg-bg/70">
+                      <EditMark size={18} />
+                    </button>
+                  )}
                 </li>
               );
             })}
