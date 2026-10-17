@@ -40,7 +40,6 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Chevron } from "@/components/ui/Arrows";
 import { BackButton } from "@/components/ui/DetailBar";
 import { QuestionsEditor } from "./QuestionsEditor";
-import { shownQuestions } from "@/lib/questions";
 
 /*
  * Profile, as a short hub: your card and "Who am I?" up top, then one Settings list (each row
@@ -134,7 +133,7 @@ function Rows({ me, active }: { me: Me; active?: SectionKey }) {
     { k: "sections", icon: <Glyph k="cards" size={19} />, status: `${me.features.length} on` },
     ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} />, status: practices ? `${practices.length} ${practices.length === 1 ? "practice" : "practices"}` : "" }] : []),
     ...(reflects
-      ? [{ k: "questions" as const, icon: <FeatureGlyph k="daily" size={19} />, status: [me.features.includes("daily") && `${shownQuestions("daily", me.questions).length} daily`, me.features.includes("weekly") && `${shownQuestions("weekly", me.questions).length} weekly`].filter(Boolean).join(" · ") }]
+      ? [{ k: "questions" as const, icon: <FeatureGlyph k="daily" size={19} />, status: "" }]
       : []),
     { k: "device", icon: <Glyph k="phone" size={19} />, status: "" },
     { k: "privacy", icon: <Glyph k="lock" size={19} />, status: "" },
