@@ -263,12 +263,12 @@ export default function AdminPage() {
                             <span className="block h-full rounded-full bg-saffron" style={{ width: `${(u.activeDays / 30) * 100}%` }} />
                           </span>
                         </Fact>
-                        <Fact icon={<Glyph k="calendar" size={17} />} label="Joined" value={dateFmt.format(new Date(u.createdAt))} />
                         <Fact icon={<Glyph k="storage" size={17} />} label="Storage" value={`${formatBytes(u.storageBytes)} of 200 MB`}>
                           <span className="mt-1.5 block h-1 rounded-full bg-line overflow-hidden">
                             <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max(u.storageBytes ? 2 : 0, Math.min(100, (u.storageBytes / QUOTA) * 100))}%` }} />
                           </span>
                         </Fact>
+                        <Fact icon={<Glyph k="calendar" size={17} />} label="Joined" value={dateFmt.format(new Date(u.createdAt))} />
                       </dl>
 
                       <div className="flex flex-wrap items-center justify-end gap-2">
