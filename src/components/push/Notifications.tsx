@@ -5,27 +5,18 @@ import { Switch } from "@/components/ui/Switch";
 import { useToast } from "@/components/ui/Toast";
 import { usePush, type PushState } from "@/lib/push-client";
 import { cn } from "@/lib/utils";
-import { BellDrawing as FeatureGlyphDrawing } from "@/components/art/FeatureBadge";
+import { BellMark } from "@/components/art/PenMarks";
 
-/** A bell in the feature-badge style (pastel tile, one ink stroke). */
+/** The pen-drawn bell (the one at the top right) on the feature-badge tile. */
 export function BellBadge({ size = 34, className }: { size?: number; className?: string }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 48 48"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <span
       aria-hidden="true"
-      className={cn("shrink-0 feature-badge", className)}
-      style={{ ["--fb-tile" as string]: "#FBE3CC", ["--fb-ink" as string]: "#B55A24" }}
+      className={cn("feature-badge grid place-items-center shrink-0", className)}
+      style={{ width: size, height: size, borderRadius: size * 0.27, background: "var(--fb-tile-now)", color: "var(--fb-ink-now)", ["--fb-tile" as string]: "#FBE3CC", ["--fb-ink" as string]: "#B55A24" }}
     >
-      <rect width="48" height="48" rx="13" fill="var(--fb-tile-now)" />
-      <g stroke="var(--fb-ink-now)" strokeWidth={2.4}>
-        <FeatureGlyphDrawing />
-      </g>
-    </svg>
+      <BellMark size={Math.round(size * 0.62)} />
+    </span>
   );
 }
 

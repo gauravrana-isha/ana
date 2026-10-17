@@ -176,8 +176,3 @@ export function FeatureGlyph({ k, size = 22, className }: { k: string; size?: nu
 export function hasBadge(k: string) {
   return k in TONES;
 }
-
-/** The bell on its own (for badges built elsewhere, e.g. the notifications badge). */
-export function BellDrawing() {
-  return <Drawing k="bell" ink="currentColor" />;
-}
