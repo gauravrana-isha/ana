@@ -192,7 +192,7 @@ function WeeklyReflectionView({
         {/* Edit button */}
         <button
           onClick={() => setEditing(true)}
-          className="ana-fab fixed bottom-[80px] right-6 lg:bottom-8 lg:right-8
+          className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
                      w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
                      shadow-[0_6px_16px_var(--accent-soft)] z-20"
           aria-label="Edit reflection"
@@ -223,7 +223,7 @@ function WeeklyReflectionView({
         <button
           onClick={() => { onSave(); setEditing(false); }}
           disabled={isPending}
-          className="ana-fab fixed bottom-[80px] right-6 lg:bottom-8 lg:right-8
+          className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
                      w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
                      shadow-[0_6px_16px_var(--accent-soft)] z-20
                      disabled:opacity-50 transition-opacity"
