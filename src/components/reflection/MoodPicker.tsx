@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { MoodBadge, MoodFace, type MoodKey } from "@/components/art/MoodFace";
 import { cn } from "@/lib/utils";
 
-const MOODS = [
+const MOODS: { key: MoodKey; label: string }[] = [
   { key: "low", label: "Low" },
   { key: "agitated", label: "Agitated" },
   { key: "neutral", label: "Neutral" },
@@ -15,173 +16,90 @@ const MOODS = [
 interface MoodPickerProps {
   value: string | null;
   onChange: (mood: string | null) => void;
+  /** Already inside a card (the stepper): no card of its own. */
+  bare?: boolean;
 }
 
-export function MoodPicker({ value, onChange }: MoodPickerProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState(false);
-  const [liveProgress, setLiveProgress] = useState<number | null>(null);
+/**
+ * Five faces, spread across the width: tap one, or slide a finger along the row to move
+ * between them. The chosen face turns into its coloured badge, with a soft pill gliding
+ * behind it. Arrow keys work too (it's a radio group).
+ */
+export function MoodPicker({ value, onChange, bare = false }: MoodPickerProps) {
+  const reduce = useReducedMotion();
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [sliding, setSliding] = useState(false);
+  const current = MOODS.findIndex((m) => m.key === value);
 
-  const currentIdx = MOODS.findIndex((m) => m.key === value);
-  const snappedProgress = currentIdx >= 0 ? (currentIdx / (MOODS.length - 1)) * 100 : -1;
-  const displayProgress = liveProgress !== null ? liveProgress : snappedProgress;
-
-  const liveIdx = liveProgress !== null
-    ? Math.round((liveProgress / 100) * (MOODS.length - 1))
-    : currentIdx;
-  const selectedKey: MoodKey | null = liveIdx >= 0 ? (MOODS[liveIdx].key as MoodKey) : null;
-  const selectedLabel = liveIdx >= 0 ? MOODS[liveIdx].label : null;
-
-  const getProgressFromX = useCallback((clientX: number) => {
-    if (!trackRef.current) return 0;
-    const rect = trackRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    return Math.max(0, Math.min(100, (x / rect.width) * 100));
-  }, []);
-
-  const snapToMood = useCallback((progress: number) => {
-    const idx = Math.round((progress / 100) * (MOODS.length - 1));
-    const clamped = Math.max(0, Math.min(MOODS.length - 1, idx));
-    onChange(MOODS[clamped].key);
-    setLiveProgress(null);
-  }, [onChange]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setDragging(true);
-    const p = getProgressFromX(e.clientX);
-    setLiveProgress(p);
-  }, [getProgressFromX]);
-
-  useEffect(() => {
-    if (!dragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const p = getProgressFromX(e.clientX);
-      setLiveProgress(p);
-    };
-
-    const handleMouseUp = (e: MouseEvent) => {
-      const p = getProgressFromX(e.clientX);
-      snapToMood(p);
-      setDragging(false);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [dragging, getProgressFromX, snapToMood]);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    setDragging(true);
-    const p = getProgressFromX(e.touches[0].clientX);
-    setLiveProgress(p);
-  }, [getProgressFromX]);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!dragging) return;
-    const p = getProgressFromX(e.touches[0].clientX);
-    setLiveProgress(p);
-  }, [dragging, getProgressFromX]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (liveProgress !== null) {
-      snapToMood(liveProgress);
+  function pickAt(clientX: number) {
+    const r = rowRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const i = Math.max(0, Math.min(MOODS.length - 1, Math.floor(((clientX - r.left) / r.width) * MOODS.length)));
+    if (MOODS[i].key !== value) {
+      onChange(MOODS[i].key);
+      if (navigator.vibrate && sliding) navigator.vibrate(6);
     }
-    setDragging(false);
-  }, [liveProgress, snapToMood]);
+  }
+
+  function onKey(e: React.KeyboardEvent) {
+    const d = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : 0;
+    if (!d) return;
+    e.preventDefault();
+    const next = Math.max(0, Math.min(MOODS.length - 1, (current < 0 ? 2 : current) + (current < 0 ? 0 : d)));
+    onChange(MOODS[next].key);
+    (rowRef.current?.children[next] as HTMLElement | undefined)?.focus();
+  }
 
   return (
-    <div className="rounded-16 p-6 bg-surface">
-      {/* Header: fixed height so choosing a mood never moves anything */}
-      <div className="flex items-center justify-between gap-3 h-10 mb-5">
-        <p className="font-serif text-lg text-ink">How are you feeling?</p>
-        <div className={cn("flex items-center gap-2 transition-opacity duration-200", selectedKey ? "opacity-100" : "opacity-0")} aria-live="polite">
-          {selectedKey && <MoodBadge k={selectedKey} size={34} />}
-          <span className="font-serif text-base text-accent min-w-[4.5rem] text-right">{selectedLabel ?? ""}</span>
-        </div>
-      </div>
+    <div className={bare ? undefined : "rounded-16 p-5 sm:p-6 bg-surface"}>
+      <p className="font-serif text-lg text-ink mb-4">How are you feeling?</p>
 
-      {/* Slider track */}
       <div
-        ref={trackRef}
-        className="relative h-12 flex items-center cursor-pointer select-none touch-none"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        role="slider"
+        ref={rowRef}
+        role="radiogroup"
         aria-label="Mood"
-        aria-valuemin={0}
-        aria-valuemax={4}
-        aria-valuenow={liveIdx >= 0 ? liveIdx : undefined}
-        aria-valuetext={selectedLabel ?? "Not set"}
-        tabIndex={0}
+        onKeyDown={onKey}
+        // Slide along the row to choose; vertical scrolling still works.
+        className="grid grid-cols-5 gap-1 touch-pan-y select-none"
+        onPointerDown={(e) => {
+          setSliding(true);
+          pickAt(e.clientX);
+        }}
+        onPointerMove={(e) => sliding && pickAt(e.clientX)}
+        onPointerUp={() => setSliding(false)}
+        onPointerCancel={() => setSliding(false)}
+        onPointerLeave={() => setSliding(false)}
       >
-        {/* Background track — clean rounded bar, no dots at edges */}
-        <div className="absolute inset-x-0 h-[14px] rounded-full bg-surface-2 border border-line overflow-hidden">
-          {/* Filled portion */}
-          {displayProgress >= 0 && (
-            <div
-              className={cn(
-                "absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-accent/50 via-accent/80 to-accent",
-                !dragging && "transition-[width] duration-300 ease-out"
-              )}
-              style={{ width: `${displayProgress}%` }}
-            />
-          )}
-        </div>
-
-        {/* Middle snap indicators only (not at edges) */}
-        {MOODS.slice(1, -1).map((_, i) => {
-          const pos = ((i + 1) / (MOODS.length - 1)) * 100;
-          return (
-            <div
-              key={i}
-              className="absolute top-1/2 -translate-y-1/2 w-[3px] h-[3px] rounded-full bg-line/60"
-              style={{ left: `${pos}%`, marginLeft: "-1.5px" }}
-            />
-          );
-        })}
-
-        {/* Thumb */}
-        {displayProgress >= 0 && (
-          <div
-            className={cn(
-              "absolute top-1/2 -translate-y-1/2 rounded-full bg-accent shadow-[0_2px_12px_rgba(0,0,0,0.3),0_0_0_4px_var(--bg)]",
-              dragging ? "w-9 h-9 scale-105" : "w-8 h-8",
-              !dragging && "transition-all duration-300 ease-out"
-            )}
-            style={{ left: `calc(${displayProgress}% - ${dragging ? 18 : 16}px)` }}
-          />
-        )}
-      </div>
-
-      {/* Mood icons row */}
-      <div className="flex justify-between mt-5 -mx-2">
-        {MOODS.map((m) => {
-          const isActive = value === m.key && !dragging;
+        {MOODS.map((m, i) => {
+          const on = i === current;
           return (
             <button
               key={m.key}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              aria-label={m.label}
+              tabIndex={on || (current < 0 && i === 2) ? 0 : -1}
               onClick={() => onChange(m.key)}
-              className={cn(
-                "press flex flex-col items-center gap-2 w-[64px] rounded-14 py-2 transition-colors duration-200",
-                isActive ? "" : "hover:bg-surface-2"
-              )}
+              className="press relative flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
             >
-              <span className="grid place-items-center w-[38px] h-[38px]">
-                {isActive ? <MoodBadge k={m.key as MoodKey} size={38} /> : <MoodFace k={m.key as MoodKey} size={30} className="text-ink-soft" />}
+              {on && (
+                <motion.span
+                  layoutId="mood-pill"
+                  className="absolute inset-0 rounded-[18px] bg-bg shadow-[var(--shadow-soft)]"
+                  transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 38 }}
+                />
+              )}
+              <span className="relative grid place-items-center w-11 h-11">
+                {on ? (
+                  <motion.span key="badge" initial={reduce ? false : { scale: 0.7 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 22 }}>
+                    <MoodBadge k={m.key} size={44} />
+                  </motion.span>
+                ) : (
+                  <MoodFace k={m.key} size={32} className="text-ink-soft" />
+                )}
               </span>
-              <span className={cn(
-                "font-ui text-[11px] leading-none",
-                isActive ? "text-accent font-medium" : "text-ink-soft"
-              )}>
-                {m.label}
-              </span>
+              <span className={cn("relative font-ui text-[11.5px] leading-none", on ? "text-accent font-semibold" : "text-ink-soft")}>{m.label}</span>
             </button>
           );
         })}

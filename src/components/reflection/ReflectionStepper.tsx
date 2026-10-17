@@ -70,9 +70,10 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
         if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(step + (dx < 0 ? 1 : -1));
       }}
     >
-      {/* Where you are: step count, and a dot per step (filled when answered) */}
-      <div className="flex items-center justify-between gap-3 mb-5">
-        <span className="font-ui text-[13px] font-semibold text-ink-soft tabular">
+      {/* Where you are: the count, and a full-width bar of one segment per step (the current one
+          in full colour, answered ones lighter). Each segment opens its question. */}
+      <div className="mb-5">
+        <span className="block mb-2 font-ui text-[13px] font-semibold text-ink-soft tabular">
           {isMood ? "Last one" : `${step + 1} of ${prompts.length}`}
         </span>
         <div className="flex items-center gap-1.5" role="tablist" aria-label="Questions">
@@ -84,12 +85,12 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
               aria-selected={i === step}
               aria-label={i < prompts.length ? `Question ${i + 1}${answered(i) ? ", answered" : ""}` : "Mood"}
               onClick={() => go(i)}
-              className="press grid place-items-center h-6 px-0.5"
+              className="press flex-1 flex items-center h-6"
             >
               <span
                 className={cn(
-                  "block h-1.5 rounded-full transition-all duration-300",
-                  i === step ? "w-5 bg-accent" : answered(i) ? "w-1.5 bg-accent/55" : "w-1.5 bg-line"
+                  "block w-full h-1.5 rounded-full transition-colors duration-300",
+                  i === step ? "bg-accent" : answered(i) ? "bg-accent/45" : "bg-line"
                 )}
               />
             </button>
@@ -109,7 +110,7 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
             className="rounded-[22px] bg-surface p-5 sm:p-7"
           >
             {isMood ? (
-              <MoodPicker value={mood} onChange={onMood} />
+              <MoodPicker bare value={mood} onChange={onMood} />
             ) : (
               <>
                 <h2 className="font-display text-[22px] sm:text-[24px] font-semibold leading-[1.3] text-ink text-balance">{prompt.q}</h2>
