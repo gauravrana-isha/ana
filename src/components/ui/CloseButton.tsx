@@ -32,7 +32,7 @@ export function CloseButton({
       className={cn(
         "press group grid place-items-center shrink-0 rounded-full border transition-colors disabled:opacity-40",
         onDark
-          ? "bg-white/12 border-white/20 text-white hover:bg-white/20 hover:border-white/35"
+          ? "bg-black/45 backdrop-blur-md border-white/25 text-white hover:bg-black/60 hover:border-white/40"
           : "bg-surface border-line/70 text-ink-soft hover:text-ink hover:border-ink-soft/40 hover:bg-surface-2",
         className
       )}

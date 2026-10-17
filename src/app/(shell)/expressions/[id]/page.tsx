@@ -147,7 +147,7 @@ function ViewerPhoto({ id }: { id: string }) {
       src={src}
       alt=""
       draggable={false}
-      className="max-w-full max-h-full object-contain select-none"
+      className="absolute inset-0 w-full h-full object-contain select-none"
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
@@ -198,7 +198,7 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
           <AnimatePresence mode="wait" initial={false}>
             <ViewerPhoto key={index} id={photos[index]} />
           </AnimatePresence>
-          <CloseButton onClick={() => onIndex(null)} onDark className="absolute top-[max(14px,var(--safe-top))] right-4" />
+          <CloseButton onClick={() => onIndex(null)} onDark className="absolute z-10 top-[calc(var(--safe-top)+10px)] right-3" />
           {photos.length > 1 && (
             <>
               <span className="absolute bottom-[max(18px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 font-ui text-[13px] text-white/80 tabular">{index + 1} / {photos.length}</span>
