@@ -15,6 +15,8 @@ import { catalogFor, describeTracking, type CatalogPractice } from "@/lib/practi
 import type { PracticeField } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CloseButton } from "@/components/ui/CloseButton";
+import { Portal } from "@/components/ui/Portal";
+import { useVisibleArea } from "@/lib/visual-viewport";
 import { TickMark } from "./FieldInput";
 import { PracticeLibrary } from "./PracticeLibrary";
 import { PracticeEditor } from "./PracticeEditor";
@@ -52,6 +54,7 @@ interface AddPracticeDialogProps {
 
 export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
   const reduce = useReducedMotion();
+  const area = useVisibleArea(open);
   const [tab, setTab] = useState<"yours" | "library" | "custom">("yours");
 
   useEffect(() => {
@@ -67,9 +70,10 @@ export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
   }, [open, onClose]);
 
   return (
+    <Portal>
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6" role="dialog" aria-modal="true" aria-label="Your practices">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6" style={area} role="dialog" aria-modal="true" aria-label="Your practices">
           <motion.div
             className="absolute inset-0 bg-[rgba(24,22,15,0.36)]"
             initial={{ opacity: 0 }}
@@ -78,7 +82,7 @@ export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
             onClick={onClose}
           />
           <motion.div
-            className="relative w-full sm:max-w-[620px] h-[92dvh] sm:h-[min(820px,88dvh)] flex flex-col bg-bg rounded-t-[24px] sm:rounded-[24px] shadow-[var(--shadow-lift)] overflow-hidden"
+            className="relative w-full sm:max-w-[620px] h-[92%] sm:h-[min(820px,88%)] flex flex-col bg-bg rounded-t-[24px] sm:rounded-[24px] shadow-[var(--shadow-lift)] overflow-hidden"
             initial={reduce ? { opacity: 0 } : { y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={reduce ? { opacity: 0 } : { y: 40, opacity: 0 }}
@@ -123,6 +127,7 @@ export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }
 

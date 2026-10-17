@@ -137,7 +137,10 @@ export function cellSummary(spec: PracticeSpec, entry: Partial<DayLogEntry> | un
   const parts: string[] = [];
   const full: string[] = [];
   let usedDefault = false;
-  for (const f of spec.fields) {
+  // A week at a glance: where a practice is counted in taps (1× / 2×), that's all a cell
+  // shows; the other numbers (e.g. kapalbhati) are in the day itself.
+  const shown = spec.fields.some((f) => f.taps) ? spec.fields.filter((f) => f.taps) : spec.fields;
+  for (const f of shown) {
     const v = values[f.key];
     if (!filled(v)) continue;
     if (spec.rhythm && !filled(logged[f.key])) usedDefault = true;
