@@ -457,7 +457,9 @@ function Invites() {
   async function share(inv: Invite) {
     const url = link(inv.code);
     try {
-      if (navigator.share) await navigator.share({ title: "Join me on ana", text: "An invite to ana, a quiet journal for your sadhana.", url });
+      // The link goes in the message itself, on its own line after a blank one: apps that are
+      // handed the text and the link separately (WhatsApp) run them together on one line.
+      if (navigator.share) await navigator.share({ title: "Join me on ana", text: `An invite to ana, a quiet journal for your sadhana.\n\n${url}` });
       else {
         await navigator.clipboard.writeText(url);
         toast("Link copied", "success", 1600);
