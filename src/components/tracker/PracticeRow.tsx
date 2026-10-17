@@ -28,7 +28,7 @@ export function PracticeRow({ practice, entry, onChange, editable = true }: Prac
         tabIndex={editable ? 0 : -1}
         aria-label={editable ? `Edit ${practice.name}` : practice.name}
         title="Edit name and usual values"
-        className="group flex items-center gap-3 min-w-[148px] flex-1 text-left rounded-[10px]"
+        className="group flex items-center gap-3 min-w-[120px] flex-1 text-left rounded-[10px]"
       >
         <PracticeIcon name={practice.name} iconName={practice.iconName} catalogId={practice.catalogId} />
         <span className="font-serif text-base text-ink leading-snug min-w-0 line-clamp-2 hyphens-auto group-hover:underline decoration-line underline-offset-4">{practice.name}</span>

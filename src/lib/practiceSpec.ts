@@ -74,8 +74,9 @@ export function specFor(p: PracticeLike): PracticeSpec {
   return { hasDoneToggle, fields, rhythm, minutes: entry?.minutes };
 }
 
-/** A unit short enough to sit beside its number on one line ("108 kb", "15 m"). */
-const SHORT_UNITS: Record<string, string> = { min: "m", kapalbhati: "kb", rounds: "r", cycles: "c", times: "×" };
+/** A unit short enough to sit beside its number on one line ("15 m"). Kapalbhati shows just
+    its number, so a practice with taps and kapalbhati keeps to one row. */
+const SHORT_UNITS: Record<string, string> = { min: "m", kapalbhati: "", rounds: "r", cycles: "c", times: "×" };
 export function shortUnit(unit: string) {
   return SHORT_UNITS[unit] ?? (unit.length > 3 ? unit.slice(0, 2) : unit);
 }
