@@ -2,8 +2,8 @@
 
 import { usePersistentState } from "@/lib/persist";
 
-import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Ornament } from "@/components/art/Ornament";
 import { Avatar } from "@/components/shell/Sidebar";
@@ -18,6 +18,8 @@ import { Chevron } from "@/components/ui/Arrows";
 import { TickMark } from "@/components/tracker/FieldInput";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
+import { Sheet } from "@/components/ui/Sheet";
+import { PlusMark, SearchMark } from "@/components/art/PenMarks";
 
 type Status = "PENDING" | "APPROVED" | "SUSPENDED";
 
@@ -68,14 +70,30 @@ export default function AdminPage() {
   const [tab, setTab] = usePersistentState<Status | "ALL">("admin.tab", "PENDING", ["PENDING", "APPROVED", "SUSPENDED", "ALL"] as const);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const { data, isPending: isLoading } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: async (): Promise<{ users: AdminUser[]; me: string }> => {
-      const res = await fetch("/api/admin/users");
+  // A page at a time, for the chosen tab and search (searching runs on the server).
+  const [query, setQuery] = useState("");
+  const [q, setQ] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setQ(query.trim()), 250);
+    return () => clearTimeout(t);
+  }, [query]);
+  const list = useInfiniteQuery({
+    queryKey: ["admin-users", tab, q],
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam }): Promise<{ users: AdminUser[]; me: string; counts: Record<string, number>; nextCursor: string | null }> => {
+      const sp = new URLSearchParams();
+      if (tab !== "ALL") sp.set("status", tab);
+      if (q) sp.set("q", q);
+      if (pageParam) sp.set("cursor", pageParam);
+      const res = await fetch(`/api/admin/users?${sp}`);
       if (!res.ok) throw new Error("Failed to load");
       return res.json();
     },
+    getNextPageParam: (last) => last.nextCursor,
+    placeholderData: (prev) => prev,
   });
+  const isLoading = list.isPending;
+  const data = list.data?.pages[0];
 
   const change = useMutation({
     mutationFn: async ({ id, body }: { id: string; body: Record<string, unknown> }) => {
@@ -90,14 +108,9 @@ export default function AdminPage() {
     onSettled: () => qc.invalidateQueries({ queryKey: ["admin-users"] }),
   });
 
-  const users = useMemo(() => data?.users ?? [], [data]);
+  const shown = useMemo(() => list.data?.pages.flatMap((p) => p.users) ?? [], [list.data]);
   const rowBusy = (id: string) => change.isPending && change.variables?.id === id;
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { ALL: users.length, PENDING: 0, APPROVED: 0, SUSPENDED: 0 };
-    users.forEach((u) => c[u.status]++);
-    return c;
-  }, [users]);
-  const shown = tab === "ALL" ? users : users.filter((u) => u.status === tab);
+  const counts = data?.counts ?? { ALL: 0, PENDING: 0, APPROVED: 0, SUSPENDED: 0 };
 
   return (
     <div>
@@ -119,6 +132,20 @@ export default function AdminPage() {
         />
       </div>
 
+      <div className="mt-4 flex flex-col sm:flex-row gap-2.5">
+        <label className="relative flex-1">
+          <span className="sr-only">Search people</span>
+          <SearchMark size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft pointer-events-none" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name or email"
+            className="w-full h-11 pl-10 pr-4 rounded-[14px] bg-surface text-ink font-ui text-[15px] outline-none border border-transparent focus:border-accent transition-colors placeholder:text-ink-soft/80"
+          />
+        </label>
+        <Invites />
+      </div>
+
       <RecentErrors />
 
       <div className="mt-6 flex flex-col gap-2">
@@ -129,7 +156,7 @@ export default function AdminPage() {
           <div className="flex flex-col items-center text-center py-16">
             <Ornament name="kolam" width={150} className="text-accent/50" />
             <p className="mt-3 font-ui text-[14.5px] text-ink-soft max-w-[280px]">
-              {tab === "PENDING" ? "No one is waiting. New sign-ups will appear here." : "No one here yet."}
+              {q ? `No one matches “${q}”.` : tab === "PENDING" ? "No one is waiting. New sign-ups will appear here." : "No one here yet."}
             </p>
           </div>
         )}
@@ -266,6 +293,14 @@ export default function AdminPage() {
             </article>
           );
         })}
+
+        {list.hasNextPage && (
+          <div className="flex justify-center pt-2">
+            <Button variant="ghost" onClick={() => list.fetchNextPage()} loading={list.isFetchingNextPage}>
+              Show more
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -372,4 +407,148 @@ function formatBytes(n: number) {
   if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
   if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
   return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+interface Invite {
+  id: string;
+  code: string;
+  note: string | null;
+  maxUses: number | null;
+  uses: number;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+}
+
+const USES = [
+  { value: "1", name: "One person", label: "1" },
+  { value: "5", name: "Five people", label: "5" },
+  { value: "25", name: "Twenty-five people", label: "25" },
+  { value: "any", name: "No limit", label: "Any" },
+] as const;
+const DAYS = [
+  { value: "7", name: "A week", label: "7 days" },
+  { value: "30", name: "A month", label: "30 days" },
+  { value: "never", name: "No end", label: "No end" },
+] as const;
+
+/** Invites: links that let people in as soon as they've set up, without waiting for approval. */
+function Invites() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const ask = useConfirm();
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [uses, setUses] = useState<(typeof USES)[number]["value"]>("1");
+  const [days, setDays] = useState<(typeof DAYS)[number]["value"]>("7");
+  const [made, setMade] = useState<Invite | null>(null);
+  const { data: invites = [] } = useQuery({
+    queryKey: ["admin-invites"],
+    queryFn: async (): Promise<Invite[]> => {
+      const res = await fetch("/api/admin/invites");
+      return res.ok ? res.json() : [];
+    },
+  });
+  const create = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/admin/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: note.trim() || undefined, maxUses: uses === "any" ? null : Number(uses), days: days === "never" ? null : Number(days) }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't make the invite");
+      return (await res.json()) as Invite;
+    },
+    onSuccess: (inv) => {
+      setMade(inv);
+      setNote("");
+      qc.invalidateQueries({ queryKey: ["admin-invites"] });
+    },
+    onError: (e) => toast(e instanceof Error ? e.message : "Couldn't make the invite", "error"),
+  });
+
+  const link = (code: string) => `${location.origin}/join/${code}`;
+  async function share(inv: Invite) {
+    const url = link(inv.code);
+    try {
+      if (navigator.share) await navigator.share({ title: "Join me on ana", text: "An invite to ana, a quiet journal for your sadhana.", url });
+      else {
+        await navigator.clipboard.writeText(url);
+        toast("Link copied", "success", 1600);
+      }
+    } catch {
+      /* share sheet closed */
+    }
+  }
+  async function revoke(inv: Invite) {
+    if (!(await ask({ title: "Revoke this invite?", body: "The link stops working. Anyone who already joined with it stays.", confirmLabel: "Revoke", tone: "danger" }))) return;
+    await fetch("/api/admin/invites", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: inv.id, revoke: true }) });
+    qc.invalidateQueries({ queryKey: ["admin-invites"] });
+  }
+  const live = (inv: Invite) => !inv.revokedAt && (!inv.expiresAt || new Date(inv.expiresAt) > new Date()) && (inv.maxUses === null || inv.uses < inv.maxUses);
+  const active = invites.filter(live).length;
+
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)} className="shrink-0">
+        <PlusMark size={16} /> Invite{active ? <span className="tabular text-ink-soft">· {active} open</span> : null}
+      </Button>
+      <Sheet open={open} onClose={() => { setOpen(false); setMade(null); }} title="Invites">
+        <div className="flex flex-col gap-6">
+          {made ? (
+            <div className="rounded-[18px] bg-accent-soft p-4">
+              <p className="font-ui text-[13px] font-semibold text-accent">New invite</p>
+              <p className="mt-1 font-ui text-[22px] font-semibold tracking-[0.12em] text-ink tabular select-all">{made.code}</p>
+              <p className="mt-1 font-ui text-[13px] text-ink-soft break-all">{link(made.code)}</p>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" onClick={() => share(made)}>Share link</Button>
+                <Button size="sm" variant="ghost" onClick={() => setMade(null)}>Make another</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <p className="font-ui text-[14px] leading-[1.55] text-ink-soft">Whoever joins with the link is let in as soon as they&rsquo;ve set up, without waiting for you.</p>
+              <label className="block">
+                <span className="font-ui text-[13px] font-semibold text-ink">A note for yourself <span className="font-normal text-ink-soft">(optional)</span></span>
+                <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 80))} placeholder="e.g. Saturday satsang group" className="mt-2 w-full h-11 px-4 rounded-[14px] bg-surface-2 text-ink font-ui text-[15px] outline-none border border-transparent focus:border-accent" />
+              </label>
+              <div>
+                <span className="font-ui text-[13px] font-semibold text-ink">How many can use it</span>
+                <Segmented className="mt-2" label="How many can use it" value={uses} onChange={setUses} options={USES.map((u) => ({ value: u.value, name: u.name, label: u.label }))} />
+              </div>
+              <div>
+                <span className="font-ui text-[13px] font-semibold text-ink">Works for</span>
+                <Segmented className="mt-2" label="Works for" value={days} onChange={setDays} options={DAYS.map((d) => ({ value: d.value, name: d.name, label: d.label }))} />
+              </div>
+              <Button onClick={() => create.mutate()} loading={create.isPending} className="self-start">Make invite</Button>
+            </div>
+          )}
+
+          {invites.length > 0 && (
+            <div>
+              <p className="font-ui text-[13px] font-semibold text-ink mb-2">Your invites</p>
+              <ul className="rounded-[16px] bg-surface divide-y divide-line">
+                {invites.map((inv) => (
+                  <li key={inv.id} className={cn("flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3", !live(inv) && "opacity-55")}>
+                    <span className="flex-1 min-w-[150px]">
+                      <span className="block font-ui text-[14.5px] font-semibold text-ink tabular tracking-[0.06em]">{inv.code}</span>
+                      <span className="block font-ui text-[12.5px] text-ink-soft">
+                        {[inv.note, `${inv.uses}${inv.maxUses ? ` of ${inv.maxUses}` : ""} joined`, inv.revokedAt ? "Revoked" : inv.expiresAt ? (new Date(inv.expiresAt) > new Date() ? `until ${dateFmt.format(new Date(inv.expiresAt))}` : "Ended") : null].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
+                    {live(inv) && (
+                      <span className="flex items-center gap-1 ml-auto -mr-2">
+                        <Button size="sm" variant="ghost" onClick={() => share(inv)}><Glyph k="copy" size={15} /> Share</Button>
+                        <Button size="sm" variant="ghost" className="text-ink-soft hover:text-danger" onClick={() => revoke(inv)}>Revoke</Button>
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </Sheet>
+    </>
+  );
 }

@@ -7,7 +7,9 @@ import { SadhguruSignature } from "@/components/art/SadhguruSignature";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { SignInChoices } from "@/components/auth/PasskeySignIn";
 import { signInWithGoogle } from "@/app/actions";
+import { cookies } from "next/headers";
 import { getCurrentUser, homeFor } from "@/lib/session";
+import { INVITE_COOKIE } from "@/lib/invites";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -17,10 +19,11 @@ const ERRORS: Record<string, string> = {
   Configuration: "Sign-in isn't set up correctly yet. Please tell an admin.",
 };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; invite?: string }> }) {
   const user = await getCurrentUser();
   if (user) redirect(homeFor(user));
-  const { error } = await searchParams;
+  const { error, invite } = await searchParams;
+  const invited = !!(await cookies()).get(INVITE_COOKIE)?.value;
   const message = error ? (ERRORS[error] ?? "Something went wrong signing in. Please try again.") : null;
 
   return (
@@ -74,9 +77,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </p>
           )}
 
-          <p className="mt-6 font-ui text-[13px] leading-[1.6] text-ink-soft">
-            New here? Continue with Google and an admin will let you in. After that, your passkey signs you in.
-          </p>
+          {invited ? (
+            <p className="mt-6 font-ui text-[13px] leading-[1.6] text-accent">
+              You&rsquo;re invited. Continue with Google to begin; you&rsquo;ll be let in as soon as you&rsquo;ve set up.
+            </p>
+          ) : (
+            <p className="mt-6 font-ui text-[13px] leading-[1.6] text-ink-soft">
+              {invite === "used" ? "That invite link has been used up or has ended. You can still continue with Google and an admin will let you in." : "New here? Continue with Google and an admin will let you in. After that, your passkey signs you in."}
+            </p>
+          )}
         </div>
       </main>
     </div>

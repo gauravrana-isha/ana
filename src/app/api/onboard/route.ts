@@ -7,6 +7,7 @@ import { notifyAdminsOfPending } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/session";
 import { FEATURE_KEYS, isFeatureKey } from "@/lib/features";
 import { sealed } from "@/lib/sealed";
+import { INVITE_COOKIE, claimInvite } from "@/lib/invites";
 
 /** Starter practices, sealed on the device. */
 const SealedPractice = z.object({
@@ -76,9 +77,14 @@ export async function POST(req: NextRequest) {
     }),
   ]);
 
-  // Waiting to be let in: every admin hears about it (in the bell, and as a push).
-  if (user.status === "PENDING") {
+  // Joined with an invite: let in straight away. Otherwise every admin hears someone is waiting.
+  const code = req.cookies.get(INVITE_COOKIE)?.value;
+  let status = user.status;
+  if (status === "PENDING" && code && (await claimInvite(user.id, code))) status = "APPROVED";
+  else if (status === "PENDING") {
     await notifyAdminsOfPending({ id: user.id, name: parsed.data.name, email: user.email ?? null }).catch((e) => console.error("notify admins", e));
   }
-  return NextResponse.json({ ok: true, status: user.status });
+  const res = NextResponse.json({ ok: true, status });
+  if (code) res.cookies.delete(INVITE_COOKIE);
+  return res;
 }

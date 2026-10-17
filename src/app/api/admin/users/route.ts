@@ -1,16 +1,35 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { resolveAdmin } from "@/lib/session";
 
-export async function GET() {
+const PAGE = 30;
+const STATUSES = ["PENDING", "APPROVED", "SUSPENDED"] as const;
+
+/**
+ * People, a page at a time: one status (or all), optionally matching a name or email
+ * (?status=&q=&cursor=), with the count for each status.
+ */
+export async function GET(req: NextRequest) {
   const admin = await resolveAdmin();
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const sp = req.nextUrl.searchParams;
+  const status = STATUSES.find((s) => s === sp.get("status"));
+  const q = sp.get("q")?.trim().slice(0, 80);
+  const cursor = sp.get("cursor");
 
-  const users = await db.user.findMany({
-    // Legacy rows (no Google account) are hidden; they can only be claimed.
-    where: { accounts: { some: {} } },
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+  // Legacy rows (no Google account) are hidden; they can only be claimed.
+  const base: Prisma.UserWhereInput = {
+    accounts: { some: {} },
+    ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q, mode: "insensitive" } }] } : {}),
+  };
+  const [grouped, page] = await Promise.all([
+    db.user.groupBy({ by: ["status"], where: base, _count: { _all: true } }),
+    db.user.findMany({
+    where: { ...base, ...(status ? { status } : {}) },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: PAGE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
       id: true,
       name: true,
@@ -23,7 +42,15 @@ export async function GET() {
       createdAt: true,
       features: { select: { feature: true, allowed: true, enabled: true } },
     },
-  });
+    }),
+  ]);
+  const counts = { ALL: 0, PENDING: 0, APPROVED: 0, SUSPENDED: 0 } as Record<string, number>;
+  for (const g of grouped) {
+    counts[g.status] = g._count._all;
+    counts.ALL += g._count._all;
+  }
+  const hasMore = page.length > PAGE;
+  const users = page.slice(0, PAGE);
 
   // Admins see what they need to let people in and look after storage, never anything
   // people write or track: when they were last active, when they joined, and how much
@@ -55,5 +82,7 @@ export async function GET() {
       return { ...u, storageBytes: used.get(u.id) ?? 0, lastActiveAt: last?.toISOString() ?? null, activeDays: days.get(u.id) ?? 0 };
     }),
     me: admin.id,
+    counts,
+    nextCursor: hasMore ? users[users.length - 1].id : null,
   });
 }
