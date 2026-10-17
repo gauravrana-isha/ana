@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { DeviceMobile, Fingerprint, Password, Scroll } from "@phosphor-icons/react";
+
 import { Button } from "@/components/ui/Button";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import {
   type VaultStatus,
 } from "@/lib/vault/vault";
 import { ChoiceCard, FieldError, ScreenTitle, VaultScreen } from "./VaultScreen";
+import { Glyph } from "@/components/art/Glyphs";
 
 type Mode = "choose" | "device" | "passphrase" | "words";
 
@@ -71,10 +72,10 @@ export function Unlock({ userId, status }: { userId: string; status: VaultStatus
         <div>
           <ScreenTitle title="Unlock your journal" lead="This device needs your key once. After that, ana opens here as usual." />
           <div className="mt-7 flex flex-col gap-2.5">
-            {hasPasskey && <ChoiceCard icon={<Fingerprint size={22} />} title="Use your passkey" line="Face ID, fingerprint or device PIN" onClick={passkey} busy={busy} />}
-            <ChoiceCard icon={<DeviceMobile size={22} />} title="Use a device you're signed in on" line="Show a code here, confirm it there" onClick={() => go("device")} />
-            {hasPassphrase && <ChoiceCard icon={<Password size={22} />} title="Use your passphrase" line="The words you chose" onClick={() => go("passphrase")} />}
-            <ChoiceCard icon={<Scroll size={22} />} title="Use your recovery words" line="The 12 words you wrote down" onClick={() => go("words")} />
+            {hasPasskey && <ChoiceCard icon={<Glyph k="fingerprint" size={24} />} title="Use your passkey" line="Face ID, fingerprint or device PIN" onClick={passkey} busy={busy} />}
+            <ChoiceCard icon={<Glyph k="phone" size={24} />} title="Use a device you're signed in on" line="Show a code here, confirm it there" onClick={() => go("device")} />
+            {hasPassphrase && <ChoiceCard icon={<Glyph k="password" size={24} />} title="Use your passphrase" line="The words you chose" onClick={() => go("passphrase")} />}
+            <ChoiceCard icon={<Glyph k="words" size={24} />} title="Use your recovery words" line="The 12 words you wrote down" onClick={() => go("words")} />
           </div>
           <div className="mt-4">
             <FieldError>{error}</FieldError>

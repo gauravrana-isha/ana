@@ -11,7 +11,7 @@ import { NotificationSettings } from "@/components/push/Notifications";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { DownloadSimple, UploadSimple } from "@phosphor-icons/react";
+
 import { usePractices } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
 import { Avatar } from "@/components/shell/Sidebar";
@@ -37,6 +37,7 @@ import { exportJournal, importJournal } from "@/lib/importer";
 import { PrivacySettings } from "@/components/vault/PrivacySettings";
 import { DeleteMark, EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
+import { Glyph } from "@/components/art/Glyphs";
 
 export default function ProfilePage() {
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as ThemeName);
@@ -238,10 +239,10 @@ export default function ProfilePage() {
         </p>
         <div className="flex flex-wrap gap-2.5" inert={!!dataBusy} aria-busy={!!dataBusy || undefined}>
           <Button variant="secondary" onClick={handleExport} loading={dataBusy === "export"}>
-            <DownloadSimple size={16} /> Download my journal
+            <Glyph k="download" size={18} /> Download my journal
           </Button>
           <label className={cn("press inline-flex items-center gap-2 h-11 px-5 rounded-[14px] bg-surface-2 text-ink font-ui text-[14px] font-semibold cursor-pointer", dataBusy && "opacity-60")}>
-            {dataBusy === "import" ? <ButtonLoader /> : <UploadSimple size={16} />} Import a file
+            {dataBusy === "import" ? <ButtonLoader /> : <Glyph k="upload" size={18} />} Import a file
             <input type="file" accept=".json,application/json" className="hidden" onChange={handleImport} />
           </label>
         </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowCounterClockwise, MapPin } from "@phosphor-icons/react";
+
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { useToast } from "@/components/ui/Toast";
@@ -18,6 +18,7 @@ import { DeleteMark, DotsMark, EditMark } from "@/components/art/PenMarks";
 import { deleteMoment } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Chevron } from "@/components/ui/Arrows";
+import { Glyph } from "@/components/art/Glyphs";
 
 export const STAMP_LABEL: Record<string, string> = {
   growth: "Growth", struggle: "Struggle", insight: "Insight", stillness: "Stillness", devotion: "Devotion",
@@ -165,12 +166,12 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
             {timeOf(moment) && <span>{timeOf(moment)}</span>}
             {moment.place && (
               <span className="inline-flex items-center gap-1">
-                <MapPin size={12} /> {moment.place}
+                <Glyph k="pin" size={14} /> {moment.place}
               </span>
             )}
             {moment.lookBackOn && (
               <span className="inline-flex items-center gap-1 text-accent">
-                <ArrowCounterClockwise size={12} /> back on {lookBackLabel(moment)}
+                <Glyph k="returns" size={14} /> back on {lookBackLabel(moment)}
               </span>
             )}
           </p>

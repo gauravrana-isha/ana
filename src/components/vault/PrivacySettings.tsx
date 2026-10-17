@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { DeviceMobile, Fingerprint, LockSimple, Password, Scroll } from "@phosphor-icons/react";
+
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { useToast } from "@/components/ui/Toast";
@@ -26,6 +26,7 @@ import { RecoveryWords } from "./RecoveryWords";
 import { FieldError } from "./VaultScreen";
 import { useConfirm } from "@/components/ui/Confirm";
 import { PlusMark } from "@/components/art/PenMarks";
+import { Glyph } from "@/components/art/Glyphs";
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
 
@@ -124,7 +125,7 @@ export function PrivacySettings() {
 
       <div className="rounded-[18px] bg-surface divide-y divide-line">
         {passkeys.map((k) => (
-          <Row key={k.id} icon={<Fingerprint size={19} />} title={k.label ?? "Passkey"} line={used(k)}>
+          <Row key={k.id} icon={<Glyph k="fingerprint" size={21} />} title={k.label ?? "Passkey"} line={used(k)}>
             {!k.signsIn && support !== "no" && (
               <Button size="sm" variant="ghost" loading={busy === "upgrade:" + k.id} onClick={() => upgrade(k)}>Use to sign in</Button>
             )}
@@ -132,12 +133,12 @@ export function PrivacySettings() {
           </Row>
         ))}
         {passphrase ? (
-          <Row icon={<Password size={19} />} title="Passphrase" line={used(passphrase)}>
+          <Row icon={<Glyph k="password" size={21} />} title="Passphrase" line={used(passphrase)}>
             <Button size="sm" variant="ghost" onClick={() => setSheet("passphrase")}>Change</Button>
             <Button size="sm" variant="ghost" className="text-ink-soft hover:text-danger" loading={busy === passphrase.id} onClick={() => remove(passphrase)}>Remove</Button>
           </Row>
         ) : null}
-        <Row icon={<Scroll size={19} />} title="Recovery words" line={phrase ? `Made ${dateFmt.format(new Date(phrase.createdAt))}` : "12 words on paper"}>
+        <Row icon={<Glyph k="words" size={21} />} title="Recovery words" line={phrase ? `Made ${dateFmt.format(new Date(phrase.createdAt))}` : "12 words on paper"}>
           <Button size="sm" variant="ghost" onClick={() => setSheet("words")}>Make new words</Button>
         </Row>
         <div className="flex flex-wrap gap-2 px-4 py-3.5">
@@ -156,10 +157,10 @@ export function PrivacySettings() {
 
       <div className="mt-3 flex flex-wrap gap-2.5">
         <Button variant="secondary" onClick={() => setSheet("device")}>
-          <DeviceMobile size={16} /> Let in a new device
+          <Glyph k="phone" size={18} /> Let in a new device
         </Button>
         <Button variant="ghost" className="text-ink-soft" onClick={lockDevice}>
-          <LockSimple size={16} /> Lock this device
+          <Glyph k="lock" size={18} /> Lock this device
         </Button>
       </div>
 

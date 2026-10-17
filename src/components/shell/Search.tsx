@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarBlank, Camera, Feather, Microphone, ShieldCheck, SunHorizon, UserCircle, VideoCamera } from "@phosphor-icons/react";
 import { PersonAvatar } from "@/components/people/People";
 import { FeatureBadge, FeatureGlyph } from "@/components/art/FeatureBadge";
 import { FEATURES } from "@/lib/features";
@@ -15,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { CrossMark, PlusMark } from "@/components/art/PenMarks";
 import { fetchSearchIndex } from "@/lib/journal";
 import { searchIndex } from "@/lib/compute/search";
+import { Glyph } from "@/components/art/Glyphs";
+import { MomentGlyph } from "@/components/art/MomentIcon";
 
 interface Results {
   moments: { id: string; title: string; kind: string; at: string; snippet: string }[];
@@ -22,7 +23,6 @@ interface Results {
   reflections: { kind: "daily" | "weekly"; date: string; href: string; snippet: string }[];
 }
 
-const KIND_ICON: Record<string, typeof Feather> = { writing: Feather, moment: Feather, audio: Microphone, video: VideoCamera, photo: Camera };
 
 export function openSearch() {
   window.dispatchEvent(new Event("ana:search"));
@@ -181,7 +181,7 @@ export function SearchDialog() {
                       <FeatureBadge k={p.key} size={32} />
                     ) : (
                       <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-surface-2 text-accent shrink-0">
-                        {p.icon === "plus" ? <PlusMark size={18} /> : p.icon === "admin" ? <ShieldCheck size={16} /> : <UserCircle size={17} />}
+                        {p.icon === "plus" ? <PlusMark size={18} /> : p.icon === "admin" ? <Glyph k="shield" size={18} /> : <Glyph k="person" size={19} />}
                       </span>
                     )}
                     <span className="min-w-0 flex-1">
@@ -213,10 +213,9 @@ export function SearchDialog() {
                   {data.moments.length > 0 && <Group title="Moments" />}
                   {data.moments.map((m) => {
                     const i = ++idx;
-                    const Icon = KIND_ICON[m.kind] ?? Feather;
-                    return (
+                        return (
                       <button key={m.id} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(`/expressions/${m.id}`)} className={itemClass(i)}>
-                        <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-surface-2 text-accent shrink-0"><Icon size={16} /></span>
+                        <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-surface-2 text-accent shrink-0"><MomentGlyph kind={m.kind} size={18} /></span>
                         <span className="min-w-0 flex-1">
                           <span className="block font-ui text-[14.5px] font-semibold text-ink truncate">{m.title}</span>
                           {m.snippet && <span className="block font-ui text-[12.5px] text-ink-soft truncate">{m.snippet}</span>}
@@ -231,7 +230,7 @@ export function SearchDialog() {
                     return (
                       <button key={r.kind + r.date} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(r.href)} className={itemClass(i)}>
                         <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-surface-2 text-accent shrink-0">
-                          {r.kind === "daily" ? <SunHorizon size={16} /> : <CalendarBlank size={16} />}
+                          {r.kind === "daily" ? <Glyph k="sunrise" size={18} /> : <Glyph k="calendar" size={18} />}
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block font-ui text-[14.5px] font-semibold text-ink truncate">

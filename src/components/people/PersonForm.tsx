@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Camera } from "@phosphor-icons/react";
+
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -12,6 +12,7 @@ import { PersonAvatar } from "./People";
 import { DateField } from "@/components/ui/pickers";
 import { today } from "@/lib/dates";
 import { savePerson } from "@/lib/journal";
+import { MomentGlyph } from "@/components/art/MomentIcon";
 
 export interface PersonDetail {
   id: string;
@@ -113,7 +114,7 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
               <PersonAvatar person={{ name: name || "?", photoId: person?.photoId ?? null }} size={80} />
             )}
             <span className="absolute -bottom-0.5 -right-0.5 grid place-items-center w-8 h-8 rounded-full bg-accent text-bg border-[3px] border-bg">
-              <Camera size={14} weight="fill" />
+              <MomentGlyph kind="photo" size={16} />
             </span>
           </button>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setPhoto({ blob: f, url: URL.createObjectURL(f) }); }} />

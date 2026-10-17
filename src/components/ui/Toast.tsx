@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
-import { CheckCircle, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
+
 import { cn } from "@/lib/utils";
 import { CrossMark } from "@/components/art/PenMarks";
+import { Glyph } from "@/components/art/Glyphs";
 
 type ToastType = "success" | "error" | "loading";
 
@@ -72,9 +73,9 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   }, []);
 
   const icons = {
-    success: <CheckCircle size={18} weight="fill" className="text-good" />,
-    error: <WarningCircle size={18} weight="fill" className="text-accent" />,
-    loading: <SpinnerGap size={18} weight="thin" className="text-accent animate-spin" />,
+    success: <Glyph k="check-circle" size={20} className="text-good" />,
+    error: <Glyph k="warning" size={20} className="text-accent" />,
+    loading: <Glyph k="spinner" size={20} className="text-accent animate-spin" />,
   };
 
   return (

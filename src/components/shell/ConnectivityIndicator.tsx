@@ -1,8 +1,9 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { WifiSlash, ArrowsClockwise } from "@phosphor-icons/react";
+
 import { usePendingCount } from "@/lib/outbox";
+import { Glyph } from "@/components/art/Glyphs";
 
 /** A small pill at the top while offline, or while saves made offline are still being sent. */
 export function ConnectivityIndicator() {
@@ -18,14 +19,14 @@ export function ConnectivityIndicator() {
     >
       {!online ? (
         <>
-          <WifiSlash size={14} className="text-accent" />
+          <Glyph k="offline" size={16} className="text-accent" />
           <span className="font-ui text-[12px] text-ink-soft">
             Offline{pending ? ` · ${pending} ${pending === 1 ? "save" : "saves"} waiting` : " · saves will wait"}
           </span>
         </>
       ) : (
         <>
-          <ArrowsClockwise size={14} className="text-accent animate-spin" />
+          <Glyph k="sync" size={16} className="text-accent animate-spin" />
           <span className="font-ui text-[12px] text-ink-soft">Saving {pending}…</span>
         </>
       )}

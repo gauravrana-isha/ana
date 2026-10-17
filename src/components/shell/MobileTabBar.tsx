@@ -6,10 +6,11 @@ import { usePersistentState } from "@/lib/persist";
 import { usePrefetchScreen } from "@/lib/prefetch";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { DotsThreeCircle } from "@phosphor-icons/react";
+
 import { NavIcon } from "./NavIcon";
 import { BARE_PAGES, type NavItem } from "./nav";
 import { cn } from "@/lib/utils";
+import { Glyph } from "@/components/art/Glyphs";
 
 const MAX_TABS = 5;
 // On phones the everyday sections come first; the rest sit under "More".
@@ -53,7 +54,7 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
           ))}
           {!fits && (
             <button type="button" onClick={() => setMore(true)} aria-expanded={more} className="press relative flex flex-1 flex-col items-center justify-center gap-1 min-w-0">
-              <TabInner active={moreActive || more} label="More" icon={(on) => <DotsThreeCircle size={22} weight={on ? "fill" : "regular"} />} layoutId={moreActive ? "tab-active" : undefined} />
+              <TabInner active={moreActive || more} label="More" icon={(on) => <Glyph k="more" size={24} />} layoutId={moreActive ? "tab-active" : undefined} />
             </button>
           )}
         </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cake, Camera, Feather, Handshake, Microphone, VideoCamera } from "@phosphor-icons/react";
+
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -21,6 +21,8 @@ import { BusyBar } from "@/components/ui/Busy";
 import { deletePerson, fetchPerson } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
 import { DetailBar } from "@/components/ui/DetailBar";
+import { Glyph } from "@/components/art/Glyphs";
+import { MomentGlyph } from "@/components/art/MomentIcon";
 
 export default function PersonPage({ params }: { params: Promise<{ id: string }> }) {
   const ask = useConfirm();
@@ -88,17 +90,17 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
 
         {(person.howMet || birthday || person.notes) && (
           <div className="mt-5 pt-4 border-t border-line flex flex-col gap-2.5 font-ui text-[14px] text-ink">
-            {person.howMet && <p className="flex gap-2.5"><Handshake size={18} className="text-ink-soft shrink-0 mt-0.5" /> {person.howMet}</p>}
-            {birthday && <p className="flex gap-2.5"><Cake size={18} className="text-ink-soft shrink-0 mt-0.5" /> Birthday {birthday}</p>}
+            {person.howMet && <p className="flex gap-2.5"><Glyph k="handshake" size={20} className="text-ink-soft shrink-0 mt-0.5" /> {person.howMet}</p>}
+            {birthday && <p className="flex gap-2.5"><Glyph k="cake" size={20} className="text-ink-soft shrink-0 mt-0.5" /> Birthday {birthday}</p>}
             {person.notes && <p className="font-serif text-[15.5px] leading-[1.6] whitespace-pre-line text-ink-soft">{person.notes}</p>}
           </div>
         )}
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => openNew("writing")}><Feather size={15} /> Write a moment</Button>
-          <Button size="sm" variant="secondary" onClick={() => openNew("audio")}><Microphone size={15} /> Voice</Button>
-          <Button size="sm" variant="secondary" onClick={() => openNew("video")}><VideoCamera size={15} /> Video</Button>
-          <Button size="sm" variant="secondary" onClick={() => openNew("photo")}><Camera size={15} /> Photo</Button>
+          <Button size="sm" onClick={() => openNew("writing")}><MomentGlyph kind="writing" size={17} /> Write a moment</Button>
+          <Button size="sm" variant="secondary" onClick={() => openNew("audio")}><MomentGlyph kind="audio" size={17} /> Voice</Button>
+          <Button size="sm" variant="secondary" onClick={() => openNew("video")}><MomentGlyph kind="video" size={17} /> Video</Button>
+          <Button size="sm" variant="secondary" onClick={() => openNew("photo")}><MomentGlyph kind="photo" size={17} /> Photo</Button>
         </div>
       </section>
 

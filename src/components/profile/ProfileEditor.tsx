@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { ArrowCounterClockwise, Camera } from "@phosphor-icons/react";
+
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -13,6 +13,8 @@ import { mediaUrl, shrinkPhoto, uploadMedia } from "@/lib/media-client";
 import type { Me } from "@/lib/me";
 import { today } from "@/lib/dates";
 import { sealFields } from "@/lib/vault/vault";
+import { Glyph } from "@/components/art/Glyphs";
+import { MomentGlyph } from "@/components/art/MomentIcon";
 
 const field =
   "mt-2 w-full h-12 px-4 rounded-[14px] bg-surface-2 text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/70";
@@ -100,7 +102,7 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
         <div className="flex items-center gap-4">
           <button type="button" onClick={() => fileRef.current?.click()} className="press relative rounded-full" aria-label="Choose a photo">
             <Avatar name={name || me.email || "You"} image={shownImage ?? null} size={76} />
-            <span className="absolute -bottom-0.5 -right-0.5 grid place-items-center w-7 h-7 rounded-full bg-accent text-bg ring-2 ring-bg"><Camera size={14} weight="fill" /></span>
+            <span className="absolute -bottom-0.5 -right-0.5 grid place-items-center w-7 h-7 rounded-full bg-accent text-bg ring-2 ring-bg"><MomentGlyph kind="photo" size={16} /></span>
           </button>
           <div className="flex flex-col items-start gap-1">
             <button type="button" onClick={() => fileRef.current?.click()} className="press h-9 px-3 rounded-[11px] font-ui text-[13.5px] font-semibold text-accent hover:bg-accent-soft">
@@ -108,7 +110,7 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
             </button>
             {(me.photoId || preview) && photo !== null && (
               <button type="button" onClick={() => { setPhoto(null); setPreview(null); }} className="press inline-flex items-center gap-1.5 h-8 px-3 rounded-[10px] font-ui text-[12.5px] font-semibold text-ink-soft hover:text-ink">
-                <ArrowCounterClockwise size={13} /> {me.image ? "Use my Google photo" : "Remove photo"}
+                <Glyph k="returns" size={15} /> {me.image ? "Use my Google photo" : "Remove photo"}
               </button>
             )}
           </div>

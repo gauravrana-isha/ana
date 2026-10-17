@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { CalendarBlank, Clock } from "@phosphor-icons/react";
+
 import { cn } from "@/lib/utils";
 import { Portal } from "./Portal";
 import { CloseButton } from "./CloseButton";
@@ -10,6 +10,7 @@ import { useVisibleArea } from "@/lib/visual-viewport";
 import { toISODate, today } from "@/lib/dates";
 import { Chevron, RoundArrowButton } from "./Arrows";
 import { CrossMark } from "@/components/art/PenMarks";
+import { Glyph } from "@/components/art/Glyphs";
 
 /*
  * ana's own date and time pickers. Used everywhere instead of the browser/device pickers so
@@ -310,7 +311,7 @@ export function DateField({ value, onChange, placeholder = "Choose a date", min,
     <>
       <div className={cn("relative", className)}>
         <button type="button" onClick={() => setOpen(true)} aria-label={`${label}: ${value ? prettyDate(value) : "not set"}`} className={fieldClass}>
-          <CalendarBlank size={18} className="text-ink-soft shrink-0" />
+          <Glyph k="calendar" size={20} className="text-ink-soft shrink-0" />
           <span className={cn("flex-1 truncate", value ? "text-ink" : "text-ink-soft/80")}>{value ? (compact ? prettyDate(value, value.slice(0, 4) !== String(new Date().getFullYear()), false) : prettyDate(value)) : placeholder}</span>
         </button>
         {clearable && value && (
@@ -337,7 +338,7 @@ export function TimeField({ value, onChange, label, className, compact = false }
         aria-label={`${label}: ${value ? formatTime12(value) : "not set"}`}
         className={compact ? cn("press inline-flex items-center gap-1.5 h-9 px-3 rounded-[10px] bg-surface-2 text-ink font-ui text-[14px] tabular hover:bg-[color-mix(in_srgb,var(--surface-2)_85%,var(--ink)_6%)]", className) : cn(fieldClass, className)}
       >
-        <Clock size={compact ? 14 : 18} className="text-ink-soft shrink-0" />
+        <Glyph k="clock" size={18} className="text-ink-soft shrink-0" />
         <span className={cn("whitespace-nowrap", value ? "text-ink" : "text-ink-soft/80")}>{value ? formatTime12(value) : "Set time"}</span>
       </button>
       <PickerPanel

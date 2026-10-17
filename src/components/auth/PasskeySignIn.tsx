@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Fingerprint } from "@phosphor-icons/react";
+
 import { ButtonLoader } from "@/components/ui/Loader";
 import { cn } from "@/lib/utils";
 import { passkeyUsedHere, prepareSignIn, signInWithPasskey } from "@/lib/vault/vault";
+import { Glyph } from "@/components/art/Glyphs";
 
 /**
  * The sign-in choices. On a device that has used a passkey for ana, "Sign in with passkey"
@@ -51,7 +52,7 @@ export function SignInChoices({ google }: { google: React.ReactNode }) {
         leads ? "bg-accent text-bg shadow-[var(--shadow-soft)] hover:brightness-110" : "bg-surface text-ink hover:bg-surface-2"
       )}
     >
-      {busy ? <ButtonLoader /> : <Fingerprint size={20} />}
+      {busy ? <ButtonLoader /> : <Glyph k="fingerprint" size={22} />}
       {busy ? "Waiting for your passkey…" : "Sign in with passkey"}
     </button>
   ) : null;

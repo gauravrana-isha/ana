@@ -6,7 +6,6 @@ import { usePersistentState } from "@/lib/persist";
 import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Cards, List } from "@phosphor-icons/react";
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { STAMP_GUIDE } from "@/components/reflection/StampRow";
@@ -23,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { CrossMark, FiltersMark, PlusMark } from "@/components/art/PenMarks";
 import { FeatureGlyph } from "@/components/art/FeatureBadge";
 import { TickMark } from "@/components/tracker/FieldInput";
+import { Glyph } from "@/components/art/Glyphs";
 
 const FILTERS = [
   { id: "", label: "All" },
@@ -135,9 +135,9 @@ function ExpressionsContent() {
           {extraFilters > 0 && <span className="absolute -top-1 -right-1 grid place-items-center min-w-[17px] h-[17px] px-1 rounded-full bg-accent text-bg font-ui text-[10.5px] font-bold tabular">{extraFilters}</span>}
         </button>
         <div role="radiogroup" aria-label="View" className="shrink-0 hidden sm:flex p-0.5 rounded-full border border-line">
-          {([["full", "Full moments", Cards], ["folded", "One line each", List]] as const).map(([id, label, Icon]) => (
+          {([["full", "Full moments", "cards"], ["folded", "One line each", "list"]] as const).map(([id, label, Icon]) => (
             <button key={id} type="button" role="radio" aria-checked={view === id} aria-label={label} title={label} onClick={() => setView(id)} className={cn("press grid place-items-center w-8 h-8 rounded-full transition-colors", view === id ? "bg-accent text-bg" : "text-ink-soft hover:text-ink")}>
-              <Icon size={16} />
+              <Glyph k={Icon} size={18} />
             </button>
           ))}
         </div>
@@ -204,9 +204,9 @@ function ExpressionsContent() {
           <div className="sm:hidden">
             <p className="font-ui text-[13px] font-semibold text-ink mb-2">View</p>
             <div className="grid grid-cols-2 p-1 rounded-full bg-surface-2">
-              {([["full", "Full moments", Cards], ["folded", "One line each", List]] as const).map(([id, label, Icon]) => (
+              {([["full", "Full moments", "cards"], ["folded", "One line each", "list"]] as const).map(([id, label, Icon]) => (
                 <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)} className={cn("press inline-flex items-center justify-center gap-1.5 h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors", view === id ? "bg-bg text-ink shadow-[var(--shadow-soft)]" : "text-ink-soft")}>
-                  <Icon size={15} /> {label}
+                  <Glyph k={Icon} size={17} /> {label}
                 </button>
               ))}
             </div>

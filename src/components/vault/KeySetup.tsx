@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { EyeSlash, Fingerprint, Key, LockSimple, Password, Eye } from "@phosphor-icons/react";
+
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/lib/vault/vault";
 import { ChoiceCard, FieldError, ScreenTitle, VaultScreen } from "./VaultScreen";
 import { RecoveryWords } from "./RecoveryWords";
+import { Glyph } from "@/components/art/Glyphs";
 
 type Step = "intro" | "how" | "passphrase" | "words" | "check";
 
@@ -94,7 +95,7 @@ export function KeySetup({
           <div className="mt-7 flex flex-col gap-2.5">
             {support !== "no" && (
               <ChoiceCard
-                icon={<Fingerprint size={22} />}
+                icon={<Glyph k="fingerprint" size={24} />}
                 title="A passkey"
                 line="Face ID, fingerprint or device PIN. Saved in your Google or Apple account, so it works on your other devices too."
                 tag="Best"
@@ -102,7 +103,7 @@ export function KeySetup({
                 busy={busy}
               />
             )}
-            <ChoiceCard icon={<Password size={22} />} title="A passphrase" line="A few words only you know. Works on any device." onClick={() => go("passphrase")} />
+            <ChoiceCard icon={<Glyph k="password" size={24} />} title="A passphrase" line="A few words only you know. Works on any device." onClick={() => go("passphrase")} />
           </div>
           {support === "no" && (
             <p className="mt-4 font-ui text-[13.5px] leading-[1.55] text-ink-soft">This browser can&rsquo;t keep your key in a passkey, so a passphrase it is. You can add a passkey later from a device that can.</p>
@@ -149,9 +150,9 @@ function BackButton({ onClick }: { onClick: () => void }) {
 
 function Intro({ firstTime }: { firstTime: boolean }) {
   const points = [
-    { icon: <LockSimple size={20} />, text: "Everything you write, track and record is locked on your device before it's sent." },
-    { icon: <EyeSlash size={20} />, text: "No one else can read it. Not the people who run ana, not anyone with the database." },
-    { icon: <Key size={20} />, text: "You'll keep 12 recovery words. If you lose your devices and those words, no one can open your journal again, not even us." },
+    { icon: <Glyph k="lock" size={22} />, text: "Everything you write, track and record is locked on your device before it's sent." },
+    { icon: <Glyph k="eye-off" size={22} />, text: "No one else can read it. Not the people who run ana, not anyone with the database." },
+    { icon: <Glyph k="key" size={22} />, text: "You'll keep 12 recovery words. If you lose your devices and those words, no one can open your journal again, not even us." },
   ];
   return (
     <div>
@@ -243,7 +244,7 @@ export function PassphraseForm({ onSubmit, cta = "Continue", title = "Choose a p
           <span className="relative mt-2 block">
             <input type={show ? "text" : "password"} value={p} onChange={(e) => setP(e.target.value)} autoComplete="new-password" autoFocus className={cn(input, "pr-12")} />
             <button type="button" onClick={() => setShow((v) => !v)} aria-label={show ? "Hide" : "Show"} className="absolute right-1.5 top-1.5 grid place-items-center w-9 h-9 rounded-[10px] text-ink-soft hover:text-ink hover:bg-surface-2">
-              {show ? <EyeSlash size={18} /> : <Eye size={18} />}
+              {show ? <Glyph k="eye-off" size={20} /> : <Glyph k="eye" size={20} />}
             </button>
           </span>
           <span className="mt-2 flex items-center gap-2" aria-live="polite">

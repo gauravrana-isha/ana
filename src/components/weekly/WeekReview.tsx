@@ -3,7 +3,6 @@
 import { WeekReviewSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, Feather, Microphone, VideoCamera } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { PracticeIcon } from "@/components/tracker/PracticeIcon";
@@ -12,6 +11,7 @@ import { today } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { WeekBars, WeekGrid } from "./WeekCharts";
 import { fetchDigest } from "@/lib/journal";
+import { MomentGlyph } from "@/components/art/MomentIcon";
 
 interface Review {
   days: string[];
@@ -33,7 +33,6 @@ interface Review {
 const DAY = ["Su", "M", "Tu", "W", "Th", "F", "Sa"];
 const MOODS = ["Low", "Agitated", "Neutral", "Content", "Blissful"];
 const MOOD_FILL = [20, 40, 60, 80, 100].map((p) => `color-mix(in srgb, var(--accent) ${p}%, var(--surface-2))`);
-const KIND_ICON: Record<string, typeof Feather> = { writing: Feather, moment: Feather, audio: Microphone, video: VideoCamera, photo: Camera };
 
 function Card({ title, lead, children, className }: { title: string; lead?: string; children: React.ReactNode; className?: string }) {
   return (
@@ -170,11 +169,10 @@ export function WeekReview({ weekStart, weekRange }: { weekStart: string; weekRa
           {data.moments.length > 0 ? (
             <ul className="flex flex-col gap-1.5">
               {data.moments.map((m) => {
-                const Icon = KIND_ICON[m.kind] ?? Feather;
                 return (
                   <li key={m.id}>
                     <Link href={`/expressions/${m.id}`} className="flex items-center gap-3 p-2 -mx-2 rounded-[12px] hover:bg-bg">
-                      <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-bg text-accent shrink-0"><Icon size={16} /></span>
+                      <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-bg text-accent shrink-0"><MomentGlyph kind={m.kind} size={18} /></span>
                       <span className="flex-1 font-ui text-[14px] text-ink truncate">{m.title || "Untitled moment"}</span>
                       <span className="font-ui text-[12px] text-ink-soft tabular">{new Date(m.at).toLocaleDateString(undefined, { weekday: "short" })}</span>
                     </Link>

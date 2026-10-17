@@ -6,9 +6,10 @@ import { usePathname } from "next/navigation";
 import { Lotus } from "@/components/art/Lotus";
 import { BARE_PAGES, PAGE_TITLES } from "./nav";
 import { formatDateHand, today } from "@/lib/dates";
-import { Info } from "@phosphor-icons/react";
+
 import { SearchButton } from "./Search";
 import { NotificationBell } from "./NotificationBell";
+import { Glyph } from "@/components/art/Glyphs";
 
 /** Pages that explain themselves on request: the ⓘ in the header asks the page to open its help. */
 const HELP_PAGES = ["/commitment"];
@@ -73,7 +74,7 @@ export function Topbar() {
           title={`About ${title}`}
           className="press grid place-items-center w-8 h-8 -mr-0.5 rounded-full text-ink-soft hover:text-ink hover:bg-surface"
         >
-          <Info size={17} />
+          <Glyph k="info" size={19} />
         </button>
       )}
       <time

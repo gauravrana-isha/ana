@@ -5,7 +5,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowCounterClockwise, MapPin } from "@phosphor-icons/react";
+
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { PersonAvatar } from "@/components/people/People";
@@ -21,6 +21,7 @@ import { Portal } from "@/components/ui/Portal";
 import { CloseButton } from "@/components/ui/CloseButton";
 import { DetailBar } from "@/components/ui/DetailBar";
 import { BackMark } from "@/components/art/PenMarks";
+import { Glyph } from "@/components/art/Glyphs";
 
 /**
  * One moment, in full: its media at full size (photos open fullscreen), the whole text, the
@@ -76,7 +77,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
               {moment.hasTime && ` · ${when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
             </span>
             {moment.place && (
-              <span className="inline-flex items-center gap-1"><MapPin size={13} /> {moment.place}</span>
+              <span className="inline-flex items-center gap-1"><Glyph k="pin" size={15} /> {moment.place}</span>
             )}
           </p>
         </div>
@@ -125,7 +126,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
           )}
           {moment.lookBackOn && (
             <p className="inline-flex items-center gap-1.5 font-ui text-[13.5px] text-accent">
-              <ArrowCounterClockwise size={14} /> Comes back on {lookBackLabel(moment)}
+              <Glyph k="returns" size={16} /> Comes back on {lookBackLabel(moment)}
             </p>
           )}
         </footer>

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Copy } from "@phosphor-icons/react";
 import { TickMark } from "@/components/tracker/FieldInput";
 import { phraseWords } from "@/lib/vault/vault";
+import { Glyph } from "@/components/art/Glyphs";
 
 /** The 12 recovery words, numbered, in reading order; with a way to copy them. */
 export function RecoveryWords({ phrase }: { phrase: string }) {
@@ -32,7 +32,7 @@ export function RecoveryWords({ phrase }: { phrase: string }) {
         }}
         className="press mt-3 inline-flex items-center gap-1.5 h-9 px-3 rounded-[11px] font-ui text-[13px] font-semibold text-accent hover:bg-accent-soft"
       >
-        {copied ? <TickMark size={15} /> : <Copy size={15} />} {copied ? "Copied" : "Copy the words"}
+        {copied ? <TickMark size={15} /> : <Glyph k="copy" size={17} />} {copied ? "Copied" : "Copy the words"}
       </button>
     </div>
   );

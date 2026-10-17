@@ -5,7 +5,6 @@ import { usePersistentState } from "@/lib/persist";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarBlank, Clock, Crown, HardDrives, HourglassMedium } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Avatar } from "@/components/shell/Sidebar";
 import { NavIcon } from "@/components/shell/NavIcon";
@@ -17,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Chevron } from "@/components/ui/Arrows";
 import { TickMark } from "@/components/tracker/FieldInput";
+import { Glyph } from "@/components/art/Glyphs";
 
 type Status = "PENDING" | "APPROVED" | "SUSPENDED";
 
@@ -155,14 +155,14 @@ export default function AdminPage() {
                 >
                   <span className="flex items-center gap-1.5">
                     <span className="font-ui text-[14.5px] font-semibold text-ink truncate">{name}</span>
-                    {u.role === "ADMIN" && <Crown size={14} weight="fill" className="text-saffron shrink-0" aria-label="Admin" />}
+                    {u.role === "ADMIN" && <span role="img" aria-label="Admin" className="text-saffron shrink-0"><Glyph k="crown" size={16} /></span>}
                   </span>
                   <span className="block font-ui text-[13px] text-ink-soft truncate">
                     {u.email} · <span className="tabular">{dateFmt.format(new Date(u.createdAt))}</span>
                   </span>
                   {u.status === "PENDING" && !u.onboardedAt && (
                     <span className="sm:hidden mt-1 inline-flex items-center gap-1 font-ui text-[12px] font-semibold text-saffron">
-                      <HourglassMedium size={13} weight="fill" /> Finishing onboarding
+                      <Glyph k="hourglass" size={15} /> Finishing onboarding
                     </span>
                   )}
                 </button>
@@ -225,9 +225,9 @@ export default function AdminPage() {
                       </div>
 
                       <dl className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <Fact icon={<Clock size={15} />} label="Last active" value={activeLabel(u.lastActiveAt)} />
-                        <Fact icon={<CalendarBlank size={15} />} label="Joined" value={dateFmt.format(new Date(u.createdAt))} />
-                        <Fact icon={<HardDrives size={15} />} label="Storage" value={`${formatBytes(u.storageBytes)} of 200 MB`}>
+                        <Fact icon={<Glyph k="clock" size={17} />} label="Last active" value={activeLabel(u.lastActiveAt)} />
+                        <Fact icon={<Glyph k="calendar" size={17} />} label="Joined" value={dateFmt.format(new Date(u.createdAt))} />
+                        <Fact icon={<Glyph k="storage" size={17} />} label="Storage" value={`${formatBytes(u.storageBytes)} of 200 MB`}>
                           <span className="mt-1.5 block h-1 rounded-full bg-line overflow-hidden">
                             <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max(u.storageBytes ? 2 : 0, Math.min(100, (u.storageBytes / QUOTA) * 100))}%` }} />
                           </span>
@@ -266,7 +266,7 @@ function StatusActions({ u, isMe, busy, onChange }: { u: AdminUser; isMe: boolea
       return (
         <>
           <span className="inline-flex items-center justify-center gap-1.5 h-9 min-w-[124px] px-3 rounded-[11px] bg-[color-mix(in_srgb,var(--saffron)_12%,var(--surface))] font-ui text-[12.5px] font-semibold text-saffron" title="They signed in but haven't finished the welcome steps yet">
-            <HourglassMedium size={14} weight="fill" /> Onboarding
+            <Glyph k="hourglass" size={16} /> Onboarding
           </span>
           <Button size="sm" variant="danger" disabled={busy} onClick={() => onChange({ status: "SUSPENDED" })}>
             Decline

@@ -5,7 +5,7 @@ import { ListSkeleton, TodaySkeleton } from "@/components/skeletons/ScreenSkelet
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowCounterClockwise, Cake, Scroll } from "@phosphor-icons/react";
+
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { Arrow } from "@/components/ui/Arrows";
 import { Ornament } from "@/components/art/Ornament";
@@ -22,6 +22,7 @@ import { today as todayStr } from "@/lib/dates";
 import { isKept } from "@/lib/practiceDefaults";
 import { cn } from "@/lib/utils";
 import { fetchToday } from "@/lib/journal";
+import { Glyph } from "@/components/art/Glyphs";
 
 function greeting(first: string | null | undefined) {
   const h = new Date().getHours();
@@ -70,7 +71,7 @@ export default function TodayPage() {
       {/* The commitment letter, when it's time to read it again */}
       {data?.commitment && (
         <Link href="/commitment" className="press group block rounded-[22px] border border-accent/30 bg-accent-soft p-5 sm:p-6">
-          <span className="inline-flex items-center gap-2 font-ui text-[13px] font-semibold text-accent"><Scroll size={16} /> Your commitment · time to read it again</span>
+          <span className="inline-flex items-center gap-2 font-ui text-[13px] font-semibold text-accent"><Glyph k="words" size={18} /> Your commitment · time to read it again</span>
           <p className="mt-2 font-serif text-[17px] leading-[1.65] text-ink line-clamp-3 whitespace-pre-line">{data.commitment.body}</p>
           <span className="mt-3 inline-flex items-center gap-1.5 font-ui text-[13.5px] font-semibold text-accent">Read it again <Arrow size={15} className="transition-transform group-hover:translate-x-0.5" /></span>
         </Link>
@@ -149,7 +150,7 @@ export default function TodayPage() {
                       <PersonAvatar person={p} size={40} />
                       <span className="flex-1 font-ui text-[15px] font-semibold text-ink">{p.name}</span>
                       <span className="inline-flex items-center gap-1.5 font-ui text-[13px] font-semibold text-saffron">
-                        <Cake size={16} /> {p.inDays === 0 ? "Today" : p.inDays === 1 ? "Tomorrow" : `In ${p.inDays} days`}
+                        <Glyph k="cake" size={18} /> {p.inDays === 0 ? "Today" : p.inDays === 1 ? "Tomorrow" : `In ${p.inDays} days`}
                       </span>
                     </Link>
                   </li>
@@ -161,7 +162,7 @@ export default function TodayPage() {
           {/* Moments coming back */}
           {data && data.lookBack.length > 0 && (
             <section>
-              <SectionHead title="Coming back to you" icon={<ArrowCounterClockwise size={16} />} />
+              <SectionHead title="Coming back to you" icon={<Glyph k="returns" size={18} />} />
               <div className="flex flex-col gap-2.5">
                 {data.lookBack.map((m) => <MomentCard key={m.id} moment={m} onEdit={edit} />)}
               </div>

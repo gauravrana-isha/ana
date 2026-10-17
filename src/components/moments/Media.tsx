@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { CameraRotate, Images, Pause, Play, Stop, UploadSimple, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatDuration, type AttachmentDTO } from "@/lib/media-client";
 import { useRecorder } from "./useRecorder";
@@ -12,6 +11,7 @@ import type { UploadState } from "./useEagerUploads";
 import { TickMark } from "@/components/tracker/FieldInput";
 import { CrossMark } from "@/components/art/PenMarks";
 import { StoredAudio, StoredImg, StoredVideo } from "./StoredMedia";
+import { Glyph } from "@/components/art/Glyphs";
 
 // ---------------------------------------------------------------- playback
 
@@ -39,7 +39,7 @@ export function AudioPlayer({ src, duration, className }: { src: string; duratio
         aria-label={playing ? "Pause" : "Play"}
         className="press grid place-items-center w-10 h-10 rounded-full bg-accent text-bg shrink-0"
       >
-        {playing ? <Pause size={16} weight="fill" /> : <Play size={16} weight="fill" className="translate-x-[1px]" />}
+        {playing ? <Glyph k="pause" size={18} /> : <Glyph k="play" size={18} className="translate-x-[1px]" />}
       </button>
       <input
         type="range"
@@ -114,7 +114,7 @@ export function MediaPreview({ attachments }: { attachments: AttachmentDTO[] }) 
               {/* A video is opened only on its moment's page (it may be large); here, a quiet frame. */}
               <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-ink/80 to-ink/60" />
               <span className="absolute inset-0 grid place-items-center">
-                <span className="grid place-items-center w-11 h-11 rounded-full bg-black/45 text-white"><Play size={18} weight="fill" /></span>
+                <span className="grid place-items-center w-11 h-11 rounded-full bg-black/45 text-white"><Glyph k="play" size={20} /></span>
               </span>
             </>
           )}
@@ -123,7 +123,7 @@ export function MediaPreview({ attachments }: { attachments: AttachmentDTO[] }) 
       )}
       {audio.map((a) => (
         <div key={a.id} className="flex items-center gap-3 h-11 px-3 rounded-[12px] bg-bg/70">
-          <span className="grid place-items-center w-7 h-7 rounded-full bg-accent text-bg"><Play size={12} weight="fill" /></span>
+          <span className="grid place-items-center w-7 h-7 rounded-full bg-accent text-bg"><Glyph k="play" size={14} /></span>
           <span aria-hidden="true" className="flex-1 flex items-center gap-[3px] h-5 overflow-hidden">
             {Array.from({ length: 28 }).map((_, i) => (
               <span key={i} className="w-[3px] rounded-full bg-accent/45" style={{ height: `${30 + ((i * 37) % 70)}%` }} />
@@ -216,7 +216,7 @@ export function AudioCapture({ value, onChange }: { value: CapturedMedia | null;
         <div className="flex flex-col gap-2">
           <AudioPlayer src={value.url} duration={value.seconds} />
           <button type="button" onClick={() => { rec.reset(); onChange(null); }} className="press self-center inline-flex items-center gap-1.5 h-9 px-3 rounded-[11px] font-ui text-[13px] font-semibold text-accent hover:bg-accent-soft">
-            <ArrowCounterClockwise size={15} /> Record again
+            <Glyph k="returns" size={17} /> Record again
           </button>
         </div>
       ) : (
@@ -230,7 +230,7 @@ export function AudioCapture({ value, onChange }: { value: CapturedMedia | null;
             style={{ background: recording ? "var(--danger)" : "var(--accent)" }}
           >
             {recording && <span className="absolute inset-0 rounded-full animate-ping bg-[var(--danger)] opacity-25" aria-hidden="true" />}
-            <span className="relative">{recording ? <Stop size={26} weight="fill" /> : <MomentGlyph kind="audio" size={34} strokeWidth={2.8} />}</span>
+            <span className="relative">{recording ? <Glyph k="stop" size={28} /> : <MomentGlyph kind="audio" size={34} strokeWidth={2.8} />}</span>
           </button>
           <div className="font-display text-[22px] font-semibold text-ink tabular" aria-live="polite">
             {recording ? formatDuration(rec.elapsed) : rec.state === "asking" ? "Allow the microphone…" : "Tap to record"}
@@ -274,7 +274,7 @@ export function VideoCapture({ value, onChange }: { value: CapturedMedia | null;
           <div className="flex flex-col gap-2">
             <video src={value.url} controls playsInline className="w-full max-h-[380px] rounded-[18px] bg-black" />
             <button type="button" onClick={() => { rec.reset(); onChange(null); }} className="press self-center inline-flex items-center gap-1.5 h-9 px-3 rounded-[11px] font-ui text-[13px] font-semibold text-accent hover:bg-accent-soft">
-              <ArrowCounterClockwise size={15} /> Choose again
+              <Glyph k="returns" size={17} /> Choose again
             </button>
           </div>
         ) : cameraOn ? (
@@ -303,7 +303,7 @@ export function VideoCapture({ value, onChange }: { value: CapturedMedia | null;
                 <span className={cn("block bg-[#e5484d] transition-all duration-200", recording ? "w-6 h-6 rounded-[6px]" : "w-12 h-12 rounded-full")} />
               </button>
               {rec.canFlip && !recording ? (
-                <button type="button" onClick={rec.flip} aria-label="Switch camera" className="press grid place-items-center w-11 h-11 rounded-full bg-black/45 text-white"><CameraRotate size={20} /></button>
+                <button type="button" onClick={rec.flip} aria-label="Switch camera" className="press grid place-items-center w-11 h-11 rounded-full bg-black/45 text-white"><Glyph k="camera-flip" size={22} /></button>
               ) : (
                 <span className="w-11" />
               )}
@@ -325,7 +325,7 @@ export function VideoCapture({ value, onChange }: { value: CapturedMedia | null;
                 <MomentGlyph kind="video" size={18} /> {native ? "Record video" : "Open camera"}
               </ActionButton>
               <ActionButton onClick={() => fileRef.current?.click()}>
-                <UploadSimple size={18} /> Choose a video
+                <Glyph k="upload" size={20} /> Choose a video
               </ActionButton>
             </div>
           </div>
@@ -402,7 +402,7 @@ export function PhotoCapture({ value, onChange, statusOf, onRetry }: { value: Ca
                 <span className="block w-[52px] h-[52px] rounded-full bg-white" />
               </button>
               {cam.canFlip ? (
-                <button type="button" onClick={cam.flip} aria-label="Switch camera" className="press grid place-items-center w-11 h-11 rounded-full bg-black/45 text-white"><CameraRotate size={20} /></button>
+                <button type="button" onClick={cam.flip} aria-label="Switch camera" className="press grid place-items-center w-11 h-11 rounded-full bg-black/45 text-white"><Glyph k="camera-flip" size={22} /></button>
               ) : (
                 <span className="w-11" />
               )}
@@ -419,7 +419,7 @@ export function PhotoCapture({ value, onChange, statusOf, onRetry }: { value: Ca
             )}
             <div className="mt-1 flex flex-wrap justify-center gap-2">
               <ActionButton primary onClick={takePhoto}><MomentGlyph kind="photo" size={18} /> Take a photo</ActionButton>
-              <ActionButton onClick={() => fileRef.current?.click()}><Images size={18} /> Choose photos</ActionButton>
+              <ActionButton onClick={() => fileRef.current?.click()}><Glyph k="images" size={20} /> Choose photos</ActionButton>
             </div>
           </div>
         ) : (
@@ -450,7 +450,7 @@ export function PhotoCapture({ value, onChange, statusOf, onRetry }: { value: Ca
                   <MomentGlyph kind="photo" size={17} /> Take
                 </button>
                 <button type="button" onClick={() => fileRef.current?.click()} className="press flex items-center justify-center gap-1.5 font-ui text-[12.5px] font-semibold text-ink-soft hover:text-ink hover:bg-surface">
-                  <Images size={17} /> Choose
+                  <Glyph k="images" size={19} /> Choose
                 </button>
               </motion.div>
             )}

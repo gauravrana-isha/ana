@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { SidebarSimple } from "@phosphor-icons/react";
+
 import { Lotus } from "@/components/art/Lotus";
 import { Ornament } from "@/components/art/Ornament";
 import { NavIcon } from "./NavIcon";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
 import { useMediaSrc } from "@/lib/vault/files";
+import { Glyph } from "@/components/art/Glyphs";
 
 interface SidebarProps {
   items: NavItem[];
@@ -95,7 +96,7 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
                 aria-expanded={false}
                 className="absolute inset-0 grid place-items-center rounded-[14px] bg-surface text-ink opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-opacity duration-150"
               >
-                <SidebarSimple size={21} />
+                <Glyph k="sidebar" size={23} />
               </button>
             )}
           </div>
@@ -110,7 +111,7 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
               aria-expanded={true}
               className="press ml-auto grid place-items-center w-9 h-9 rounded-[11px] text-ink-soft hover:text-ink hover:bg-surface"
             >
-              <SidebarSimple size={20} />
+              <Glyph k="sidebar" size={22} />
             </button>
           )}
         </div>

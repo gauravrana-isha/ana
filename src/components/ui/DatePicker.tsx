@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarBlank } from "@phosphor-icons/react";
+
 import { today, addDays, weekStart as getWeekStart } from "@/lib/dates";
 import { RoundArrowButton } from "./Arrows";
 import { Calendar, PickerPanel } from "./pickers";
+import { Glyph } from "@/components/art/Glyphs";
 
 interface DatePickerProps {
   value: string; // YYYY-MM-DD (the Monday, in week mode)
@@ -41,7 +42,7 @@ export function DatePicker({ value, onChange, mode, disableFuture = true }: Date
         className="press inline-flex items-center gap-2 h-10 px-3 rounded-[12px] font-serif text-[16.5px] text-ink hover:bg-surface tabular"
       >
         {label()}
-        <CalendarBlank size={16} className="text-ink-soft" />
+        <Glyph k="calendar" size={18} className="text-ink-soft" />
       </button>
       <RoundArrowButton dir="right" aria-label={mode === "week" ? "Next week" : "Next day"} disabled={!canGoNext} onClick={() => canGoNext && onChange(addDays(value, step))} />
 

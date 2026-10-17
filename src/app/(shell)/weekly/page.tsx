@@ -5,7 +5,7 @@ import { usePersistentState } from "@/lib/persist";
 import { useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FloppyDisk } from "@phosphor-icons/react";
+
 import { PromptCard } from "@/components/reflection/PromptCard";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { ButtonLoader } from "@/components/ui/Loader";
@@ -15,6 +15,7 @@ import { weekStart as getWeekStart, today, addDays } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchWeekly, saveWeekly } from "@/lib/journal";
 import { EditMark } from "@/components/art/PenMarks";
+import { Glyph } from "@/components/art/Glyphs";
 
 const WEEKLY_PROMPTS = [
   { key: "1", q: "How is my experience of Sadhana?", hint: "Sitting still with more ease, for longer? Stronger? During or after Pradakshina?" },
@@ -245,7 +246,7 @@ function WeeklyReflectionView({
                      disabled:opacity-50 transition-opacity"
           aria-label="Save reflection"
         >
-          {isPending ? <ButtonLoader /> : <FloppyDisk size={22} weight="thin" />}
+          {isPending ? <ButtonLoader /> : <Glyph k="save" size={24} />}
         </button>
       )}
     </Busy>
