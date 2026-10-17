@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "@phosphor-icons/react";
 import { FeatureBadge, FeatureGlyph } from "@/components/art/FeatureBadge";
 import { BellBadge } from "@/components/push/Notifications";
 import { timeAgo } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { CloseButton } from "@/components/ui/CloseButton";
 
 interface Item {
   id: string;
@@ -122,9 +122,7 @@ export function NotificationBell({ className }: { className?: string }) {
                     Mark all read
                   </button>
                 )}
-                <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="press grid place-items-center w-8 h-8 rounded-full bg-surface text-ink-soft hover:text-ink">
-                  <X size={14} />
-                </button>
+                <CloseButton onClick={() => setOpen(false)} size="sm" />
               </div>
               <div className="overflow-y-auto overscroll-contain px-2 pb-3">
                 {items.length === 0 ? (

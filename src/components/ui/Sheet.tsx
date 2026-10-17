@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { X } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "./Busy";
+import { CloseButton } from "@/components/ui/CloseButton";
 import { Portal } from "./Portal";
 import { useVisibleArea } from "@/lib/visual-viewport";
 
@@ -60,9 +60,7 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
             <header className="shrink-0 px-5 sm:px-6 pt-4 sm:pt-6">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-display text-[24px] font-semibold tracking-[-0.015em] text-ink">{title}</h2>
-                <button type="button" onClick={onClose} disabled={busy} aria-label="Close" className="press disabled:opacity-40 grid place-items-center w-9 h-9 rounded-full bg-surface text-ink-soft hover:text-ink">
-                  <X size={16} />
-                </button>
+                <CloseButton onClick={onClose} disabled={busy} />
               </div>
               <div inert={busy}>{header}</div>
             </header>

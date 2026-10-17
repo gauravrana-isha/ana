@@ -9,6 +9,7 @@ import { useRecorder } from "./useRecorder";
 import { prefersNativeCapture, useCamera } from "./useCamera";
 import { MomentBadge, MomentGlyph } from "@/components/art/MomentIcon";
 import type { UploadState } from "./useEagerUploads";
+import { TickMark } from "@/components/tracker/FieldInput";
 
 // ---------------------------------------------------------------- playback
 
@@ -483,7 +484,7 @@ export function UploadBadge({ state, onRetry }: { state: UploadState | undefined
   }
   if (state.status === "done") {
     return (
-      <span aria-label="Uploaded" className="absolute bottom-1.5 left-1.5 grid place-items-center w-6 h-6 rounded-full bg-good text-white text-[12px] font-serif leading-none shadow">✓</span>
+      <span aria-label="Uploaded" className="absolute bottom-1.5 left-1.5 grid place-items-center w-6 h-6 rounded-full bg-accent text-bg shadow"><TickMark size={14} /></span>
     );
   }
   const r = 9, c = 2 * Math.PI * r;

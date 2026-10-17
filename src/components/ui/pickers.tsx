@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CalendarBlank, Clock, X } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Portal } from "./Portal";
+import { CloseButton } from "./CloseButton";
 import { useVisibleArea } from "@/lib/visual-viewport";
 import { toISODate, today } from "@/lib/dates";
 import { Chevron, RoundArrowButton } from "./Arrows";
@@ -51,9 +52,7 @@ export function PickerPanel({ open, onClose, title, children, footer }: { open: 
             <span className="sm:hidden block mx-auto w-10 h-1 rounded-full bg-line mb-3" aria-hidden="true" />
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-[19px] font-semibold text-ink">{title}</h2>
-              <button type="button" onClick={onClose} aria-label="Close" className="press grid place-items-center w-8 h-8 rounded-full bg-surface text-ink-soft hover:text-ink">
-                <X size={14} />
-              </button>
+              <CloseButton onClick={onClose} size="sm" />
             </div>
             {children}
             {footer && <div className="mt-4 flex gap-2">{footer}</div>}

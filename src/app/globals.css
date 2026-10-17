@@ -423,3 +423,8 @@ html.kb-open .ana-fab {
   .ana-skeleton-in, .ana-page-in { animation: none; }
   .ana-draw path { animation-duration: 4.8s; }
 }
+
+/* The tick is revealed left to right, as if written, when a practice is ticked. */
+@keyframes ana-tick-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.ana-tick-reveal { animation: ana-tick-reveal 0.26s cubic-bezier(0.65, 0, 0.35, 1) 0.03s both; }
+@media (prefers-reduced-motion: reduce) { .ana-tick-reveal { animation: none; } }

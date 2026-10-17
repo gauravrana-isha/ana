@@ -11,6 +11,8 @@ import { catalogFor } from "./practiceCatalog";
 export interface FieldSpec extends PracticeField {
   /** Short word shown under the value: "min", "times", "kapalbhati". */
   unit: string;
+  /** The unit as one or two letters, for chips that must stay on one line. */
+  short: string;
   /** Title for the editor: "Minutes", "Kapalbhati". */
   title: string;
   /** Shown as a pair/trio of taps rather than a number (1×, 2×). */
@@ -62,6 +64,7 @@ export function specFor(p: PracticeLike): PracticeSpec {
       ...merged,
       fill: merged.fill ?? (merged.kind === "MINUTES" ? entry?.minutes : undefined),
       unit,
+      short: shortUnit(unit),
       title,
       taps: merged.kind === "COUNT" && !!merged.max && merged.max <= 3,
     };
@@ -69,6 +72,12 @@ export function specFor(p: PracticeLike): PracticeSpec {
 
   const rhythm = !hasDoneToggle && fields.length > 0 && fields.every((f) => f.default !== undefined && f.default !== "");
   return { hasDoneToggle, fields, rhythm, minutes: entry?.minutes };
+}
+
+/** A unit short enough to sit beside its number on one line ("108 kb", "15 m"). */
+const SHORT_UNITS: Record<string, string> = { min: "m", kapalbhati: "kb", rounds: "r", cycles: "c", times: "×" };
+export function shortUnit(unit: string) {
+  return SHORT_UNITS[unit] ?? (unit.length > 3 ? unit.slice(0, 2) : unit);
 }
 
 function filled(v: unknown) {

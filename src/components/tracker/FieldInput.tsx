@@ -16,12 +16,26 @@ export function DoneCheckbox({ done, onToggle, label = "Done" }: { done: boolean
       aria-pressed={done}
       aria-label={label}
       className={cn(
-        "press w-[30px] h-[30px] rounded-full grid place-items-center shrink-0 transition-all duration-250",
-        done ? "bg-good border-[1.6px] border-good text-white" : "border-[1.6px] border-line text-transparent hover:border-ink-soft"
+        "press w-[30px] h-[30px] rounded-full grid place-items-center shrink-0 border-[1.6px] transition-colors duration-200",
+        done ? "bg-accent border-accent text-bg" : "border-line text-transparent hover:border-ink-soft"
       )}
     >
-      <span className="text-[16px] leading-none font-serif">✓</span>
+      {/* The calligraphic tick, drawn rather than typed: fonts render "✓" differently, and
+          badly on iPhone. Revealed left to right when ticked. */}
+      <TickMark size={19} className={done ? "ana-tick-reveal" : undefined} />
     </button>
+  );
+}
+
+/** The calligraphic tick, as a drawing (in the current text colour). */
+export function TickMark({ size = 16, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <path
+        fill="currentColor"
+        d="M3.2 12.2c.4-1 1.9-1.4 2.6-.7.5.5.7 1.5 1 2.2.2.5.5.5.8 0C10.2 8.5 12.9 4.7 15.5 3.9c1.5-.5 3.1-.5 4.9-.5l.1.3C17.1 7.3 14.4 11.4 11.6 17c-.8 1.6-1.6 2.7-3.2 2.7-1.8 0-2.4-1.4-2.9-3.3-.5-1.7-2.6-3.2-2.3-4.2z"
+      />
+    </svg>
   );
 }
 
@@ -61,10 +75,11 @@ export function NumberChip({ field, value, onChange, practiceName }: { field: Fi
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`${practiceName}: ${field.title}${value ? ` ${value}` : " not set"}`}
-        className="press flex flex-col items-center justify-center min-w-[58px] h-11 px-2.5 rounded-[12px] bg-surface-2 hover:bg-[color-mix(in_srgb,var(--surface-2)_85%,var(--ink)_6%)]"
+        title={`${field.title} (${field.unit})`}
+        className="press inline-flex items-baseline justify-center gap-[3px] min-w-[52px] h-9 px-2.5 rounded-full bg-surface-2 hover:bg-[color-mix(in_srgb,var(--surface-2)_85%,var(--ink)_6%)] whitespace-nowrap"
       >
-        <span className={cn("font-ui text-[15px] font-semibold tabular leading-none", value ? "text-ink" : "text-ink-soft/60")}>{value || "–"}</span>
-        <span className="font-ui text-[10.5px] text-ink-soft mt-1 leading-none max-w-[84px] truncate">{field.unit}</span>
+        <span className={cn("font-ui text-[14.5px] font-semibold tabular leading-9", value ? "text-ink" : "text-ink-soft/60")}>{value || "–"}</span>
+        {!!value && <span className="font-ui text-[12px] font-medium text-ink-soft leading-9">{field.short}</span>}
       </button>
       <NumberSheet open={open} onClose={() => setOpen(false)} field={field} value={value} practiceName={practiceName} onSave={onChange} />
     </>

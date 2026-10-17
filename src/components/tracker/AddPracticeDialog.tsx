@@ -5,7 +5,7 @@ import { Busy } from "@/components/ui/Busy";
 import { createElement, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash, X } from "@phosphor-icons/react";
+import { Plus, Trash } from "@phosphor-icons/react";
 import { practiceIcon } from "./practiceIcons";
 import type { IconProps } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +14,8 @@ import { keys, usePractices } from "@/lib/queries";
 import { catalogFor, describeTracking, type CatalogPractice } from "@/lib/practiceCatalog";
 import type { PracticeField } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { CloseButton } from "@/components/ui/CloseButton";
+import { TickMark } from "./FieldInput";
 import { PracticeLibrary } from "./PracticeLibrary";
 import { PracticeEditor } from "./PracticeEditor";
 import { specFor } from "@/lib/practiceSpec";
@@ -85,14 +87,7 @@ export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
             <span className="sm:hidden mx-auto mt-2.5 w-10 h-1 rounded-full bg-line" aria-hidden="true" />
             <header className="flex items-center justify-between gap-3 px-5 sm:px-6 pt-4 sm:pt-6">
               <h2 className="font-display text-[24px] font-semibold tracking-[-0.015em] text-ink">Your practices</h2>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="press grid place-items-center w-9 h-9 rounded-full bg-surface text-ink-soft hover:text-ink"
-              >
-                <X size={16} />
-              </button>
+              <CloseButton onClick={onClose} />
             </header>
 
             <div role="tablist" className="mx-5 sm:mx-6 mt-4 p-1 rounded-full bg-surface grid grid-cols-3">
@@ -244,7 +239,7 @@ function CustomTab({ onDone }: { onDone: () => void }) {
               >
                 <PaintedTile icon={ico} size={44} className="rounded-[12px] w-full h-full" />
                 {on && (
-                  <span className="absolute -top-1.5 -right-1.5 grid place-items-center w-5 h-5 rounded-full bg-accent text-bg text-[11px] font-serif leading-none shadow">✓</span>
+                  <span className="absolute -top-1.5 -right-1.5 grid place-items-center w-5 h-5 rounded-full bg-accent text-bg shadow"><TickMark size={12} /></span>
                 )}
               </button>
             );

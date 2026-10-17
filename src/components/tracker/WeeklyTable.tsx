@@ -6,6 +6,7 @@ import { today } from "@/lib/dates";
 import { cellSummary, specFor } from "@/lib/practiceSpec";
 import type { Practice, DayLogEntries } from "@/lib/types";
 import { PracticeIcon } from "./PracticeIcon";
+import { TickMark } from "./FieldInput";
 
 interface WeeklyTableProps {
   practices: Practice[];
@@ -65,7 +66,11 @@ export function WeeklyTable({ practices, weekDays, dayLogs, onCellTap }: WeeklyT
                       )}
                     >
                       {summary ? (
-                        <span className={cn("font-semibold", summary.muted ? "text-ink-soft/70 font-medium" : summary.text === "✓" ? "text-good text-[15px]" : "text-accent")}>{summary.text}</span>
+                        summary.text === "✓" ? (
+                          <TickMark size={17} className="inline-block text-accent" />
+                        ) : (
+                          <span className={cn("font-semibold", summary.muted ? "text-ink-soft/70 font-medium" : "text-accent")}>{summary.text}</span>
+                        )
                       ) : (
                         <span className="text-ink-soft/30">·</span>
                       )}

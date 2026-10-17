@@ -28,13 +28,16 @@ export function PracticeRow({ practice, entry, onChange, editable = true }: Prac
         tabIndex={editable ? 0 : -1}
         aria-label={editable ? `Edit ${practice.name}` : practice.name}
         title="Edit name and usual values"
-        className="group flex items-center gap-3 min-w-0 flex-1 basis-[180px] text-left rounded-[10px]"
+        className="group flex items-center gap-3 min-w-[148px] flex-1 text-left rounded-[10px]"
       >
         <PracticeIcon name={practice.name} iconName={practice.iconName} catalogId={practice.catalogId} />
-        <span className="font-serif text-base text-ink leading-snug min-w-0 group-hover:underline decoration-line underline-offset-4">{practice.name}</span>
+        <span className="font-serif text-base text-ink leading-snug min-w-0 line-clamp-2 hyphens-auto group-hover:underline decoration-line underline-offset-4">{practice.name}</span>
       </button>
 
-      <div className="flex items-center gap-2 ml-auto">
+      {/* One row whenever the name keeps a readable width beside the controls (two lines at
+          most); only when the controls truly can't fit (a narrow phone, a wide level picker)
+          do they move under the name. */}
+      <div className="flex items-center gap-1.5 sm:gap-2 ml-auto shrink-0">
         {spec.fields.map((field) => (
           <FieldControl
             key={field.key}

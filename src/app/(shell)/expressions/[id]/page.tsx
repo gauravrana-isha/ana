@@ -5,7 +5,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowCounterClockwise, CaretLeft, CaretRight, MapPin, PencilSimple, Trash, X } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, CaretLeft, CaretRight, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { StampIcon, type StampKey } from "@/components/art/StampIcon";
 import { PersonAvatar } from "@/components/people/People";
@@ -18,6 +18,7 @@ import { mediaUrl } from "@/lib/media-client";
 import type { Moment } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 import { Portal } from "@/components/ui/Portal";
+import { CloseButton } from "@/components/ui/CloseButton";
 
 /**
  * One moment, in full: its media at full size (photos open fullscreen), the whole text, the
@@ -194,7 +195,7 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
           }}
         >
           <AnimatePresence mode="wait" initial={false}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            { }
             <motion.img
               key={index}
               src={photos[index]}
@@ -207,9 +208,7 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
               transition={{ duration: 0.18 }}
             />
           </AnimatePresence>
-          <button type="button" onClick={() => onIndex(null)} aria-label="Close" className="press absolute top-[max(14px,env(safe-area-inset-top))] right-4 grid place-items-center w-11 h-11 rounded-full bg-white/15 text-white">
-            <X size={20} />
-          </button>
+          <CloseButton onClick={() => onIndex(null)} onDark className="absolute top-[max(14px,env(safe-area-inset-top))] right-4" />
           {photos.length > 1 && (
             <>
               <span className="absolute bottom-[max(18px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 font-ui text-[13px] text-white/80 tabular">{index + 1} / {photos.length}</span>
