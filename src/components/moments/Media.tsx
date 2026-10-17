@@ -318,7 +318,7 @@ export function VideoCapture({ value, onChange }: { value: CapturedMedia | null;
             ) : rec.state === "unsupported" ? (
               <Hint tone="warn">This browser can&rsquo;t record here. Choose a video instead.</Hint>
             ) : (
-              <Hint>Up to 5 minutes. You can watch it before keeping it.</Hint>
+              <Hint>Up to 5 minutes.</Hint>
             )}
             <div className="mt-1 flex flex-wrap justify-center gap-2">
               <ActionButton primary onClick={() => (native ? nativeRef.current?.click() : rec.prepare())}>

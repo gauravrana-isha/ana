@@ -133,7 +133,6 @@ export default function TodayPage() {
           <FeatureBadge k="commitment" size={48} />
           <span className="flex-1 min-w-0">
             <span className="block font-display text-[18px] font-semibold text-ink">Write your commitment</span>
-            <span className="block font-ui text-[13.5px] text-ink-soft mt-0.5">A letter to yourself that comes back when you choose.</span>
           </span>
           <Arrow size={18} className="text-ink-soft group-hover:text-ink transition-colors" />
         </Link>

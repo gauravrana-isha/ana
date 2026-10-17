@@ -38,7 +38,6 @@ export function WhoAmICard() {
           ) : (
             <>
               <p className="font-serif italic text-[17px] leading-[1.55] text-ink">A slow self-portrait in three layers: body, mind, emotion.</p>
-              <p className="font-ui text-[13px] text-ink-soft mt-1.5">Not a mood for the day. How you are, these days.</p>
             </>
           )}
           <span className="mt-3 inline-flex items-center gap-1.5 font-ui text-[14px] font-semibold text-accent">

@@ -300,7 +300,6 @@ function YoursTab({ onAdd }: { onAdd: () => void }) {
 
   return (
     <>
-      <p className="font-ui text-[13px] text-ink-soft mb-3">Tap a practice to rename it or change its usual values.</p>
       <ul className="flex flex-col gap-1.5">
         {practices.map((p) => {
           const spec = specFor(p);

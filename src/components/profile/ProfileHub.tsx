@@ -321,8 +321,7 @@ function DataPanel() {
   return (
     <div>
       <p className="font-ui text-[13.5px] leading-[1.55] text-ink-soft mb-3 max-w-[60ch]">
-        Download everything as a file you keep: practices, days, reflections, moments, people and letters. Recordings and photos stay safely in your account.
-        Importing the same file twice won&rsquo;t duplicate anything.
+        Download your journal as a file, or import one.
       </p>
       <div className="flex flex-wrap gap-2.5" inert={!!busy} aria-busy={!!busy || undefined}>
         <Button variant="secondary" onClick={exportIt} loading={busy === "export"}>

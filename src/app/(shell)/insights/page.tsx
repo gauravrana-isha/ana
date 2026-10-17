@@ -41,9 +41,6 @@ export default function InsightsPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <p className="font-serif italic text-[16.5px] text-ink-soft max-w-[52ch]">
-        Patterns, not scores. Nothing here is a grade; it&rsquo;s a way of seeing how the days have been.
-      </p>
 
       {data.has.tracker && <MonthWeave data={data} />}
       {data.has.tracker && data.rhythm.length > 0 && <Rhythm rows={data.rhythm} />}
@@ -56,11 +53,10 @@ export default function InsightsPage() {
   );
 }
 
-function Section({ title, lead, children }: { title: string; lead?: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
       <h2 className="font-display text-[20px] font-semibold text-ink">{title}</h2>
-      {lead && <p className="font-ui text-[13.5px] text-ink-soft mt-1 max-w-[60ch]">{lead}</p>}
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -90,7 +86,7 @@ function MonthWeave({ data }: { data: InsightsData }) {
     );
   }
   return (
-    <Section title={label} lead="Each square is a day you kept the practice. Blank days are simply days.">
+    <Section title={label}>
       <div className="rounded-[20px] bg-surface p-4 sm:p-5 flex flex-col gap-4">
         {data.practices.map((p) => {
           const keptDays = p.days.filter(Boolean).length;
@@ -133,7 +129,7 @@ function MoodWeeks({ mood }: { mood: InsightsData["mood"] }) {
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
   return (
-    <Section title="Mood, the last eight weeks" lead={logged.length ? "From the mood you mark at the end of each daily reflection." : "Mark how you feel at the end of the daily reflection and it will gather here."}>
+    <Section title="Mood, the last eight weeks">
       <div className="rounded-[20px] bg-surface p-4 sm:p-5">
         <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-[3px] max-w-[420px]">
           <span />
@@ -189,7 +185,7 @@ function moodWord(avg: number) {
 
 function Together({ rows }: { rows: InsightsData["together"] }) {
   return (
-    <Section title="Practice and mood together" lead="Only shown when there are at least five days on each side. A pattern to notice, not a rule.">
+    <Section title="Practice and mood together">
       {rows.length === 0 ? (
         <p className="rounded-[16px] bg-surface p-4 font-ui text-[14px] text-ink-soft">Not enough days yet to notice anything. Keep going gently.</p>
       ) : (
@@ -217,7 +213,7 @@ function Together({ rows }: { rows: InsightsData["together"] }) {
 function PeopleBars({ rows }: { rows: InsightsData["people"] }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
-    <Section title="Moments with people" lead="The last three months.">
+    <Section title="With people · last 3 months">
       {rows.length === 0 ? (
         <p className="rounded-[16px] bg-surface p-4 font-ui text-[14px] text-ink-soft">Tag people on your moments and they&rsquo;ll appear here.</p>
       ) : (
@@ -246,7 +242,7 @@ const SCALE_WORD: Record<string, string> = { low: "Low", steady: "Medium", high:
 
 function Rhythm({ rows }: { rows: InsightsData["rhythm"] }) {
   return (
-    <Section title="Daily rhythm" lead="Your usual this month. Days you didn't change it count at their default.">
+    <Section title="Daily rhythm">
       <ul className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {rows.map((r) => (
           <li key={r.id} className="flex items-center gap-3 rounded-[18px] bg-surface p-4">

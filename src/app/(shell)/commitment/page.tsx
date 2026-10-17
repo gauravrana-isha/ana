@@ -115,9 +115,6 @@ export default function CommitmentPage() {
       {editing ? (
         <Busy busy={saving} bar={false}>
         <section className="flex flex-col gap-5">
-          {current && (
-            <p className="font-serif italic text-[17px] text-ink-soft max-w-[56ch]">Write it again as it is now. The earlier letter is kept below.</p>
-          )}
           <div className="relative rounded-[22px] bg-surface px-5 py-5 sm:px-8 sm:py-7 overflow-hidden">
             <BusyBar show={saving} className="absolute top-0 inset-x-6" />
             <AboutButton onClick={() => setIntroAsked(true)} />
