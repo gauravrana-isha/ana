@@ -28,7 +28,9 @@ export function Segmented<T extends string>({
   fill = false,
   iconOnly = false,
   tone = "plain",
+  onClear,
   className,
+  itemClassName,
 }: {
   value: T | null;
   onChange: (v: T) => void;
@@ -41,7 +43,11 @@ export function Segmented<T extends string>({
   iconOnly?: boolean;
   /** "plain": a light pill. "accent": a teal pill. "outline": a teal pill on a hairline track (small icon toggles). */
   tone?: "plain" | "accent" | "outline";
+  /** Tapping the chosen option again clears the choice (a count that goes back to none). */
+  onClear?: () => void;
   className?: string;
+  /** Extra classes for every option (a minimum width, say). */
+  itemClassName?: string;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
@@ -69,7 +75,8 @@ export function Segmented<T extends string>({
 
   function choose(i: number) {
     const o = options[i];
-    if (!o || o.value === value) return;
+    if (!o) return;
+    if (o.value === value) return onClear?.();
     onChange(o.value);
     if (typeof navigator !== "undefined" && "vibrate" in navigator && matchMedia("(pointer: coarse)").matches) navigator.vibrate(6);
   }
@@ -127,7 +134,8 @@ export function Segmented<T extends string>({
               "press relative z-[1] inline-flex items-center justify-center gap-1.5 rounded-full font-ui font-semibold whitespace-nowrap outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/40",
               h,
               iconOnly ? (size === "sm" ? "w-8" : "w-9") : size === "sm" ? "px-3 text-[12.5px]" : "px-4 text-[13.5px]",
-              on ? (tone === "plain" ? "text-ink" : "text-bg") : "text-ink-soft hover:text-ink"
+              on ? (tone === "plain" ? "text-ink" : "text-bg") : "text-ink-soft hover:text-ink",
+              itemClassName
             )}
           >
             {o.icon}

@@ -12,7 +12,7 @@ import { deletePractice, editPractice, mergeFields } from "@/lib/journal";
 import { DEFAULT_SCALE, SCALE_KEYS, specFor, type FieldSpec } from "@/lib/practiceSpec";
 import { describeTracking } from "@/lib/practiceCatalog";
 import type { Practice } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { Segmented } from "@/components/ui/Segmented";
 import { PracticeIcon } from "./PracticeIcon";
 import { DeleteMark, MinusMark, PlusMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
@@ -139,24 +139,26 @@ function FieldDefault({ field, rhythm, value, onChange, practiceName }: { field:
       {field.kind === "TIME" ? (
         <TimeField compact label={`${practiceName} default time`} value={String(value?.default ?? "")} onChange={(t) => onChange({ default: t })} />
       ) : field.kind === "ICONSCALE" ? (
-        <div role="radiogroup" aria-label={`${practiceName} default level`} className="flex p-1 rounded-full bg-surface-2">
-          {SCALE_KEYS.map((k, i) => (
-            <button key={k} type="button" role="radio" aria-checked={value?.default === k} onClick={() => onChange({ default: k })} className={cn("press h-8 px-3 rounded-full font-ui text-[12.5px] font-semibold", value?.default === k ? "bg-accent text-bg" : "text-ink-soft")}>
-              {(field.labels ?? DEFAULT_SCALE)[i]}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label={`${practiceName} default level`}
+          tone="accent"
+          size="sm"
+          className="bg-surface-2"
+          value={(value?.default as string) ?? null}
+          onChange={(k) => onChange({ default: k })}
+          options={SCALE_KEYS.map((k, n) => ({ value: k, label: (field.labels ?? DEFAULT_SCALE)[n] }))}
+        />
       ) : field.taps ? (
-        <div role="radiogroup" aria-label={`${practiceName}: ${field.title} when ticked`} className="flex p-1 rounded-full bg-surface-2">
-          {[0, ...Array.from({ length: field.max ?? 2 }, (_, i) => i + 1)].map((n) => {
-            const on = (rhythm ? value?.default : value?.fill) === (n || null) || (!n && !(rhythm ? value?.default : value?.fill));
-            return (
-              <button key={n} type="button" role="radio" aria-checked={on} onClick={() => onChange(rhythm ? { default: n || null } : { fill: n || null })} className={cn("press h-8 min-w-[44px] px-2.5 rounded-full font-ui text-[13px] font-semibold tabular", on ? "bg-accent text-bg" : "text-ink-soft")}>
-                {n ? `${n}×` : "None"}
-              </button>
-            );
-          })}
-        </div>
+        <Segmented
+          label={`${practiceName}: ${field.title} when ticked`}
+          tone="accent"
+          size="sm"
+          className="bg-surface-2"
+          itemClassName="min-w-[44px] px-2.5 tabular"
+          value={String((rhythm ? value?.default : value?.fill) || 0)}
+          onChange={(v) => onChange(rhythm ? { default: Number(v) || null } : { fill: Number(v) || null })}
+          options={[0, ...Array.from({ length: field.max ?? 2 }, (_, k) => k + 1)].map((n) => ({ value: String(n), label: n ? `${n}×` : "None" }))}
+        />
       ) : (
         <Stepper
           value={Number(rhythm ? value?.default ?? 0 : value?.fill ?? 0)}

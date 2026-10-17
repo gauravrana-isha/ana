@@ -5,6 +5,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { PickerPanel, TimeField } from "@/components/ui/pickers";
 import { DEFAULT_SCALE, SCALE_KEYS, type FieldSpec } from "@/lib/practiceSpec";
+import { Segmented } from "@/components/ui/Segmented";
 import { MinusMark, PlusMark } from "@/components/art/PenMarks";
 
 /* The controls a practice row is made of. Every control says what it is. */
@@ -40,30 +41,21 @@ export function TickMark({ size = 16, className }: { size?: number; className?: 
   );
 }
 
-/** 1× / 2× — for "how many times today" when the answer is small. */
+/** 1× / 2× — for "how many times today" when the answer is small. Tap the chosen one again to clear it. */
 export function TapCount({ field, value, onChange, practiceName }: { field: FieldSpec; value: number; onChange: (v: number) => void; practiceName: string }) {
   const max = field.max ?? 2;
   return (
-    <div role="group" aria-label={`${practiceName}: ${field.title}`} title={`How many ${field.unit} today`} className="flex items-center gap-1 p-1 rounded-full bg-surface-2">
-      {Array.from({ length: max }, (_, i) => i + 1).map((n) => {
-        const on = value === n;
-        return (
-          <button
-            key={n}
-            type="button"
-            aria-pressed={on}
-            aria-label={`${n} ${field.unit}`}
-            onClick={() => onChange(on ? 0 : n)}
-            className={cn(
-              "press h-8 min-w-[40px] px-2 rounded-full font-ui text-[13px] font-semibold tabular transition-colors",
-              on ? "bg-accent text-bg" : "text-ink-soft hover:text-ink"
-            )}
-          >
-            {n}×
-          </button>
-        );
-      })}
-    </div>
+    <Segmented
+      label={`${practiceName}: ${field.title}`}
+      tone="accent"
+      size="sm"
+      className="bg-surface-2"
+      itemClassName="min-w-[40px] px-2 tabular"
+      value={value ? String(value) : null}
+      onChange={(v) => onChange(Number(v))}
+      onClear={() => onChange(0)}
+      options={Array.from({ length: max }, (_, k) => ({ value: String(k + 1), label: `${k + 1}×`, name: `${k + 1} ${field.unit}` }))}
+    />
   );
 }
 
@@ -164,23 +156,15 @@ export function NumberSheet({ open, onClose, field, value, practiceName, onSave 
 export function ScalePicker({ field, value, onChange, practiceName }: { field: FieldSpec; value: unknown; onChange: (v: string) => void; practiceName: string }) {
   const labels = field.labels ?? DEFAULT_SCALE;
   return (
-    <div role="radiogroup" aria-label={`${practiceName}: ${field.title}`} className="flex p-1 rounded-full bg-surface-2">
-      {SCALE_KEYS.map((k, i) => {
-        const on = value === k;
-        return (
-          <button
-            key={k}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            onClick={() => onChange(k)}
-            className={cn("press h-8 px-3 rounded-full font-ui text-[12.5px] font-semibold transition-colors", on ? "bg-accent text-bg" : "text-ink-soft hover:text-ink")}
-          >
-            {labels[i]}
-          </button>
-        );
-      })}
-    </div>
+    <Segmented
+      label={`${practiceName}: ${field.title}`}
+      tone="accent"
+      size="sm"
+      className="bg-surface-2"
+      value={SCALE_KEYS.includes(value as (typeof SCALE_KEYS)[number]) ? (value as string) : null}
+      onChange={onChange}
+      options={SCALE_KEYS.map((k, n) => ({ value: k, label: labels[n] }))}
+    />
   );
 }
 
