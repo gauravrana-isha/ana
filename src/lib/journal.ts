@@ -8,7 +8,7 @@ import { computeDigest, type DigestRaw } from "./compute/digest";
 import type { SearchIndex } from "./compute/search";
 import { openDeep, seal, sealFields, sealValues } from "./vault/vault";
 import { newId, send } from "./outbox";
-import { shownQuestions, toStored, type QuestionSets } from "./questions";
+import { shownQuestions, toStored, type QuestionSets, type ReflectionKind } from "./questions";
 
 /*
  * Reading and writing the journal from the device. Everything personal is sealed here
@@ -157,7 +157,7 @@ export async function saveWeekly(weekStart: string, r: Omit<WeeklyReflection, "w
 
 /** Keep someone's reflection questions (both lists, sealed together). */
 export async function saveQuestions(sets: QuestionSets) {
-  const stored = Object.fromEntries(Object.entries(sets).map(([k, list]) => [k, toStored(list)]));
+  const stored = Object.fromEntries(Object.entries(sets).map(([k, list]) => [k, toStored(k as ReflectionKind, list)]));
   await send("/api/me", "PATCH", { questions: await seal(stored) });
 }
 

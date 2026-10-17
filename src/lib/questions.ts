@@ -3,7 +3,8 @@
  * can reword, hide, reorder and add to them in Settings, and that list is kept sealed on their
  * account (only their devices can read it). Answers are stored by question key, so keys never
  * change: built-ins keep "1", "2"…, questions someone adds get "c_…". A question they remove
- * stays in the list, marked removed, so past answers can still show it.
+ * stays in the list, marked removed, so past answers can still show it. Each question can carry
+ * a description (a line to help answer it); a built-in's own is used until it's changed.
  */
 
 export type ReflectionKind = "daily" | "weekly";
@@ -11,6 +12,8 @@ export type ReflectionKind = "daily" | "weekly";
 export interface Question {
   key: string;
   q: string;
+  /** The description shown under the question. Stored only when it differs from the built-in's
+      ("" when someone cleared it). */
   hint?: string;
   /** A built-in question switched off (it can be switched back on). */
   hidden?: boolean;
@@ -43,16 +46,26 @@ export const BUILT_IN: Record<ReflectionKind, Question[]> = {
   ],
 };
 
+/** The longest question and description someone can write. */
+export const QUESTION_MAX = 300;
+export const HINT_MAX = 400;
+
+/** A built-in question's own description, if it has one. */
+export function builtInHint(kind: ReflectionKind, key: string) {
+  return BUILT_IN[kind].find((b) => b.key === key)?.hint;
+}
+
 /**
- * Every question of a reflection in order, hidden and removed ones too. A built-in keeps its
- * hint while its wording is the original; built-ins someone's list doesn't have yet go last.
+ * Every question of a reflection in order, hidden and removed ones too, each with the
+ * description to show (its own, or the built-in's). Built-ins someone's list doesn't have yet
+ * go last.
  */
 export function allQuestions(kind: ReflectionKind, sets: QuestionSets | null | undefined): Question[] {
   const saved = sets?.[kind];
   if (!Array.isArray(saved) || saved.length === 0) return BUILT_IN[kind];
   const list = saved.map((s) => {
-    const b = BUILT_IN[kind].find((x) => x.key === s.key);
-    return b?.q === s.q ? { ...s, hint: b.hint } : s;
+    // "" (cleared) is kept as "", so saving the list again doesn't bring the built-in's back.
+    return { ...s, hint: s.hint !== undefined ? s.hint : builtInHint(kind, s.key) };
   });
   return [...list, ...BUILT_IN[kind].filter((b) => !saved.some((s) => s.key === b.key))];
 }
@@ -82,7 +95,11 @@ export function newQuestionKey() {
   return `c_${crypto.randomUUID().slice(0, 8)}`;
 }
 
-/** What's kept: no hints (they come from the built-ins), no empty flags. */
-export function toStored(list: Question[]): Question[] {
-  return list.map(({ key, q, hidden, removed }) => ({ key, q, ...(hidden ? { hidden } : {}), ...(removed ? { removed } : {}) }));
+/** What's kept: a description only when it isn't the built-in's own, and no empty flags. */
+export function toStored(kind: ReflectionKind, list: Question[]): Question[] {
+  return list.map(({ key, q, hint, hidden, removed }) => {
+    // No description stored means the built-in's own (or none); "" means cleared.
+    const own = hint !== undefined && hint.trim() !== (builtInHint(kind, key) ?? "");
+    return { key, q, ...(own ? { hint: hint.trim() } : {}), ...(hidden ? { hidden } : {}), ...(removed ? { removed } : {}) };
+  });
 }
