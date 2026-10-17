@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -16,6 +16,7 @@ import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
 import { useMediaSrc } from "@/lib/vault/files";
 import { Glyph } from "@/components/art/Glyphs";
+import { Portal } from "@/components/ui/Portal";
 
 interface SidebarProps {
   items: NavItem[];
@@ -43,13 +44,53 @@ function Label({ collapsed, children, className }: { collapsed: boolean; childre
   );
 }
 
-/** Label shown beside an icon when the sidebar is collapsed. */
+/**
+ * Label shown beside an icon when the sidebar is collapsed, on hover or keyboard focus of the
+ * item it sits in. It's drawn outside the sidebar (whose list scrolls, and so would clip it),
+ * placed beside the item.
+ */
 function Tip({ show, children }: { show: boolean; children: React.ReactNode }) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [at, setAt] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const item = anchor?.parentElement;
+    if (!show || !item) return;
+    const place = () => {
+      const r = item.getBoundingClientRect();
+      setAt({ x: r.right + 12, y: r.top + r.height / 2 });
+    };
+    const hide = () => setAt(null);
+    item.addEventListener("pointerenter", place);
+    item.addEventListener("pointerleave", hide);
+    item.addEventListener("focus", place);
+    item.addEventListener("blur", hide);
+    item.addEventListener("click", hide);
+    return () => {
+      item.removeEventListener("pointerenter", place);
+      item.removeEventListener("pointerleave", hide);
+      item.removeEventListener("focus", place);
+      item.removeEventListener("blur", hide);
+      item.removeEventListener("click", hide);
+    };
+  }, [show, anchor]);
+
   if (!show) return null;
   return (
-    <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 whitespace-nowrap rounded-[10px] bg-ink text-bg px-2.5 py-1.5 font-ui text-[12.5px] font-semibold opacity-0 -translate-x-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100">
-      {children}
-    </span>
+    <>
+      <span ref={setAnchor} hidden />
+      {at && (
+        <Portal>
+          <span
+            aria-hidden="true"
+            className="ana-side-tip pointer-events-none fixed z-[90] -translate-y-1/2 whitespace-nowrap rounded-[10px] bg-ink text-bg px-2.5 py-1.5 font-ui text-[12.5px] font-semibold"
+            style={{ left: at.x, top: at.y }}
+          >
+            {children}
+          </span>
+        </Portal>
+      )}
+    </>
   );
 }
 
