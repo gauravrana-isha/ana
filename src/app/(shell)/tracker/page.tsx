@@ -26,6 +26,8 @@ import { PracticeIcon } from "@/components/tracker/PracticeIcon";
 import { WeeklyTable } from "@/components/tracker/WeeklyTable";
 import { WeeklyEntryModal } from "@/components/tracker/WeeklyEntryModal";
 import { AddPracticeDialog } from "@/components/tracker/AddPracticeDialog";
+import { PlusMark } from "@/components/art/PenMarks";
+import { Button } from "@/components/ui/Button";
 import { TrackerSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { ButtonLoader } from "@/components/ui/Loader";
 import { Busy } from "@/components/ui/Busy";
@@ -117,10 +119,12 @@ export default function TrackerPage() {
 
   if (practiceList.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="font-serif text-base text-ink-soft">
-          No practices yet. Visit <a href="/onboarding" className="text-accent underline">onboarding</a> to begin.
-        </p>
+      <div className="flex flex-col items-center text-center py-12 gap-4">
+        <p className="font-serif italic text-[17px] text-ink-soft">No practices yet.</p>
+        <Button onClick={() => setDialogOpen(true)}>
+          <PlusMark size={18} /> Add practices
+        </Button>
+        <AddPracticeDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
       </div>
     );
   }
