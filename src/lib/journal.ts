@@ -8,6 +8,7 @@ import { computeDigest, type DigestRaw } from "./compute/digest";
 import type { SearchIndex } from "./compute/search";
 import { openDeep, seal, sealFields, sealValues } from "./vault/vault";
 import { newId, send } from "./outbox";
+import { shownQuestions, toStored, type QuestionSets } from "./questions";
 
 /*
  * Reading and writing the journal from the device. Everything personal is sealed here
@@ -152,6 +153,12 @@ export async function saveWeekly(weekStart: string, r: Omit<WeeklyReflection, "w
   if (res.queued) return { weekStart, ...r };
   const d = await openDeep(res.data);
   return { weekStart, answers: d.answers ?? {}, stamps: d.stamps ?? {} };
+}
+
+/** Keep someone's reflection questions (both lists, sealed together). */
+export async function saveQuestions(sets: QuestionSets) {
+  const stored = Object.fromEntries(Object.entries(sets).map(([k, list]) => [k, toStored(list)]));
+  await send("/api/me", "PATCH", { questions: await seal(stored) });
 }
 
 // ---------- moments ----------
@@ -345,9 +352,8 @@ export async function savePortrait(p: { body: Ring; mind: Ring; emotion: Ring; w
 // ---------- today ----------
 
 /** A question counts as answered with words written or a stamp chosen. */
-export function answeredCount(answers: Record<string, string>, stamps: Record<string, string[]>) {
-  const keys = new Set([...Object.keys(answers), ...Object.keys(stamps)]);
-  return [...keys].filter((k) => (typeof answers[k] === "string" && answers[k].trim()) || (stamps[k]?.length ?? 0) > 0).length;
+export function answeredCount(keys: string[], answers: Record<string, string>, stamps: Record<string, string[]>) {
+  return keys.filter((k) => (typeof answers[k] === "string" && answers[k].trim()) || (stamps[k]?.length ?? 0) > 0).length;
 }
 
 export interface TodayData {
@@ -360,14 +366,15 @@ export interface TodayData {
 }
 
 export async function fetchToday(date: string): Promise<TodayData> {
-  type Raw = Omit<TodayData, "daily"> & { daily: { answers: Record<string, string>; stamps: Record<string, string[]>; total: number; mood: string | null } | null };
+  type Raw = Omit<TodayData, "daily"> & { daily: { answers: Record<string, string>; stamps: Record<string, string[]>; questions: QuestionSets | null; mood: string | null } | null };
   const raw = await getOpen<Raw | null>(`/api/today?date=${date}`, null);
   if (!raw) return { lookBack: [], onThisDay: [], birthdays: [], daily: null };
+  const keys = shownQuestions("daily", raw.daily?.questions).map((x) => x.key);
   return {
     ...raw,
     lookBack: raw.lookBack.map(normaliseMoment),
     onThisDay: raw.onThisDay.map(normaliseMoment),
-    daily: raw.daily ? { answered: answeredCount(raw.daily.answers, raw.daily.stamps), total: raw.daily.total, mood: raw.daily.mood } : null,
+    daily: raw.daily ? { answered: answeredCount(keys, raw.daily.answers, raw.daily.stamps), total: keys.length, mood: raw.daily.mood } : null,
   };
 }
 

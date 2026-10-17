@@ -47,6 +47,9 @@ model User {
   birthdaySealed      String?
   /// The invite this person joined with, if any.
   inviteCodeId        String?
+  /// Your Daily and Weekly reflection questions (reworded, hidden, added, reordered), sealed.
+  /// Empty: the built-in questions.
+  questions           String?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @default(now()) @updatedAt
 

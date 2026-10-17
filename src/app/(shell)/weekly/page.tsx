@@ -13,21 +13,11 @@ import { Busy } from "@/components/ui/Busy";
 import { WeekReview } from "@/components/weekly/WeekReview";
 import { weekStart as getWeekStart, today, addDays } from "@/lib/dates";
 import { fetchWeekly, saveWeekly } from "@/lib/journal";
+import { useMe } from "@/lib/me";
+import { readingQuestions, shownQuestions, type QuestionSets } from "@/lib/questions";
 import { EditMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
-
-const WEEKLY_PROMPTS = [
-  { key: "1", q: "How is my experience of Sadhana?", hint: "Sitting still with more ease, for longer? Stronger? During or after Pradakshina?" },
-  { key: "2", q: "Am I making Bhakti Sadhana part of my life?", hint: "Seeing something higher than myself? Seeing the best in people?" },
-  { key: "3", q: "Is my commitment toward my growth unwavering?", hint: "Even when unwell, can I use the situation for growth?" },
-  { key: "4", q: "Am I experiencing an effortless sense of joy and love?", hint: "Irrespective of the situation — am I smiling naturally?" },
-  { key: "5", q: "How often am I part of the problem, and how often part of the solution?" },
-  { key: "6", q: "Am I feeling more balanced and still within?", hint: "Regardless of body, mind, or surroundings?" },
-  { key: "7", q: "What is my current level of intensity in seva?", hint: "Am I giving myself fully to what needs to happen?" },
-  { key: "8", q: "What is holding me back from being more intense in seva?", hint: "Body, mind, emotion, or situation?" },
-  { key: "9", q: "What can I do to enhance my intensity?", hint: "One concrete step for the coming week." },
-];
 
 export default function WeeklyPage() {
   return (
@@ -44,6 +34,7 @@ function WeeklyContent() {
     getWeekStart(weekParam && /^\d{4}-\d{2}-\d{2}$/.test(weekParam) && weekParam <= today() ? weekParam : today())
   );
   const qc = useQueryClient();
+  const { data: me } = useMe();
 
   const weekEnd = addDays(selectedWeekStart, 6);
   const weekRange = (() => {
@@ -126,7 +117,7 @@ function WeeklyContent() {
 
       {tab === "reflection" ? (
         <WeeklyReflectionView
-          prompts={WEEKLY_PROMPTS}
+          questions={me?.questions ?? null}
           localAnswers={localAnswers}
           localStamps={localStamps}
           serverAnswers={answers}
@@ -144,7 +135,7 @@ function WeeklyContent() {
 }
 
 function WeeklyReflectionView({
-  prompts,
+  questions,
   localAnswers,
   localStamps,
   serverAnswers,
@@ -154,7 +145,7 @@ function WeeklyReflectionView({
   onStampToggle,
   onSave,
 }: {
-  prompts: Array<{ key: string; q: string; hint?: string }>;
+  questions: QuestionSets | null;
   localAnswers: Record<string, string>;
   localStamps: Record<string, string[]>;
   serverAnswers: Record<string, string>;
@@ -165,6 +156,7 @@ function WeeklyReflectionView({
   onSave: () => void;
 }) {
   const [editing, setEditing] = useState(true);
+  const prompts = shownQuestions("weekly", questions);
   const hasSavedData = Object.values(serverAnswers).some(v => v && v.trim().length > 0);
 
   // If saved and not dirty, show read-only view
@@ -173,20 +165,22 @@ function WeeklyReflectionView({
   if (showSavedView) {
     return (
       <div className="pb-20">
-        {prompts.map((prompt) => {
+        {readingQuestions("weekly", questions, Object.keys(serverAnswers)).map((prompt) => {
           const answer = serverAnswers[prompt.key];
           if (!answer) return null;
           return (
             <div key={prompt.key} className="rounded-16 p-5 mb-3.5 bg-surface">
               <div className="flex gap-3 items-start">
                 <span className="font-ui text-[13px] font-semibold leading-[1.9] text-ink-soft/70 shrink-0 min-w-[22px] tabular">
-                  {prompt.key}
+                  {prompt.number}
                 </span>
                 <div className="flex-1">
-                  <p className="font-serif text-base font-medium leading-[1.4] text-ink-soft">
-                    {prompt.q}
-                  </p>
-                  <p className="font-serif text-base leading-[1.7] text-ink mt-2">
+                  {prompt.q && (
+                    <p className="font-serif text-base font-medium leading-[1.4] text-ink-soft">
+                      {prompt.q}
+                    </p>
+                  )}
+                  <p className="font-serif text-base leading-[1.7] text-ink mt-2 first:mt-0">
                     {answer}
                   </p>
                 </div>
@@ -211,10 +205,10 @@ function WeeklyReflectionView({
 
   return (
     <Busy busy={isPending} className="pb-20">
-      {prompts.map((prompt) => (
+      {prompts.map((prompt, i) => (
         <PromptCard
           key={prompt.key}
-          number={prompt.key}
+          number={String(i + 1)}
           question={prompt.q}
           hint={prompt.hint}
           answer={localAnswers[prompt.key] ?? ""}

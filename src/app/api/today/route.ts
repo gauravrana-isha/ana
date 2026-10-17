@@ -6,8 +6,6 @@ import { commitmentDue } from "@/lib/commitment";
 
 export const dynamic = "force-dynamic";
 
-const DAILY_PROMPT_COUNT = 7;
-
 function addDays(d: Date, n: number) {
   const x = new Date(d);
   x.setUTCDate(x.getUTCDate() + n);
@@ -86,7 +84,7 @@ export async function GET(req: NextRequest) {
     birthdays,
     commitment: commitment && commitmentDue(commitment) ? { body: commitment.body, createdAt: commitment.createdAt.toISOString() } : null,
     commitmentMissing: has("commitment") && !commitment,
-    // Sealed: the device opens these and counts what's answered.
-    daily: has("daily") ? { answers: daily?.answers ?? {}, stamps: daily?.stamps ?? {}, total: DAILY_PROMPT_COUNT, mood: daily?.moodKey ?? null } : null,
+    // Sealed: the device opens these and counts what's answered of the questions asked now.
+    daily: has("daily") ? { answers: daily?.answers ?? {}, stamps: daily?.stamps ?? {}, questions: user.questions, mood: daily?.moodKey ?? null } : null,
   });
 }

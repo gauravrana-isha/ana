@@ -39,6 +39,8 @@ import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
 import { Chevron } from "@/components/ui/Arrows";
 import { BackButton } from "@/components/ui/DetailBar";
+import { QuestionsEditor } from "./QuestionsEditor";
+import { shownQuestions } from "@/lib/questions";
 
 /*
  * Profile, as a short hub: your card and "Who am I?" up top, then one Settings list (each row
@@ -46,11 +48,12 @@ import { BackButton } from "@/components/ui/DetailBar";
  * back); on wider screens the list sits on the left and the open part on the right.
  */
 
-export type SectionKey = "sections" | "practices" | "device" | "privacy" | "data";
+export type SectionKey = "sections" | "practices" | "questions" | "device" | "privacy" | "data";
 
 const TITLES: Record<SectionKey, string> = {
   sections: "Sections",
   practices: "Practices",
+  questions: "Reflection questions",
   device: "Device",
   privacy: "Privacy & keys",
   data: "Your data",
@@ -125,10 +128,14 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 function Rows({ me, active }: { me: Me; active?: SectionKey }) {
   const { data: practices } = usePractices();
   const tracker = me.features.includes("tracker");
+  const reflects = me.features.includes("daily") || me.features.includes("weekly");
 
   const rows: { k: SectionKey; icon: React.ReactNode; status: string }[] = [
     { k: "sections", icon: <Glyph k="cards" size={19} />, status: `${me.features.length} on` },
     ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} />, status: practices ? `${practices.length} ${practices.length === 1 ? "practice" : "practices"}` : "" }] : []),
+    ...(reflects
+      ? [{ k: "questions" as const, icon: <FeatureGlyph k="daily" size={19} />, status: [me.features.includes("daily") && `${shownQuestions("daily", me.questions).length} daily`, me.features.includes("weekly") && `${shownQuestions("weekly", me.questions).length} weekly`].filter(Boolean).join(" · ") }]
+      : []),
     { k: "device", icon: <Glyph k="phone" size={19} />, status: "" },
     { k: "privacy", icon: <Glyph k="lock" size={19} />, status: "" },
     { k: "data", icon: <Glyph k="download" size={19} />, status: "" },
@@ -169,6 +176,8 @@ function Panel({ k, me }: { k: SectionKey; me: Me }) {
       return <SectionsPanel me={me} />;
     case "practices":
       return <PracticesPanel />;
+    case "questions":
+      return <QuestionsEditor me={me} />;
     case "device":
       return <DevicePanel />;
     case "privacy":

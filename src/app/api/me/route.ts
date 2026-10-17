@@ -26,6 +26,7 @@ export async function GET() {
     birthday: user.birthdaySealed ?? user.birthday?.toISOString().slice(0, 10) ?? null,
     vault: !!user.vaultAt,
     place: user.place,
+    questions: user.questions,
     portraitEveryMonths: user.portraitEveryMonths,
     features: user.effective,
     storage: storageMode(),
@@ -43,6 +44,8 @@ const PatchSchema = z.object({
   preferredName: z.string().trim().max(40).nullable().optional(),
   birthday: sealed(500).nullable().optional(),
   place: sealed(2_000).nullable().optional(),
+  /** Your reflection questions, sealed together (null: back to the built-in ones). */
+  questions: sealed(60_000).nullable().optional(),
   /** An uploaded photo attachment to use as your picture, or null to go back to the Google one. */
   photoId: z.string().max(40).nullable().optional(),
   portraitEveryMonths: z.union([z.literal(0), z.literal(3), z.literal(6), z.literal(12)]).optional(),
@@ -58,7 +61,7 @@ export async function PATCH(req: NextRequest) {
 
   const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
-  const { name, intention, features, preferredName, birthday, place, photoId, portraitEveryMonths } = parsed.data;
+  const { name, intention, features, preferredName, birthday, place, questions, photoId, portraitEveryMonths } = parsed.data;
 
   // A new photo must be yours and a photo; the old one is removed for good.
   let oldPhoto: { id: string; storage: string; pathname: string; thumbPathname: string | null } | null = null;
@@ -77,6 +80,7 @@ export async function PATCH(req: NextRequest) {
     ...(preferredName !== undefined ? { preferredName: preferredName || null } : {}),
     ...(birthday !== undefined ? { birthdaySealed: birthday, birthday: null } : {}),
     ...(place !== undefined ? { place } : {}),
+    ...(questions !== undefined ? { questions } : {}),
     ...(photoId !== undefined ? { photoId } : {}),
     ...(portraitEveryMonths !== undefined ? { portraitEveryMonths } : {}),
   };

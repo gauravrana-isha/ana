@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { FeatureKey } from "./features";
 import { openDeep } from "./vault/vault";
+import type { QuestionSets } from "./questions";
 
 export interface Me {
   id: string;
@@ -19,6 +20,7 @@ export interface Me {
   photoId: string | null;
   birthday: string | null;
   place: string | null;
+  questions: QuestionSets | null;
   portraitEveryMonths: number;
   createdAt?: string;
 }

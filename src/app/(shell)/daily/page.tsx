@@ -15,17 +15,9 @@ import { Button } from "@/components/ui/Button";
 import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
 import { formatDateHand, today } from "@/lib/dates";
 import { fetchDaily, saveDaily } from "@/lib/journal";
+import { useMe } from "@/lib/me";
+import { readingQuestions, shownQuestions } from "@/lib/questions";
 import { EditMark } from "@/components/art/PenMarks";
-
-const DAILY_PROMPTS = [
-  { key: "1", q: "How many times a day am I doing the Inner Engineering Crash Course?", hint: undefined },
-  { key: "2", q: "Am I eating more consciously?", hint: "Aware of chewing count, texture, quantity; eating with gratitude, setting aside likes/dislikes." },
-  { key: "3", q: "Am I reacting or responding to people around me?", hint: "How often angry/impatient/irritated; do I see all I experience is my making?" },
-  { key: "4", q: "Am I becoming more willing?", hint: "(a) First feeling/thought on receiving instructions; (b) can I set myself aside and act with a sense of offering; (c) would I act the same if someone were watching?" },
-  { key: "5", q: "Is my system more vibrant or dull?", hint: "Energetic all day? Ease of waking?" },
-  { key: "6", q: "How well am I maintaining Vak Shuddhi?", hint: "Fewer words; conscious word choice and intention; silence after 9:30pm?" },
-  { key: "7", q: "Am I staying more focused throughout the day?", hint: "Is focus becoming effortless, or must I remind myself?" },
-];
 
 export default function DailyPage() {
   return (
@@ -40,6 +32,8 @@ function DailyContent() {
   const param = useSearchParams().get("date");
   const [date] = useState(() => (param && /^\d{4}-\d{2}-\d{2}$/.test(param) && param <= today() ? param : today()));
   const qc = useQueryClient();
+  const { data: me } = useMe();
+  const prompts = shownQuestions("daily", me?.questions);
   // null: reading. "first": a day with nothing saved, answered one question at a time.
   // A prompt key (or "mood"): changing a saved day, in the full editor, scrolled to that item.
   const [editing, setEditing] = useState<null | "first" | string>(null);
@@ -120,7 +114,7 @@ function DailyContent() {
   // If there's saved data and user hasn't entered edit mode, show saved view
   const showSavedView = editing === null;
 
-  if (isLoading) return <DailySkeleton date={date} />;
+  if (isLoading || !me) return <DailySkeleton date={date} />;
 
   return (
     <div className="pb-20">
@@ -135,27 +129,29 @@ function DailyContent() {
       {showSavedView ? (
         /* Saved view — show answers as read-only cards with edit button */
         <>
-          {DAILY_PROMPTS.map((prompt) => {
+          {readingQuestions("daily", me.questions, [...Object.keys(serverAnswers), ...Object.keys(serverStamps)]).map((prompt) => {
             const answer = serverAnswers[prompt.key];
             const stamps = serverStamps[prompt.key] ?? [];
             if (!answer && stamps.length === 0) return null;
             return (
-              <button type="button" key={prompt.key} onClick={() => setEditing(prompt.key)} aria-label={`Edit: ${prompt.q}`} className="press block w-full text-left rounded-16 p-5 mb-3.5 bg-surface hover:bg-surface-2 transition-colors relative">
+              <button type="button" key={prompt.key} onClick={() => setEditing(prompt.key)} aria-label={prompt.q ? `Edit: ${prompt.q}` : "Edit reflection"} className="press block w-full text-left rounded-16 p-5 mb-3.5 bg-surface hover:bg-surface-2 transition-colors relative">
                 <div className="flex gap-3 items-start">
                   <span className="font-ui text-[13px] font-semibold leading-[1.9] text-ink-soft/70 shrink-0 min-w-[22px] tabular">
-                    {prompt.key}
+                    {prompt.number}
                   </span>
                   <div className="flex-1">
-                    <p className="font-serif text-base font-medium leading-[1.4] text-ink-soft">
-                      {prompt.q}
-                    </p>
+                    {prompt.q && (
+                      <p className="font-serif text-base font-medium leading-[1.4] text-ink-soft">
+                        {prompt.q}
+                      </p>
+                    )}
                     {answer && (
-                      <p className="font-serif text-base leading-[1.7] text-ink mt-2">
+                      <p className="font-serif text-base leading-[1.7] text-ink mt-2 first:mt-0">
                         {answer}
                       </p>
                     )}
                     {stamps.length > 0 && (
-                      <span className="mt-3 flex flex-wrap gap-1.5">
+                      <span className="mt-3 first:mt-0 flex flex-wrap gap-1.5">
                         {stamps.map((st) => (
                           <StampChip key={st} k={st} size="sm" />
                         ))}
@@ -176,7 +172,7 @@ function DailyContent() {
 
           {/* Edit button */}
           <button
-            onClick={() => setEditing(DAILY_PROMPTS[0].key)}
+            onClick={() => setEditing(prompts[0].key)}
             className="ana-fab fixed bottom-[88px] right-6 lg:bottom-8 lg:right-8
                        w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
                        shadow-[0_6px_16px_var(--accent-soft)] z-20"
@@ -189,7 +185,7 @@ function DailyContent() {
         editing === "first" ? (
         /* First time today: one question at a time */
         <ReflectionStepper
-          prompts={DAILY_PROMPTS}
+          prompts={prompts}
           answers={localAnswers}
           stamps={localStamps}
           mood={localMood}
@@ -204,10 +200,10 @@ function DailyContent() {
         ) : (
         /* Changing a saved day: every question on one page, opened at the one tapped */
         <Busy busy={mutation.isPending}>
-          {DAILY_PROMPTS.map((prompt) => (
+          {prompts.map((prompt, i) => (
             <div key={prompt.key} ref={editing === prompt.key ? scrollIntoView : undefined}>
               <PromptCard
-                number={prompt.key}
+                number={String(i + 1)}
                 question={prompt.q}
                 hint={prompt.hint}
                 answer={localAnswers[prompt.key] ?? ""}
