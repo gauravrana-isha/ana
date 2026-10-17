@@ -1,11 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Lotus } from "@/components/art/Lotus";
+import { BrandMark } from "@/components/art/BrandMark";
 import { cn } from "@/lib/utils";
 
 /**
- * The full-screen frame for locking and unlocking the journal: the lotus mark, one calm
+ * The full-screen frame for locking and unlocking the journal: the ana mark, one calm
  * column, a step that slides in, and the main action pinned at the bottom on phones.
  */
 export function VaultScreen({
@@ -25,7 +25,7 @@ export function VaultScreen({
       <header className="pt-[max(18px,var(--safe-top))]">
         <div className="max-w-[520px] mx-auto px-5 h-12 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-accent">
-            <Lotus size={24} />
+            <BrandMark size={24} />
             <span className="font-display text-[19px] font-semibold text-ink leading-none">ana</span>
           </span>
           {top}

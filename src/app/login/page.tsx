@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Lotus } from "@/components/art/Lotus";
+import { BrandMark } from "@/components/art/BrandMark";
 import { Ornament } from "@/components/art/Ornament";
 import { SadhguruSignature } from "@/components/art/SadhguruSignature";
 import { GoogleButton } from "@/components/auth/GoogleButton";
@@ -53,7 +53,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <Ornament name="leaves" width={420} className="absolute -right-24 -bottom-6 text-ink-soft/15 hidden sm:block" />
         <div className="w-full max-w-[380px]">
           <div className="flex items-center gap-2 text-accent">
-            <Lotus size={34} />
+            <BrandMark size={34} />
             <span className="font-display text-[30px] font-semibold text-ink tracking-[-0.01em]">ana</span>
           </div>
           <Ornament name="flourish" width={132} className="mt-5 text-ink-soft/45" />

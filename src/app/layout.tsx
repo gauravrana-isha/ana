@@ -5,6 +5,7 @@ import { Fraunces, Public_Sans } from "next/font/google";
 import { Providers } from "./providers";
 import { SplashController } from "@/components/shell/SplashController";
 import { WebAnalytics } from "@/components/shell/WebAnalytics";
+import { LAUNCH_SCREENS } from "@/lib/launch-screens";
 import "./globals.css";
 
 /*
@@ -45,12 +46,24 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   applicationName: "ana",
   manifest: "/manifest.webmanifest",
-  // favicon.ico is picked up from src/app; the PNG is for browsers that prefer it.
+  // favicon.ico (16/32/48) is picked up from src/app. Tabs get the flat mark, in a lighter teal
+  // when the browser is dark; home screens get the glossy mark on cream.
   icons: {
-    icon: [{ url: "/favicon.png", type: "image/png", sizes: "32x32" }],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    icon: [
+      { url: "/icons/favicon-32.png", type: "image/png", sizes: "32x32", media: "(prefers-color-scheme: light)" },
+      { url: "/icons/favicon-16.png", type: "image/png", sizes: "16x16", media: "(prefers-color-scheme: light)" },
+      { url: "/icons/favicon-dark-32.png", type: "image/png", sizes: "32x32", media: "(prefers-color-scheme: dark)" },
+      { url: "/icons/favicon-dark-16.png", type: "image/png", sizes: "16x16", media: "(prefers-color-scheme: dark)" },
+      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon-180.png", sizes: "180x180" },
+      { url: "/icons/apple-touch-icon-167.png", sizes: "167x167" },
+      { url: "/icons/apple-touch-icon-152.png", sizes: "152x152" },
+      { url: "/icons/apple-touch-icon-120.png", sizes: "120x120" },
+    ],
   },
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "ana" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "ana", startupImage: LAUNCH_SCREENS },
   formatDetection: { telephone: false, email: false, address: false },
   openGraph: {
     type: "website",
@@ -65,11 +78,11 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ana — sadhana journal",
     description: DESCRIPTION,
-    images: ["/og.png"],
+    images: [{ url: "/og.png", alt: "ana — your sadhana, and the moments worth keeping" }],
   },
   // A private journal: nothing here belongs in search results.
   robots: { index: false, follow: false },
-  other: { "mobile-web-app-capable": "yes" },
+  other: { "mobile-web-app-capable": "yes", "msapplication-TileColor": "#fbf8f2", "msapplication-TileImage": "/icons/icon-144.png" },
 };
 
 export const viewport: Viewport = {

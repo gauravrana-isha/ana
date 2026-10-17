@@ -13,7 +13,8 @@ const VERSION = "ana-v5";
 const DEV = self.location.hostname === "localhost" || self.location.hostname === "127.0.0.1";
 const PAGES = `${VERSION}-pages`;
 const STATIC = `${VERSION}-static`;
-const MEDIA = `${VERSION}-media`;
+/** Images, fonts and icons (renamed when the app icon changes, so the new one is fetched). */
+const MEDIA = `${VERSION}-media-2`;
 /** People's own photos (private; cleared with everything else on sign-out). */
 const PHOTOS = `${VERSION}-photos`;
 

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
-import { Lotus } from "@/components/art/Lotus";
+import { BrandMark } from "@/components/art/BrandMark";
 import { Ornament } from "@/components/art/Ornament";
 import { NavIcon } from "./NavIcon";
 import { usePrefetchScreen } from "@/lib/prefetch";
@@ -86,7 +86,7 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
               tabIndex={collapsed ? -1 : 0}
               className={cn("grid place-items-center w-12 h-12 rounded-[14px] transition-opacity duration-150", collapsed && "group-hover:opacity-0 group-focus-within:opacity-0")}
             >
-              <Lotus size={34} />
+              <BrandMark size={34} />
             </Link>
             {collapsed && (
               <button

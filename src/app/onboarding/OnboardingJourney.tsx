@@ -7,7 +7,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { Chevron } from "@/components/ui/Arrows";
-import { Lotus } from "@/components/art/Lotus";
+import { BrandMark } from "@/components/art/BrandMark";
 import { SnakeLoader } from "@/components/ui/Loader";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
@@ -298,7 +298,7 @@ function Welcome({ firstName }: { firstName: string }) {
         <Image src="/images/sadhguru-namaskar.jpg" alt="Sadhguru with hands folded in namaskar" fill priority sizes="(min-width: 600px) 560px, 100vw" className="object-cover object-[50%_22%]" />
       </div>
       <div className="mt-8 flex items-center gap-2 text-accent">
-        <Lotus size={26} />
+        <BrandMark size={26} />
         <span className="font-display text-[20px] font-semibold text-ink">ana</span>
       </div>
       <h1 className="mt-4 font-display text-[34px] font-semibold tracking-[-0.02em] leading-[1.1] text-ink">

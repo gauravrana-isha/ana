@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lotus } from "@/components/art/Lotus";
+import { BrandMark } from "@/components/art/BrandMark";
 import { Ornament } from "@/components/art/Ornament";
 import { BackMark } from "@/components/art/PenMarks";
 
@@ -12,7 +12,7 @@ export function NotFound({ fullScreen = false }: { fullScreen?: boolean }) {
   return (
     <main className={fullScreen ? "min-h-dvh grid place-items-center px-6 py-12 bg-bg" : "grid place-items-center min-h-[70dvh] py-12"}>
       <div className="w-full max-w-[420px] text-center">
-        <Lotus size={48} className="mx-auto text-accent" />
+        <BrandMark size={48} className="mx-auto text-accent" />
         <Ornament name="kolam" width={150} className="mx-auto mt-4 text-accent/50" />
         <p className="mt-6 font-ui text-[13px] font-semibold tracking-[0.08em] text-ink-soft tabular">404</p>
         <h1 className="mt-2 font-display text-[30px] font-semibold tracking-[-0.02em] text-ink leading-[1.15]">This page isn&rsquo;t here</h1>

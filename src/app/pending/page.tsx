@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Lotus } from "@/components/art/Lotus";
+import { BrandMark } from "@/components/art/BrandMark";
 import { Ornament } from "@/components/art/Ornament";
 import { Avatar } from "@/components/shell/Sidebar";
 import { PendingWatcher } from "@/components/auth/PendingWatcher";
@@ -19,7 +19,7 @@ export default async function PendingPage() {
   return (
     <main className="min-h-dvh flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-[440px] text-center">
-        <Lotus size={44} className="mx-auto text-accent" />
+        <BrandMark size={44} className="mx-auto text-accent" />
         <Ornament name="kolam" width={150} className="mx-auto mt-4 text-accent/50" />
         <h1 className="mt-6 font-display text-[30px] font-semibold tracking-[-0.02em] text-ink leading-[1.15]">
           {suspended ? "Your access is paused" : `Thank you, ${name.split(" ")[0]}`}
