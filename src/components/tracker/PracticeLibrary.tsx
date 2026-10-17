@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Check, MagnifyingGlass } from "@phosphor-icons/react";
+
 import { CATALOG, COMMON_IDS, KIND_LABEL, catalogImage, type CatalogPractice } from "@/lib/practiceCatalog";
 import { cn } from "@/lib/utils";
 import { ButtonLoader } from "@/components/ui/Loader";
 import { PracticeIcon } from "./PracticeIcon";
 import { CrossMark, PlusMark } from "@/components/art/PenMarks";
+import { FeatureGlyph } from "@/components/art/FeatureBadge";
+import { TickMark } from "./FieldInput";
 
 interface PracticeLibraryProps {
   /** Catalog ids currently chosen / added. */
@@ -49,7 +51,7 @@ export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", classN
     <div className={className}>
       <label className="relative block">
         <span className="sr-only">Search practices</span>
-        <MagnifyingGlass size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft pointer-events-none" />
+        <FeatureGlyph k="search" size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft pointer-events-none" />
         <input
           type="search"
           value={query}
@@ -107,7 +109,7 @@ export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", classN
                           <ButtonLoader />
                         ) : on ? (
                           <>
-                            <Check size={14} weight="bold" /> Added
+                            <TickMark size={15} /> Added
                           </>
                         ) : (
                           <>
@@ -123,7 +125,7 @@ export function PracticeLibrary({ chosen, onToggle, busyId, mode = "add", classN
                           on ? "bg-accent text-bg" : "border-[1.5px] border-line bg-bg"
                         )}
                       >
-                        {on && <Check size={13} weight="bold" />}
+                        {on && <TickMark size={14} />}
                       </span>
                     )}
                   </button>

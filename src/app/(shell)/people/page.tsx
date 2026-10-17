@@ -3,13 +3,14 @@
 import { ListSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { MagnifyingGlass } from "@phosphor-icons/react";
+
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PersonForm } from "@/components/people/PersonForm";
 import { timeAgo } from "@/lib/dates";
 import { CrossMark, PlusMark } from "@/components/art/PenMarks";
+import { FeatureGlyph } from "@/components/art/FeatureBadge";
 
 export default function PeoplePage() {
   const { data: people = [], isPending: isLoading } = usePeople();
@@ -26,7 +27,7 @@ export default function PeoplePage() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
         <label className="relative flex-1">
           <span className="sr-only">Search people</span>
-          <MagnifyingGlass size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft pointer-events-none" />
+          <FeatureGlyph k="search" size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft pointer-events-none" />
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${people.length || ""} people`.replace("  ", " ")} className="w-full h-11 pl-11 pr-10 rounded-[14px] bg-surface text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/80 [&::-webkit-search-cancel-button]:hidden" />
           {query && (
             <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-full text-ink-soft hover:bg-surface-2">

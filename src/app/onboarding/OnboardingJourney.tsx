@@ -5,7 +5,7 @@ import { BusyBar } from "@/components/ui/Busy";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check } from "@phosphor-icons/react";
+
 import { Chevron } from "@/components/ui/Arrows";
 import { Lotus } from "@/components/art/Lotus";
 import { LotusDraw } from "@/components/ui/Loader";
@@ -21,6 +21,7 @@ import { catalogById } from "@/lib/practiceCatalog";
 import { newId } from "@/lib/outbox";
 import { fetchStatus, seal, sealFields, start, useVault, type VaultStatus } from "@/lib/vault/vault";
 import { cn } from "@/lib/utils";
+import { TickMark } from "@/components/tracker/FieldInput";
 
 type Step = "welcome" | "you" | "sections" | "practices";
 
@@ -253,7 +254,6 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
               </div>
             )}
 
-
             {step === "practices" && (
               <div>
                 <StepTitle
@@ -334,7 +334,7 @@ function Tick({ on }: { on: boolean }) {
         on ? "bg-accent text-bg scale-100" : "border-[1.5px] border-line bg-bg scale-95"
       )}
     >
-      {on && <Check size={13} weight="bold" />}
+      {on && <TickMark size={14} />}
     </span>
   );
 }

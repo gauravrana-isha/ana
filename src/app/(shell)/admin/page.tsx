@@ -5,7 +5,7 @@ import { usePersistentState } from "@/lib/persist";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarBlank, Check, Clock, Crown, HardDrives, HourglassMedium } from "@phosphor-icons/react";
+import { CalendarBlank, Clock, Crown, HardDrives, HourglassMedium } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Avatar } from "@/components/shell/Sidebar";
 import { NavIcon } from "@/components/shell/NavIcon";
@@ -16,6 +16,7 @@ import { FEATURES, type FeatureKey } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Chevron } from "@/components/ui/Arrows";
+import { TickMark } from "@/components/tracker/FieldInput";
 
 type Status = "PENDING" | "APPROVED" | "SUSPENDED";
 
@@ -276,7 +277,7 @@ function StatusActions({ u, isMe, busy, onChange }: { u: AdminUser; isMe: boolea
     return (
       <>
         <Button size="sm" disabled={busy} onClick={() => onChange({ status: "APPROVED" })} className="min-w-[124px]">
-          <Check size={15} weight="bold" /> Approve
+          <TickMark size={16} /> Approve
         </Button>
         <Button size="sm" variant="danger" disabled={busy} onClick={() => onChange({ status: "SUSPENDED" })}>
           Decline

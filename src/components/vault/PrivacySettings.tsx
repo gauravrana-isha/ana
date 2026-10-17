@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { DeviceMobile, Fingerprint, LockSimple, Password, Plus, Scroll } from "@phosphor-icons/react";
+import { DeviceMobile, Fingerprint, LockSimple, Password, Scroll } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { useToast } from "@/components/ui/Toast";
@@ -25,6 +25,7 @@ import { PassphraseForm } from "./KeySetup";
 import { RecoveryWords } from "./RecoveryWords";
 import { FieldError } from "./VaultScreen";
 import { useConfirm } from "@/components/ui/Confirm";
+import { PlusMark } from "@/components/art/PenMarks";
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
 
@@ -142,12 +143,12 @@ export function PrivacySettings() {
         <div className="flex flex-wrap gap-2 px-4 py-3.5">
           {support !== "no" && passkeys.length < 6 && (
             <Button size="sm" variant="secondary" loading={busy === "passkey"} onClick={addPasskey}>
-              <Plus size={14} /> Add a passkey
+              <PlusMark size={15} /> Add a passkey
             </Button>
           )}
           {!passphrase && (
             <Button size="sm" variant="secondary" onClick={() => setSheet("passphrase")}>
-              <Plus size={14} /> Add a passphrase
+              <PlusMark size={15} /> Add a passphrase
             </Button>
           )}
         </div>

@@ -6,7 +6,7 @@ import { usePersistentState } from "@/lib/persist";
 import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Check, MagnifyingGlass, Cards, List } from "@phosphor-icons/react";
+import { Cards, List } from "@phosphor-icons/react";
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { STAMP_GUIDE } from "@/components/reflection/StampRow";
@@ -21,6 +21,8 @@ import { fetchMoment } from "@/lib/journal";
 import type { Moment, MomentKind } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 import { CrossMark, FiltersMark, PlusMark } from "@/components/art/PenMarks";
+import { FeatureGlyph } from "@/components/art/FeatureBadge";
+import { TickMark } from "@/components/tracker/FieldInput";
 
 const FILTERS = [
   { id: "", label: "All" },
@@ -82,7 +84,7 @@ function ExpressionsContent() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
         <label className="relative flex-1">
           <span className="sr-only">Search moments</span>
-          <MagnifyingGlass size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft pointer-events-none" />
+          <FeatureGlyph k="search" size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft pointer-events-none" />
           <input
             type="search"
             value={query}
@@ -242,7 +244,7 @@ function ExpressionsContent() {
                     <button type="button" aria-pressed={person === p.id} onClick={() => setPerson(person === p.id ? "" : p.id)} className={cn("press w-full flex items-center gap-3 h-11 px-2 rounded-[12px] text-left transition-colors", person === p.id ? "bg-accent-soft" : "hover:bg-surface")}>
                       <PersonAvatar person={p} size={30} />
                       <span className="flex-1 truncate font-ui text-[14.5px] font-semibold text-ink">{p.name}</span>
-                      {person === p.id && <Check size={16} weight="bold" className="text-accent" />}
+                      {person === p.id && <TickMark size={17} className="text-accent" />}
                     </button>
                   </li>
                 ))}

@@ -11,7 +11,7 @@ import { NotificationSettings } from "@/components/push/Notifications";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Moon, Sun, DownloadSimple, UploadSimple } from "@phosphor-icons/react";
+import { DownloadSimple, UploadSimple } from "@phosphor-icons/react";
 import { usePractices } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
 import { Avatar } from "@/components/shell/Sidebar";
@@ -35,7 +35,7 @@ import type { Practice } from "@/lib/types";
 import { deletePractice, fetchProfileStats } from "@/lib/journal";
 import { exportJournal, importJournal } from "@/lib/importer";
 import { PrivacySettings } from "@/components/vault/PrivacySettings";
-import { DeleteMark, EditMark } from "@/components/art/PenMarks";
+import { DeleteMark, EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
 
 export default function ProfilePage() {
@@ -137,8 +137,8 @@ export default function ProfilePage() {
         <SectionTitle>Appearance</SectionTitle>
         <div role="radiogroup" aria-label="Theme" className="inline-flex p-1 rounded-full bg-surface">
           {([
-            { value: "light", label: "Light", icon: Sun },
-            { value: "dark", label: "Dark", icon: Moon },
+            { value: "light", label: "Light", icon: SunMark },
+            { value: "dark", label: "Dark", icon: MoonMark },
           ] as const).map((o) => (
             <button
               key={o.value}
@@ -150,7 +150,7 @@ export default function ProfilePage() {
                 theme === o.value ? "bg-bg text-ink shadow-[var(--shadow-soft)]" : "text-ink-soft hover:text-ink"
               )}
             >
-              <o.icon size={16} weight={theme === o.value ? "fill" : "regular"} />
+              <o.icon size={17} />
               {o.label}
             </button>
           ))}
