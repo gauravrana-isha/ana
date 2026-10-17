@@ -52,15 +52,14 @@ export async function GET(req: NextRequest) {
   const hasMore = page.length > PAGE;
   const users = page.slice(0, PAGE);
 
-  // Admins see what they need to let people in and look after storage, never anything
-  // people write or track: when they were last active, when they joined, and how much
-  // storage they use, and on how many of the last 30 days they wrote anything (dates only). "Last active" is the app's own last-seen time (to ~10 minutes), or for
-  // people not seen since it was added, their latest sign-in session.
+  // Admins see what they need to let people in, never anything people write or track: when
+  // they were last active, when they joined, and on how many of the last 30 days they wrote
+  // anything (dates only). "Last active" is the app's own last-seen time (to ~10 minutes), or
+  // for people not seen since it was added, their latest sign-in session.
   const ids = users.map((u) => u.id);
   // Active days: how many of the last 30 days they wrote anything, from entry dates alone.
   const since = new Date(Date.now() - 29 * 86400_000); // today and the 29 days before
-  const [storage, sessions, active] = await Promise.all([
-    db.attachment.groupBy({ by: ["userId"], where: { userId: { in: ids } }, _sum: { size: true } }),
+  const [sessions, active] = await Promise.all([
     db.session.groupBy({ by: ["userId"], where: { userId: { in: ids }, expires: { gt: new Date() } }, _max: { updatedAt: true } }),
     ids.length
       ? db.$queryRaw<{ userId: string; days: number }[]>`
@@ -73,13 +72,12 @@ export async function GET(req: NextRequest) {
       : [],
   ]);
   const days = new Map(active.map((a) => [a.userId, a.days]));
-  const used = new Map(storage.map((s) => [s.userId, s._sum.size ?? 0]));
   const seen = new Map(sessions.map((s) => [s.userId, s._max.updatedAt]));
   return NextResponse.json({
     users: users.map(({ lastSeenAt, ...u }) => {
       const session = seen.get(u.id) ?? null;
       const last = lastSeenAt && (!session || lastSeenAt > session) ? lastSeenAt : session;
-      return { ...u, storageBytes: used.get(u.id) ?? 0, lastActiveAt: last?.toISOString() ?? null, activeDays: days.get(u.id) ?? 0 };
+      return { ...u, lastActiveAt: last?.toISOString() ?? null, activeDays: days.get(u.id) ?? 0 };
     }),
     me: admin.id,
     counts,
