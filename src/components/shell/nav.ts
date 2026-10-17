@@ -8,7 +8,7 @@ export interface NavItem {
 }
 
 /** Reading pages opened from a list: no page header, they bring their own back and ⋯. */
-export const BARE_PAGES = ["/expressions/"];
+export const BARE_PAGES = ["/expressions/", "/people/"];
 
 export const PAGE_TITLES: Record<string, string> = {
   "/today": "Today",

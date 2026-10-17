@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Cake, Camera, Feather, Handshake, Microphone, VideoCamera } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
-import { Chevron } from "@/components/ui/Arrows";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { PersonAvatar } from "@/components/people/People";
@@ -20,8 +19,8 @@ import { timeAgo } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "@/components/ui/Busy";
 import { deletePerson, fetchPerson } from "@/lib/journal";
-import { DeleteMark, EditMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
+import { DetailBar } from "@/components/ui/DetailBar";
 
 export default function PersonPage({ params }: { params: Promise<{ id: string }> }) {
   const ask = useConfirm();
@@ -68,27 +67,22 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
   const openNew = (k: MomentKind) => setComposer({ open: true, moment: null, kind: k });
 
   return (
-    <div>
-      <Link href="/people" className="press inline-flex items-center gap-1.5 h-9 -ml-2 px-2 rounded-[10px] font-ui text-[13.5px] font-semibold text-ink-soft hover:text-ink mb-3">
-        <Chevron dir="left" size={15} /> People
-      </Link>
+    <div data-bare>
+      {/* A full page, like a moment: back, Edit and Remove float at the top. */}
+      <DetailBar backTo="/people" backLabel="Back to people" what="person" deleteWord="Remove" onEdit={() => setEditing(true)} onDelete={remove} />
 
       <section inert={removing} aria-busy={removing || undefined} className={cn("relative rounded-[22px] bg-surface p-5 sm:p-6 transition-opacity", removing && "opacity-60")}>
         <BusyBar show={removing} className="absolute top-0 inset-x-6" />
-        <div className="relative flex items-center gap-4 pr-20">
+        <div className="relative flex items-center gap-4">
           <PersonAvatar person={person} size={64} />
           <div className="flex-1 min-w-0">
-            <h2 className="font-display text-[24px] sm:text-[28px] font-semibold tracking-[-0.015em] text-ink leading-tight">{person.name}</h2>
+            <h1 className="font-display text-[24px] sm:text-[28px] font-semibold tracking-[-0.015em] text-ink leading-tight">{person.name}</h1>
             {person.relation && <p className="font-ui text-[14px] text-ink-soft mt-0.5">{person.relation}</p>}
             <p className="font-ui text-[13.5px] text-accent font-semibold mt-2">
               {person.lastMomentAt
                 ? `Last moment together ${timeAgo(person.lastMomentAt)} · ${person.momentCount} in all`
                 : "No moments yet"}
             </p>
-          </div>
-          <div className="absolute right-0 top-0 flex gap-1 -mr-1.5 -mt-1">
-            <button type="button" aria-label="Edit" onClick={() => setEditing(true)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-surface-2"><EditMark size={20} /></button>
-            <button type="button" aria-label="Remove person" onClick={remove} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10"><DeleteMark size={20} /></button>
           </div>
         </div>
 

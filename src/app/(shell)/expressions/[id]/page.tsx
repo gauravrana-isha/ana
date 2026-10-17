@@ -16,11 +16,11 @@ import { RichText, plainText } from "@/components/moments/RichText";
 import { lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
 import { fetchMoment } from "@/lib/journal";
 import { MomentPageSkeleton } from "@/components/skeletons/ScreenSkeletons";
-import type { Moment } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 import { Portal } from "@/components/ui/Portal";
 import { CloseButton } from "@/components/ui/CloseButton";
-import { BackMark, DeleteMark, EditMark } from "@/components/art/PenMarks";
+import { DetailBar } from "@/components/ui/DetailBar";
+import { BackMark } from "@/components/art/PenMarks";
 
 /**
  * One moment, in full: its media at full size (photos open fullscreen), the whole text, the
@@ -33,8 +33,6 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
   const [editing, setEditing] = useState(false);
   const [viewer, setViewer] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  const back = () => (window.history.length > 1 ? router.back() : router.push("/expressions"));
 
   const { data: moment, isPending } = useQuery({
     queryKey: ["moments", "one", id],
@@ -66,22 +64,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
   return (
     <article data-bare inert={deleting} className={cn("pb-10 transition-opacity", deleting && "opacity-50")}>
       {/* No page header here: back, Edit and Delete float at the top and stay in reach while reading. */}
-      <div className="sticky top-[max(12px,calc(var(--safe-top)+6px))] lg:top-6 z-20 -mx-1 mb-4 flex items-center justify-between pointer-events-none">
-        <button type="button" onClick={back} aria-label="Back to moments" className={cn(FLOAT, "pointer-events-auto")}>
-          <BackMark size={18} />
-        </button>
-        {/* Only two things to do here, so both are out in the open: icons on phones, labelled from sm up. */}
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <button type="button" onClick={() => setEditing(true)} aria-label="Edit moment" className={cn(FLOAT, "sm:w-auto sm:px-4 sm:gap-1.5 sm:flex sm:text-accent")}>
-            <EditMark size={19} />
-            <span className="hidden sm:inline font-ui text-[14px] font-semibold">Edit</span>
-          </button>
-          <button type="button" onClick={remove} aria-label="Delete moment" className={cn(FLOAT, "sm:w-auto sm:px-4 sm:gap-1.5 sm:flex hover:text-danger")}>
-            <DeleteMark size={19} />
-            <span className="hidden sm:inline font-ui text-[14px] font-semibold">Delete</span>
-          </button>
-        </div>
-      </div>
+      <DetailBar backTo="/expressions" backLabel="Back to moments" what="moment" onEdit={() => setEditing(true)} onDelete={remove} />
 
       <header className="flex items-start gap-3.5">
         <MomentBadge kind={moment.kind} size={44} className="mt-1" />
@@ -153,9 +136,6 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
     </article>
   );
 }
-
-/** The round back, Edit and Delete buttons, on a soft blur so they read over photos and text. */
-const FLOAT = "press grid place-items-center w-10 h-10 rounded-full bg-bg/90 backdrop-blur-xl border border-line/70 text-ink-soft shadow-[0_1px_3px_rgb(0_0_0/0.06)] hover:text-ink hover:bg-surface";
 
 /** One photo in the viewer, opened on the device; fades in once it's ready. */
 function ViewerPhoto({ id }: { id: string }) {

@@ -259,6 +259,13 @@ export function PeopleSkeleton() {
 export function PersonSkeleton() {
   return (
     <Skeleton className="flex flex-col gap-6">
+      <div data-bare className="flex items-center justify-between -mx-1 -mb-2">
+        <Bone className="w-10 h-10 rounded-full" />
+        <div className="flex gap-2">
+          <Bone className="w-10 sm:w-[78px] h-10 rounded-full" />
+          <Bone className="w-10 sm:w-[104px] h-10 rounded-full" />
+        </div>
+      </div>
       <SkeletonCard className="rounded-[22px] p-5 sm:p-6 flex items-center gap-5">
         <Bone round className="w-20 h-20 shrink-0" />
         <div className="flex-1 flex flex-col gap-2.5">
