@@ -119,6 +119,8 @@ export default function AdminPage() {
         />
       </div>
 
+      <MoveToR2 />
+
       <div className="mt-6 flex flex-col gap-2">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-[76px] rounded-[18px] bg-surface animate-pulse" />)}
@@ -265,6 +267,46 @@ export default function AdminPage() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/** Shown only while R2 is set up and older files are still in the Blob store. */
+function MoveToR2() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [moving, setMoving] = useState(false);
+  const { data } = useQuery({
+    queryKey: ["admin-storage"],
+    queryFn: async (): Promise<{ mode: string; onBlob: number }> => (await fetch("/api/admin/storage")).json(),
+  });
+  if (data?.mode !== "r2" || !data.onBlob) return null;
+
+  async function move() {
+    setMoving(true);
+    try {
+      for (;;) {
+        const res = await fetch("/api/admin/storage", { method: "POST" });
+        const batch: { moved: number; failed: number; onBlob: number } = await res.json();
+        if (!res.ok) throw new Error();
+        qc.setQueryData(["admin-storage"], { mode: "r2", onBlob: batch.onBlob });
+        if (!batch.onBlob) return toast("All files are on R2 now", "success");
+        if (!batch.moved) return toast(`${batch.onBlob} files couldn't be moved. Try again later.`, "error");
+      }
+    } catch {
+      toast("Moving stopped. Try again.", "error");
+    } finally {
+      setMoving(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 flex items-center gap-3 rounded-[16px] bg-surface px-4 py-3">
+      <Glyph k="storage" size={20} className="text-accent shrink-0" />
+      <p className="flex-1 min-w-0 font-ui text-[13.5px] text-ink">
+        <span className="font-semibold tabular">{data.onBlob}</span> {data.onBlob === 1 ? "file is" : "files are"} still on Vercel Blob.
+      </p>
+      <Button size="sm" onClick={move} loading={moving}>Move to R2</Button>
     </div>
   );
 }

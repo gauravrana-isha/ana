@@ -33,13 +33,13 @@ export function mediaUrl(id: string) {
 
 /**
  * Store a file: encrypted on the device first (once the journal has a key), then straight to
- * the private Blob store in production (so large videos never touch our server), or to the
+ * private storage (R2, or Blob for older setups) in production, so large videos never touch our server, or to the
  * dev server's disk locally. Returns where it landed.
  */
 export async function storeFile(
   file: Blob,
   kind: MediaKind,
-  opts: { userId: string; storage: "blob" | "local"; onProgress?: (pct: number) => void; replacing?: string }
+  opts: { userId: string; storage: "r2" | "blob" | "local"; onProgress?: (pct: number) => void; replacing?: string }
 ) {
   const contentType = (file.type || "application/octet-stream").split(";")[0];
   if (file.size > MAX_BYTES[kind]) throw new Error(`That file is too large (up to ${MAX_BYTES[kind] / 1024 / 1024} MB).`);
@@ -48,7 +48,17 @@ export async function storeFile(
   const ext = EXT[contentType] ?? "bin";
 
   let pathname: string;
-  if (opts.storage === "blob") {
+  if (opts.storage === "r2") {
+    const res = await fetch("/api/uploads/r2", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, contentType, size: body.size, replacing: opts.replacing }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? "Upload refused");
+    await putWithProgress(data.url, body, body.type || contentType, opts.onProgress);
+    pathname = data.pathname;
+  } else if (opts.storage === "blob") {
     const res = await upload(`u/${opts.userId}/${kind}/${Date.now()}.${ext}`, body, {
       access: "private",
       handleUploadUrl: "/api/uploads",
@@ -74,11 +84,24 @@ export async function storeFile(
   return { pathname, contentType, sealed };
 }
 
+/** PUT a file to a signed link, reporting progress (fetch can't report upload progress). */
+function putWithProgress(url: string, body: Blob, type: string, onProgress?: (pct: number) => void) {
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", type);
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(Math.round((e.loaded / e.total) * 100));
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error("Upload failed. Please try again.")));
+    xhr.onerror = () => reject(new Error("Upload failed. Check your connection and try again."));
+    xhr.send(body);
+  });
+}
+
 /** Upload a recording or photo (encrypted, once the journal has a key) and register it. */
 export async function uploadMedia(
   file: Blob,
   kind: MediaKind,
-  opts: { userId: string; storage: "blob" | "local"; durationSec?: number; onProgress?: (pct: number) => void }
+  opts: { userId: string; storage: "r2" | "blob" | "local"; durationSec?: number; onProgress?: (pct: number) => void }
 ): Promise<AttachmentDTO> {
   const { pathname, contentType, sealed } = await storeFile(file, kind, opts);
   const reg = await fetch("/api/attachments", {

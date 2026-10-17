@@ -22,7 +22,7 @@ export function VaultGate({
   vault,
   children,
 }: {
-  user: { id: string; name: string; email: string; storage: "blob" | "local" };
+  user: { id: string; name: string; email: string; storage: "r2" | "blob" | "local" };
   vault: { set: boolean; check: string | null; sealed: boolean };
   children: React.ReactNode;
 }) {
@@ -97,7 +97,7 @@ function Waiting() {
   );
 }
 
-function Sealing({ me, first, onDone }: { me: { id: string; storage: "blob" | "local" }; first: boolean; onDone: () => void }) {
+function Sealing({ me, first, onDone }: { me: { id: string; storage: "r2" | "blob" | "local" }; first: boolean; onDone: () => void }) {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState("");
   const [round, setRound] = useState(0);

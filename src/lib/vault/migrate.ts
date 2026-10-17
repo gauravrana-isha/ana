@@ -33,7 +33,7 @@ let running: Promise<void> | null = null;
 let report: (done: number, total: number) => void = () => {};
 
 /** Seal everything still plain. One run at a time: a second call joins the first. */
-export function sealEverything(me: { id: string; storage: "blob" | "local" }, onProgress: (done: number, total: number) => void) {
+export function sealEverything(me: { id: string; storage: "r2" | "blob" | "local" }, onProgress: (done: number, total: number) => void) {
   report = onProgress;
   running ??= run(me, (d, t) => report(d, t)).finally(() => {
     running = null;
@@ -52,7 +52,7 @@ async function post(body: Record<string, unknown>) {
  * Round by round: fetch what's still plain, seal it here, and send it back in small
  * batches (files one at a time), so the count moves as the work actually happens.
  */
-async function run(me: { id: string; storage: "blob" | "local" }, onProgress: (done: number, total: number) => void) {
+async function run(me: { id: string; storage: "r2" | "blob" | "local" }, onProgress: (done: number, total: number) => void) {
   let total = 0;
   let done = 0;
   let lastLeft = Infinity;

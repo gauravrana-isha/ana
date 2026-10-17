@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { isSealed, legacyLeft, sealed } from "@/lib/sealed";
-import { removeStored, uploadedSize, userPrefix } from "@/lib/storage";
+import { removeStored, storageMode, uploadedSize, userPrefix } from "@/lib/storage";
 
 /*
  * Moving a journal written before encryption into its sealed form. The device asks for
@@ -153,9 +153,11 @@ export async function POST(req: NextRequest) {
   for (const a of d.attachments) {
     const old = await db.attachment.findFirst({ where: { id: a.id, ...own, sealed: false } });
     if (!old || !a.pathname.startsWith(`${userPrefix(user.id)}${old.kind}/`) || a.pathname.includes("..")) continue;
-    const size = await uploadedSize(old.storage as "blob" | "local", a.pathname);
+    // The encrypted copy was uploaded to wherever new files go now.
+    const storage = storageMode();
+    const size = await uploadedSize(storage, a.pathname);
     if (size === null) continue;
-    await db.attachment.update({ where: { id: old.id }, data: { pathname: a.pathname, size, sealed: true } });
+    await db.attachment.update({ where: { id: old.id }, data: { storage, pathname: a.pathname, size, sealed: true } });
     await removeStored(old.storage, old.pathname).catch(() => {});
   }
 

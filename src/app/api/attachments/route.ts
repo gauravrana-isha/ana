@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
-import { allowedType, baseType, isMediaKind, storageMode, uploadedSize, userPrefix } from "@/lib/storage";
+import { MEDIA_RULES, allowedType, baseType, isMediaKind, removeStored, roomFor, storageMode, uploadedSize, userPrefix } from "@/lib/storage";
 
 const Schema = z.object({
   kind: z.string(),
@@ -31,6 +31,11 @@ export async function POST(req: NextRequest) {
   const storage = storageMode();
   const size = await uploadedSize(storage, pathname);
   if (size === null) return NextResponse.json({ error: "Upload not found" }, { status: 404 });
+  // Blob enforces the size while uploading; a signed R2 link can't, so check it here.
+  if (storage === "r2" && (size > MEDIA_RULES[kind].maxBytes || size > (await roomFor(user.id)))) {
+    await removeStored(storage, pathname);
+    return NextResponse.json({ error: "That file is too large for the space left." }, { status: 413 });
+  }
 
   const attachment = await db.attachment.create({
     data: { userId: user.id, kind, storage, pathname, contentType: baseType(contentType), size, durationSec, sealed: !!sealed },
