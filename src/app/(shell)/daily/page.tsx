@@ -166,7 +166,7 @@ function DailyContent() {
           })}
 
           {serverMood && (
-            <button type="button" onClick={() => setEditing("mood")} aria-label="Edit mood" className="press w-full text-left rounded-16 p-4 bg-surface hover:bg-surface-2 transition-colors mb-3 flex items-center gap-2">
+            <button type="button" onClick={() => { setFocusKey(null); setEditing("mood"); }} aria-label="Edit mood" className="press w-full text-left rounded-16 p-4 bg-surface hover:bg-surface-2 transition-colors mb-3 flex items-center gap-2">
               <MoodIcon mood={serverMood} />
               <span className="font-serif text-sm text-accent capitalize">{serverMood}</span>
             </button>
