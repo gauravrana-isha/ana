@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowCounterClockwise, CaretDown, CaretRight, DotsThree, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
@@ -59,6 +59,54 @@ export function useDeleteMoment() {
 
 export const momentHref = (m: Moment) => `/expressions/${m.id}`;
 
+/** The ⋯ menu for one moment (Edit, Delete), on its card and on its own page. */
+export function MomentMenu({ onEdit, onDelete, className }: { onEdit: () => void; onDelete: () => void; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Closes on a tap anywhere else (sidebar and header included) or Escape. The closing tap
+  // does nothing more, so it can't also open the card underneath.
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      if (ref.current?.contains(e.target as Node)) return;
+      setOpen(false);
+      const swallow = (c: MouseEvent) => {
+        c.preventDefault();
+        c.stopPropagation();
+      };
+      document.addEventListener("click", swallow, { capture: true, once: true });
+      // A drag or scroll sends no click; don't eat the next real one.
+      setTimeout(() => document.removeEventListener("click", swallow, { capture: true }), 600);
+    };
+    const key = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", key);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className={cn("relative", className)}>
+      <button type="button" aria-label="Moment options" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-ink/5">
+        <DotsThree size={22} weight="bold" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-10 z-20 w-40 p-1 rounded-[14px] bg-bg border border-line shadow-[var(--shadow-lift)]">
+          <button type="button" onClick={() => { setOpen(false); onEdit(); }} className="w-full flex items-center gap-2 h-10 px-3 rounded-[10px] font-ui text-[14px] text-ink hover:bg-surface">
+            <PencilSimple size={16} /> Edit
+          </button>
+          <button type="button" onClick={() => { setOpen(false); onDelete(); }} className="w-full flex items-center gap-2 h-10 px-3 rounded-[10px] font-ui text-[14px] text-danger hover:bg-danger/10">
+            <Trash size={16} /> Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * A moment in a list: a steady preview (title, time, a few lines, one media thumbnail) that
  * never changes shape. Tapping anywhere on it opens the moment's own page; the menu and the
@@ -67,7 +115,6 @@ export const momentHref = (m: Moment) => `/expressions/${m.id}`;
 export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { moment: Moment; onEdit: (m: Moment) => void; hidePersonId?: string; folded?: boolean }) {
   const qc = useQueryClient();
   const del = useDeleteMoment();
-  const [menu, setMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const people = moment.people.filter((p) => p.id !== hidePersonId);
   const text = plainText(moment.body);
@@ -75,7 +122,6 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
   const seed = () => qc.setQueryData(["moments", "one", moment.id], (old: Moment | undefined) => old ?? moment);
 
   async function remove() {
-    setMenu(false);
     setDeleting(true);
     if (!(await del(moment))) setDeleting(false);
   }
@@ -122,24 +168,7 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
             )}
           </p>
         </div>
-        <div className="relative z-10">
-          <button type="button" aria-label="Moment options" aria-expanded={menu} onClick={() => setMenu((m) => !m)} className="press grid place-items-center w-9 h-9 -mr-1.5 -mt-1 rounded-full text-ink-soft hover:text-ink hover:bg-bg">
-            <DotsThree size={22} weight="bold" />
-          </button>
-          {menu && (
-            <>
-              <button type="button" aria-hidden="true" tabIndex={-1} className="fixed inset-0 z-10 cursor-default" onClick={() => setMenu(false)} />
-              <div className="absolute right-0 top-10 z-20 w-40 p-1 rounded-[14px] bg-bg border border-line shadow-[var(--shadow-lift)]">
-                <button type="button" onClick={() => { setMenu(false); onEdit(moment); }} className="w-full flex items-center gap-2 h-10 px-3 rounded-[10px] font-ui text-[14px] text-ink hover:bg-surface">
-                  <PencilSimple size={16} /> Edit
-                </button>
-                <button type="button" onClick={remove} className="w-full flex items-center gap-2 h-10 px-3 rounded-[10px] font-ui text-[14px] text-danger hover:bg-danger/10">
-                  <Trash size={16} /> Delete
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        <MomentMenu onEdit={() => onEdit(moment)} onDelete={remove} className="relative z-10 -mr-1.5 -mt-1" />
       </header>
 
       {moment.attachments.length > 0 && (

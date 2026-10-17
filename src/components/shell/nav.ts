@@ -7,6 +7,11 @@ export interface NavItem {
   href: string;
 }
 
+/** Pages opened from a list: their title is also the way back to it. */
+export const BACK_TO: Record<string, string> = {
+  "/expressions/": "/expressions",
+};
+
 export const PAGE_TITLES: Record<string, string> = {
   "/today": "Today",
   "/tracker": "Tracker",

@@ -5,14 +5,14 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowCounterClockwise, CaretLeft, CaretRight, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, CaretLeft, CaretRight, MapPin } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { MomentComposer } from "@/components/moments/MomentComposer";
 import { AudioPlayer } from "@/components/moments/Media";
 import { RichText, plainText } from "@/components/moments/RichText";
-import { lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
+import { MomentMenu, lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
 import { MomentPageSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { mediaUrl } from "@/lib/media-client";
 import type { Moment } from "@/lib/moment-types";
@@ -40,8 +40,6 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
     },
   });
 
-  const back = () => (window.history.length > 1 ? router.back() : router.push("/expressions"));
-
   if (isPending) return <MomentPageSkeleton />;
   if (!moment) {
     return (
@@ -66,23 +64,9 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <article inert={deleting} className={cn("pb-10 transition-opacity", deleting && "opacity-50")}>
-      <div className="flex items-center justify-between gap-2 -mt-2 mb-5">
-        <button type="button" onClick={back} className="press inline-flex items-center gap-1 h-10 pl-2 pr-3.5 rounded-full font-ui text-[14px] font-semibold text-ink-soft hover:text-ink hover:bg-surface">
-          <CaretLeft size={18} /> Moments
-        </button>
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={() => setEditing(true)} className="press inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full font-ui text-[14px] font-semibold text-accent hover:bg-accent-soft">
-            <PencilSimple size={16} /> Edit
-          </button>
-          <button type="button" onClick={remove} aria-label="Delete moment" className="press grid place-items-center w-10 h-10 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10">
-            <Trash size={17} />
-          </button>
-        </div>
-      </div>
-
       <header className="flex items-start gap-3.5">
         <MomentBadge kind={moment.kind} size={44} className="mt-1" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           {moment.title && <h1 className="font-display text-[26px] sm:text-[30px] font-semibold leading-[1.2] tracking-[-0.01em] text-ink text-balance">{moment.title}</h1>}
           <p className={cn("font-ui text-[13.5px] text-ink-soft tabular flex flex-wrap items-center gap-x-2.5 gap-y-1", moment.title && "mt-1.5")}>
             <span>
@@ -94,6 +78,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
             )}
           </p>
         </div>
+        <MomentMenu onEdit={() => setEditing(true)} onDelete={remove} className="shrink-0 -mr-1.5 mt-0.5" />
       </header>
 
       {(photos.length > 0 || videos.length > 0 || audios.length > 0) && (
