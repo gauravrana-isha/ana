@@ -8,6 +8,7 @@ import type { NavItem } from "./nav";
  * colour. Active ("fill"): the feature's coloured badge, like the reference journal.
  */
 export function NavIcon({ k, size = 22, weight, className }: { k: NavItem["key"] | "search"; size?: number; weight?: "fill" | "regular"; className?: string }) {
-  if (weight === "fill" && hasBadge(k)) return <FeatureBadge k={k} size={size + 6} className={className} />;
+  // The badge mounts when the item becomes active, so its little action plays on each switch.
+  if (weight === "fill" && hasBadge(k)) return <FeatureBadge k={k} size={size + 6} className={className} play />;
   return <FeatureGlyph k={k} size={size} className={className} />;
 }

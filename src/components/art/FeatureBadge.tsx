@@ -26,7 +26,7 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
       return (
         <>
           <circle cx="24" cy="24" r="8.5" />
-          <path d="M24 9.5v3M24 35.5v3M9.5 24h3M35.5 24h3M13.7 13.7l2.1 2.1M32.2 32.2l2.1 2.1M13.7 34.3l2.1-2.1M32.2 15.8l2.1-2.1" />
+          <path className="fb-rays" d="M24 9.5v3M24 35.5v3M9.5 24h3M35.5 24h3M13.7 13.7l2.1 2.1M32.2 32.2l2.1 2.1M13.7 34.3l2.1-2.1M32.2 15.8l2.1-2.1" />
           <path d="M20.6 26.2c1.9 2 4.9 2 6.8 0" />
           {dot(21, 21.8, 0.9)}
           {dot(27, 21.8, 0.9)}
@@ -35,8 +35,10 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
     case "tracker":
       return (
         <>
-          <path d="M12 15.5l2.3 2.3 4.2-4.6M23 16h13" />
-          <path d="M12 24.5l2.3 2.3 4.2-4.6M23 25h13" />
+          <path className="fb-tick" pathLength={1} d="M12 15.5l2.3 2.3 4.2-4.6" />
+          <path d="M23 16h13" />
+          <path className="fb-tick fb-late" pathLength={1} d="M12 24.5l2.3 2.3 4.2-4.6" />
+          <path d="M23 25h13" />
           <circle cx="15" cy="33.5" r="2.6" />
           <path d="M23 34h9" />
         </>
@@ -45,7 +47,7 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
       return (
         <>
           <path d="M11 27h26c0 6-6 10-13 10s-13-4-13-10z" />
-          <path d="M24 10.5c3.2 3.6 4 6.7 0 10.5c-4-3.8-3.2-6.9 0-10.5z" fill={ink} strokeWidth={1.6} />
+          <path className="fb-flame" d="M24 10.5c3.2 3.6 4 6.7 0 10.5c-4-3.8-3.2-6.9 0-10.5z" fill={ink} strokeWidth={1.6} />
           <path d="M24 21v3" />
           <path d="M19 40h10" />
         </>
@@ -55,11 +57,13 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
         <>
           <rect x="11" y="13" width="26" height="24" rx="4" />
           <path d="M11 20h26M18 10v6M30 10v6" />
-          {dot(18, 26)}
-          {dot(24, 26)}
-          {dot(30, 26)}
-          {dot(18, 31.5)}
-          {dot(24, 31.5)}
+          <g className="fb-dots">
+            {dot(18, 26)}
+            {dot(24, 26)}
+            {dot(30, 26)}
+            {dot(18, 31.5)}
+            {dot(24, 31.5)}
+          </g>
         </>
       );
     case "expressions":
@@ -67,7 +71,7 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
         <>
           <path d="M35 11c-12.5 2-19.5 11.5-20.5 24 10-2 18.5-10 20.5-24z" />
           <path d="M14.5 35L27 22.5" />
-          <path d="M11 39h11" />
+          <path className="fb-write" pathLength={1} d="M11 39h11" />
         </>
       );
     case "people":
@@ -75,8 +79,10 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
         <>
           <circle cx="19" cy="18" r="4.5" />
           <path d="M10.5 35c.8-5.3 4.3-8.5 8.5-8.5s7.7 3.2 8.5 8.5" />
-          <circle cx="30.5" cy="19.5" r="3.6" />
-          <path d="M29.5 26.8c4.3-.4 7.4 2.6 8 7.7" />
+          <g className="fb-second">
+            <circle cx="30.5" cy="19.5" r="3.6" />
+            <path d="M29.5 26.8c4.3-.4 7.4 2.6 8 7.7" />
+          </g>
         </>
       );
     case "commitment":
@@ -84,7 +90,7 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
         <>
           <rect x="14" y="9.5" width="20" height="29" rx="3" />
           <path d="M19 16h10M19 21h10M19 26h6" />
-          <path d="M18.5 33c1.6-2.6 3.2 2.3 5 0s3.3 2.2 5.5 0" />
+          <path className="fb-write" pathLength={1} d="M18.5 33c1.6-2.6 3.2 2.3 5 0s3.3 2.2 5.5 0" />
         </>
       );
     case "profile":
@@ -122,13 +128,14 @@ function Drawing({ k, ink }: { k: GlyphKey; ink: string }) {
         <>
           <path d="M13.2 27.5A11.5 11.5 0 1 0 16.4 16" />
           <path d="M15.8 10.8v5.6h5.6" />
-          <path d="M25 18.5v6.5l4.5 2.8" />
+          <path className="fb-hand" d="M25 18.5v6.5l4.5 2.8" />
         </>
       );
   }
 }
 
-export function FeatureBadge({ k, size = 40, className }: { k: string; size?: number; className?: string }) {
+/** `play`: do the feature's small action once as it appears (used when a nav item becomes active). */
+export function FeatureBadge({ k, size = 40, className, play = false }: { k: string; size?: number; className?: string; play?: boolean }) {
   if (!(k in TONES)) return null;
   const key = k as Key;
   const { tile, ink } = TONES[key];
@@ -141,7 +148,7 @@ export function FeatureBadge({ k, size = 40, className }: { k: string; size?: nu
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={cn("shrink-0 feature-badge", className)}
+      className={cn("shrink-0 feature-badge", play && "fb-play", className)}
       style={{ ["--fb-tile" as string]: tile, ["--fb-ink" as string]: ink }}
     >
       <rect width="48" height="48" rx="13" fill="var(--fb-tile-now)" />

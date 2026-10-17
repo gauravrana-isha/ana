@@ -1,5 +1,7 @@
-import { ReflectionSkeleton } from "@/components/skeletons/ScreenSkeletons";
+"use client";
+
+import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
 
 export default function Loading() {
-  return <ReflectionSkeleton />;
+  return <DailySkeleton />;
 }

@@ -136,11 +136,56 @@ export function TrackerSkeleton() {
   );
 }
 
-export function ReflectionSkeleton() {
+/** Daily, answering one question at a time: the step line, one big question card, the buttons. */
+export function ReflectionStepSkeleton() {
   return (
     <Skeleton>
-      <DateNavSkeleton />
-      {[0, 1, 2, 3].map((i) => <PromptCardSkeleton key={i} i={i} />)}
+      <div className="flex items-center justify-between mb-5">
+        <TextBone w={52} h={13} />
+        <div className="flex items-center gap-1.5">
+          <Bone className="w-5 h-1.5 rounded-full" />
+          {Array.from({ length: 7 }).map((_, i) => <Bone key={i} round className="w-1.5 h-1.5" />)}
+        </div>
+      </div>
+      <SkeletonCard className="rounded-[22px] p-5 sm:p-7">
+        <div className="flex flex-col gap-2.5">
+          <TextBone w="88%" h={22} />
+          <TextBone w="62%" h={22} />
+        </div>
+        <TextBone w="80%" h={12} className="mt-3" />
+        <Bone className="mt-5 w-full h-[150px] rounded-[14px]" />
+        <div className="mt-3 grid grid-cols-3 gap-1.5 sm:flex sm:gap-2">
+          {[0, 1, 2, 3, 4].map((i) => <Bone key={i} className="h-8 sm:w-[92px] rounded-full" />)}
+        </div>
+      </SkeletonCard>
+      <div className="mt-5 flex items-center justify-between">
+        <Bone className="w-[52px] h-11 rounded-[14px]" />
+        <Bone className="w-[96px] h-11 rounded-[14px]" />
+      </div>
+    </Skeleton>
+  );
+}
+
+/** Daily, a day already answered: the quote, then the answered questions as cards. */
+export function ReflectionReadSkeleton() {
+  return (
+    <Skeleton>
+      <div className="flex flex-col gap-2.5 mb-8">
+        <TextBone w="94%" h={17} />
+        <TextBone w="70%" h={17} />
+      </div>
+      <TextBone w={110} h={18} className="mb-4" />
+      <div className="flex flex-col gap-3.5">
+        {[0, 1, 2].map((i) => (
+          <SkeletonCard key={i} className="rounded-16 p-5 flex gap-3">
+            <TextBone w={12} h={13} />
+            <div className="flex-1 flex flex-col gap-2.5">
+              <TextBone w={["78%", "56%", "70%"][i]} h={15} />
+              <TextBone w={["40%", "62%", "34%"][i]} h={14} />
+            </div>
+          </SkeletonCard>
+        ))}
+      </div>
     </Skeleton>
   );
 }

@@ -13,7 +13,7 @@ import { MoodPicker } from "@/components/reflection/MoodPicker";
 import { StampChip } from "@/components/art/StampIcon";
 import { Busy } from "@/components/ui/Busy";
 import { Button } from "@/components/ui/Button";
-import { ReflectionSkeleton } from "@/components/skeletons/ScreenSkeletons";
+import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
 import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
 
@@ -29,7 +29,7 @@ const DAILY_PROMPTS = [
 
 export default function DailyPage() {
   return (
-    <Suspense fallback={<ReflectionSkeleton />}>
+    <Suspense fallback={<DailySkeleton />}>
       <DailyContent />
     </Suspense>
   );
@@ -130,7 +130,7 @@ function DailyContent() {
   // If there's saved data and user hasn't entered edit mode, show saved view
   const showSavedView = editing === null;
 
-  if (isLoading) return <ReflectionSkeleton />;
+  if (isLoading) return <DailySkeleton date={date} />;
 
   return (
     <div className="pb-20">
