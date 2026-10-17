@@ -507,3 +507,9 @@ html.kb-open .ana-fab {
 @keyframes lock-breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: 0.7; } }
 @keyframes lock-twinkle { 0%, 100% { transform: scale(1); opacity: 0.45; } 50% { transform: scale(1.6); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .lock-shackle, .lock-lotus, .lock-breathe, .lock-dots circle { animation: none; } }
+
+/* Our pull-to-refresh replaces the browser's (see PullToRefresh). */
+html { overscroll-behavior-y: none; }
+.ana-ptr-line { animation: ana-ptr 1.1s ease-in-out infinite; }
+@keyframes ana-ptr { 0% { transform: scaleX(0.05); transform-origin: left; } 50% { transform: scaleX(1); transform-origin: left; } 50.01% { transform-origin: right; } 100% { transform: scaleX(0.05); transform-origin: right; } }
+@media (prefers-reduced-motion: reduce) { .ana-ptr-line { animation: none; } }

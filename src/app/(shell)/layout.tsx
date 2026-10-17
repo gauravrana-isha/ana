@@ -6,6 +6,7 @@ import { SearchDialog } from "@/components/shell/Search";
 import { CacheGuard } from "@/components/shell/CacheGuard";
 import { NavProgress } from "@/components/shell/NavProgress";
 import { TapFeedback } from "@/components/shell/TapFeedback";
+import { PullToRefresh } from "@/components/shell/PullToRefresh";
 import type { NavItem } from "@/components/shell/nav";
 import { requireAppUser } from "@/lib/session";
 import { storageMode } from "@/lib/storage";
@@ -49,6 +50,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       <CacheGuard userId={user.id} />
       <NavProgress />
       <TapFeedback />
+      <PullToRefresh />
     </div>
     </VaultGate>
   );
