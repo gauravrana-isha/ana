@@ -30,6 +30,7 @@ import { DeleteMark, PlusMark } from "@/components/art/PenMarks";
 import { createPractice, deletePractice } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Segmented } from "@/components/ui/Segmented";
+import { lockScroll } from "@/lib/scroll-lock";
 
 const ICON_OPTIONS = [
   "Leaf", "Flower", "FlowerLotus", "Sun", "SunHorizon", "Moon", "Star", "Sparkle",
@@ -64,11 +65,10 @@ export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    const { overflow } = document.body.style;
-    document.body.style.overflow = "hidden";
+    const unlock = lockScroll();
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = overflow;
+      unlock();
       window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);

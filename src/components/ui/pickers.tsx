@@ -12,6 +12,7 @@ import { Chevron, RoundArrowButton } from "./Arrows";
 import { CrossMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
+import { lockScroll } from "@/lib/scroll-lock";
 
 /*
  * ana's own date and time pickers. Used everywhere instead of the browser/device pickers so
@@ -36,7 +37,11 @@ export function PickerPanel({ open, onClose, title, children, footer }: { open: 
       }
     };
     window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    const unlock = lockScroll();
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      unlock();
+    };
   }, [open, onClose]);
 
   return (

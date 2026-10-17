@@ -7,6 +7,7 @@ import { BusyBar } from "./Busy";
 import { CloseButton } from "@/components/ui/CloseButton";
 import { Portal } from "./Portal";
 import { useVisibleArea } from "@/lib/visual-viewport";
+import { lockScroll } from "@/lib/scroll-lock";
 
 interface SheetProps {
   open: boolean;
@@ -90,11 +91,10 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && !busy && onClose();
-    const { overflow } = document.body.style;
-    document.body.style.overflow = "hidden";
+    const unlock = lockScroll();
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = overflow;
+      unlock();
       window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose, busy]);

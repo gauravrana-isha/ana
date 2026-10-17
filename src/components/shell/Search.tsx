@@ -19,6 +19,7 @@ import { searchIndex } from "@/lib/compute/search";
 import { Glyph } from "@/components/art/Glyphs";
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { NotificationBell } from "./NotificationBell";
+import { lockScroll } from "@/lib/scroll-lock";
 
 /*
  * Search lives on Today: a search field with the bell beside it. Tapping the field opens the
@@ -159,12 +160,11 @@ export function SearchDialog() {
         history.back();
       } else reset();
     };
-    const { overflow } = document.body.style;
-    document.body.style.overflow = "hidden";
+    const unlock = lockScroll();
     window.addEventListener("popstate", onPop);
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = overflow;
+      unlock();
       window.removeEventListener("popstate", onPop);
       window.removeEventListener("keydown", onKey);
     };

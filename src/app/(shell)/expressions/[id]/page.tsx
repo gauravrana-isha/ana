@@ -22,6 +22,7 @@ import { CloseButton } from "@/components/ui/CloseButton";
 import { DetailBar } from "@/components/ui/DetailBar";
 import { BackMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
+import { lockScroll } from "@/lib/scroll-lock";
 
 /**
  * One moment, in full: its media at full size (photos open fullscreen), the whole text, the
@@ -176,11 +177,10 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
       if (e.key === "ArrowRight") go(1);
       if (e.key === "ArrowLeft") go(-1);
     };
-    const { overflow } = document.body.style;
-    document.body.style.overflow = "hidden";
+    const unlock = lockScroll();
     window.addEventListener("keydown", key);
     return () => {
-      document.body.style.overflow = overflow;
+      unlock();
       window.removeEventListener("keydown", key);
     };
   }, [open, go, onIndex]);

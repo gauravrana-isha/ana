@@ -513,12 +513,12 @@ function Invites() {
                 <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 80))} placeholder="e.g. Saturday satsang group" className="mt-2 w-full h-11 px-4 rounded-[14px] bg-surface-2 text-ink font-ui text-[15px] outline-none border border-transparent focus:border-accent" />
               </label>
               <div>
-                <span className="font-ui text-[13px] font-semibold text-ink">How many can use it</span>
-                <Segmented className="mt-2" label="How many can use it" value={uses} onChange={setUses} options={USES.map((u) => ({ value: u.value, name: u.name, label: u.label }))} />
+                <span className="block font-ui text-[13px] font-semibold text-ink">How many can use it</span>
+                <Segmented className="mt-2.5" label="How many can use it" value={uses} onChange={setUses} options={USES.map((u) => ({ value: u.value, name: u.name, label: u.label }))} />
               </div>
               <div>
-                <span className="font-ui text-[13px] font-semibold text-ink">Works for</span>
-                <Segmented className="mt-2" label="Works for" value={days} onChange={setDays} options={DAYS.map((d) => ({ value: d.value, name: d.name, label: d.label }))} />
+                <span className="block font-ui text-[13px] font-semibold text-ink">Works for</span>
+                <Segmented className="mt-2.5" label="Works for" value={days} onChange={setDays} options={DAYS.map((d) => ({ value: d.value, name: d.name, label: d.label }))} />
               </div>
               <Button onClick={() => create.mutate()} loading={create.isPending} className="self-start">Make invite</Button>
             </div>
