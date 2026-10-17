@@ -80,7 +80,7 @@ export function VaultGate({
     );
   }
 
-  if (state.status === "locked" && status) return <Unlock userId={user.id} status={status} />;
+  if (state.status === "locked" && status) return <Unlock userId={user.id} email={user.email} status={status} />;
 
   if (!sealed) return <Sealing me={user} first={justSetUp} onDone={() => setSealed(true)} />;
 

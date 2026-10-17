@@ -24,7 +24,7 @@ type Mode = "choose" | "device" | "passphrase" | "words";
  * unlock it once with a passkey, another signed-in device, a passphrase or the recovery
  * words. After that, ana opens here as usual.
  */
-export function Unlock({ userId, status }: { userId: string; status: VaultStatus }) {
+export function Unlock({ userId, email, status }: { userId: string; email?: string; status: VaultStatus }) {
   const [mode, setMode] = useState<Mode>("choose");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -83,7 +83,7 @@ export function Unlock({ userId, status }: { userId: string; status: VaultStatus
         </div>
       )}
 
-      {mode === "device" && <FromDevice userId={userId} status={status} />}
+      {mode === "device" && <FromDevice userId={userId} email={email} status={status} />}
 
       {mode === "passphrase" && (
         <SecretForm
@@ -228,7 +228,7 @@ function WordsForm({ userId, status }: { userId: string; status: VaultStatus }) 
   );
 }
 
-function FromDevice({ userId, status }: { userId: string; status: VaultStatus }) {
+function FromDevice({ userId, email, status }: { userId: string; email?: string; status: VaultStatus }) {
   const [code, setCode] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [round, setRound] = useState(0);
@@ -254,7 +254,7 @@ function FromDevice({ userId, status }: { userId: string; status: VaultStatus })
     <div>
       <ScreenTitle title="Use a device you're signed in on" lead="On a phone or computer where ana is already open:" />
       <ol className="mt-5 flex flex-col gap-2.5 font-ui text-[15px] leading-[1.5] text-ink">
-        <li className="flex gap-3"><Num n={1} /><span>Open <b className="font-semibold">Profile</b>, then <b className="font-semibold">Privacy &amp; keys</b>.</span></li>
+        <li className="flex gap-3"><Num n={1} /><span>Open <b className="font-semibold">Profile</b>, then <b className="font-semibold">Privacy &amp; keys</b>{email ? <> (signed in as <b className="font-semibold break-all">{email}</b>)</> : null}.</span></li>
         <li className="flex gap-3"><Num n={2} /><span>Tap <b className="font-semibold">Let in a new device</b> and type this code:</span></li>
       </ol>
       <div className="mt-5 rounded-[20px] bg-surface px-5 py-6 text-center">

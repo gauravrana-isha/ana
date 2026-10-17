@@ -614,6 +614,7 @@ export async function requestLink(userId: string, status: VaultStatus) {
 export async function approveLink(code: string) {
   if (!raw) throw new VaultLockedError();
   const res = await fetch("/api/vault/link", { cache: "no-store" });
+  if (!res.ok) throw new Error("Couldn't check for waiting devices. Try again.");
   const pending = ((await res.json().catch(() => ({}))).requests ?? []) as { id: string; publicKey: string }[];
   for (const r of pending) {
     if ((await linkCode(r.publicKey)) !== code) continue;
@@ -623,7 +624,12 @@ export async function approveLink(code: string) {
     await postJSON(`/api/vault/link/${r.id}`, { response }, "PUT");
     return;
   }
-  throw new WrongKeyError("No device is waiting with that code. Check it, or start again on the new device.");
+  // Say which it is: nothing waiting at all usually means the new device is signed in to another account.
+  throw new WrongKeyError(
+    pending.length
+      ? "That code doesn't match the device that's waiting. Check the letters, or start again on the new device."
+      : "No device is waiting for this account. Make sure the new device is signed in with the same email and showing a code."
+  );
 }
 
 /** For showing a phrase as numbered words. */

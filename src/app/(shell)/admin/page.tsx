@@ -161,9 +161,14 @@ export default function AdminPage() {
                   )}
                 </button>
 
-                <div className="hidden sm:flex items-center gap-1.5">
-                  <StatusActions u={u} isMe={isMe} busy={rowBusy(u.id)} onChange={(body) => change.mutate({ id: u.id, body })} />
-                </div>
+                {(u.status === "PENDING" || isMe) && (
+                  <div className="hidden sm:flex items-center gap-1.5">
+                    <StatusActions u={u} isMe={isMe} busy={rowBusy(u.id)} onChange={(body) => change.mutate({ id: u.id, body })} />
+                  </div>
+                )}
+                {u.status === "SUSPENDED" && (
+                  <span className="inline-flex items-center h-7 px-2.5 rounded-full bg-danger/10 font-ui text-[12px] font-semibold text-danger">Paused</span>
+                )}
                 <button
                   type="button"
                   onClick={() => setOpenId(open ? null : u.id)}
@@ -183,9 +188,11 @@ export default function AdminPage() {
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   >
                     <div className="px-4 pb-4 space-y-4">
-                      <div className="flex sm:hidden gap-1.5 flex-wrap border-t border-line pt-4">
-                        <StatusActions u={u} isMe={isMe} busy={rowBusy(u.id)} onChange={(body) => change.mutate({ id: u.id, body })} />
-                      </div>
+                      {u.status === "PENDING" && !isMe && (
+                        <div className="flex sm:hidden gap-1.5 flex-wrap border-t border-line pt-4">
+                          <StatusActions u={u} isMe={isMe} busy={rowBusy(u.id)} onChange={(body) => change.mutate({ id: u.id, body })} />
+                        </div>
+                      )}
 
                       <div>
                         <h3 className="font-ui text-[13px] font-semibold text-ink mb-2">Can use</h3>
@@ -228,7 +235,10 @@ export default function AdminPage() {
                         </Fact>
                       </dl>
 
-                      <div className="flex flex-wrap items-center justify-end gap-3">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {!isMe && u.status !== "PENDING" && (
+                          <StatusActions u={u} isMe={isMe} busy={rowBusy(u.id)} onChange={(body) => change.mutate({ id: u.id, body })} />
+                        )}
                         {!isMe && (
                           <Button
                             size="sm"
