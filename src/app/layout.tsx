@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import Script from "next/script";
 import { Fraunces, Public_Sans } from "next/font/google";
 import { Providers } from "./providers";
 import { SplashController } from "@/components/shell/SplashController";
@@ -99,7 +100,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
+        {/* Written into the page's head on the server, so it runs before the first paint. */}
+        <Script id="ana-splash" strategy="beforeInteractive">
+          {SPLASH_SCRIPT}
+        </Script>
       </head>
       <body className="font-ui antialiased min-h-dvh">
         <div className="ana-splash" aria-hidden="true" />
