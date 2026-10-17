@@ -19,6 +19,7 @@ import { deleteMoment } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Chevron } from "@/components/ui/Arrows";
 import { Glyph } from "@/components/art/Glyphs";
+import { updateMomentsCopy } from "@/lib/moments-client";
 
 export const STAMP_LABEL: Record<string, string> = {
   growth: "Growth", struggle: "Struggle", insight: "Insight", stillness: "Stillness", devotion: "Devotion",
@@ -56,7 +57,7 @@ export function useDeleteMoment() {
       toast("Couldn't delete. Please try again.", "error");
       return false;
     }
-    qc.setQueryData<Moment[]>(["moments", "all"], (list) => list?.filter((m) => m.id !== moment.id));
+    updateMomentsCopy(qc, (list) => list.filter((m) => m.id !== moment.id));
     toast("Moment deleted", "success", 1800);
     qc.invalidateQueries({ queryKey: ["moments"] });
     qc.invalidateQueries({ queryKey: ["people"] });

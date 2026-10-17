@@ -13,6 +13,8 @@ import { ConnectivityIndicator } from "@/components/shell/ConnectivityIndicator"
 import { ThemeColor } from "@/components/shell/ThemeColor";
 import { ToastProvider } from "@/components/ui/Toast";
 import { reportError } from "@/lib/report";
+import { isSealed } from "@/lib/vault/crypto";
+import { isUnlocked, openDeep, seal, waitForUnlock } from "@/lib/vault/vault";
 import { ConfirmProvider } from "@/components/ui/Confirm";
 
 export const QUERY_CACHE_KEY = "ana-query-cache";
@@ -42,9 +44,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [persister] = useState(() =>
     createAsyncStoragePersister({
       key: QUERY_CACHE_KEY,
+      // The copy on this device is encrypted with the journal key, like everything on the
+      // server: it's opened once the device is unlocked, and only written while it is.
       storage: {
-        getItem: (k) => get<string>(k).then((v) => v ?? null),
-        setItem: (k, v) => set(k, v),
+        getItem: async (k) => {
+          const stored = await get<string>(k).catch(() => undefined);
+          if (!stored) return null;
+          if (!isSealed(stored)) {
+            await del(k).catch(() => {}); // an older plain copy: dropped
+            return null;
+          }
+          if (!(await waitForUnlock())) return null;
+          return openDeep(stored).catch(() => null);
+        },
+        setItem: async (k, v) => {
+          if (isUnlocked()) await set(k, await seal(v));
+        },
         removeItem: (k) => del(k),
       },
       throttleTime: 1500,
@@ -74,7 +89,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     persister,
     maxAge: 7 * DAY,
     // Bump when a cached response changes shape, so old copies are dropped once.
-    buster: "v3",
+    buster: "v4",
     dehydrateOptions: {
       shouldDehydrateQuery: (q) => q.state.status === "success" && !NOT_PERSISTED.has(String(q.queryKey[0])),
     },

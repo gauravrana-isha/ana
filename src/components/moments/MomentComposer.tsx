@@ -23,6 +23,7 @@ import { useEagerUploads } from "./useEagerUploads";
 import { plainText } from "./RichText";
 import { CrossMark } from "@/components/art/PenMarks";
 import { Segmented } from "@/components/ui/Segmented";
+import { updateMomentsCopy } from "@/lib/moments-client";
 
 const KINDS: { id: MomentKind; label: string }[] = [
   { id: "writing", label: "Write" },
@@ -179,7 +180,7 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
       const { moment: saved, queued } = await saveMoment(moment ?? null, payload, { people: known, attachments: [...kept, ...uploaded] });
       // Show it at once (offline it only exists here until the connection is back).
       qc.setQueryData(["moments", "one", saved.id], saved);
-      qc.setQueryData<Moment[]>(["moments", "all"], (list) => (list ? [saved, ...list.filter((m) => m.id !== saved.id)] : list));
+      updateMomentsCopy(qc, (list) => [saved, ...list.filter((m) => m.id !== saved.id)]);
       if (queued) {
         toast("Kept on this device. It's saved when you're back online.", "success", 2600);
         uploads.settle();

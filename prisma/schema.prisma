@@ -451,3 +451,16 @@ model InviteCode {
   createdById String
   createdAt   DateTime  @default(now())
 }
+
+/// Something deleted (a moment, a person), kept briefly so other devices can drop their copy
+/// when they next fetch what changed. Swept after 90 days.
+model Deletion {
+  id       String   @id @default(cuid())
+  userId   String
+  /// "moment" | "person"
+  kind     String
+  recordId String
+  at       DateTime @default(now())
+
+  @@index([userId, at])
+}

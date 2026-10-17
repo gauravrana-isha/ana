@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PersonAvatar } from "@/components/people/People";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { FEATURES } from "@/lib/features";
@@ -13,7 +13,8 @@ import { Portal } from "@/components/ui/Portal";
 import { dayHeading } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { BackMark, CrossMark, PlusMark, SearchMark } from "@/components/art/PenMarks";
-import { fetchSearchIndex } from "@/lib/journal";
+import { fetchSearchIndex, syncMoments, type MomentsCopy } from "@/lib/journal";
+import { MOMENTS_KEY } from "@/lib/moments-client";
 import { searchIndex } from "@/lib/compute/search";
 import { Glyph } from "@/components/art/Glyphs";
 import { MomentGlyph } from "@/components/art/MomentIcon";
@@ -191,10 +192,14 @@ export function SearchDialog() {
   }
 
   // Words are sealed, so the search runs here, over an index fetched once while it's open.
+  const qc = useQueryClient();
   const { data: index, isFetching } = useQuery({
     queryKey: ["search-index"],
     enabled: open,
-    queryFn: fetchSearchIndex,
+    queryFn: async () => {
+      const copy = await qc.ensureQueryData({ queryKey: MOMENTS_KEY, queryFn: () => syncMoments(qc.getQueryData<MomentsCopy>(MOMENTS_KEY)) });
+      return fetchSearchIndex(copy.items);
+    },
     staleTime: 60_000,
   });
 

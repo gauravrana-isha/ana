@@ -6,7 +6,7 @@ import { today as todayStr, weekStart } from "./dates";
 import { keys } from "./queries";
 import { isUnlocked, openDeep } from "./vault/vault";
 import {
-  fetchAllMoments,
+  syncMoments,
   fetchCommitment,
   fetchDaily,
   fetchDay,
@@ -45,7 +45,7 @@ const FRESH = 30_000;
 
 type Planned = { key: readonly unknown[]; fn: () => Promise<unknown>; fresh?: number };
 
-function plan(href: string): Planned[] {
+function plan(qc: QueryClient, href: string): Planned[] {
   // Nothing personal can be fetched (or opened) while the journal is locked on this device.
   if (!isUnlocked()) return [];
   const date = todayStr();
@@ -68,7 +68,7 @@ function plan(href: string): Planned[] {
       ? [{ key: ["week-review", week], fn: () => fetchDigest(week, date) }]
       : [{ key: ["weekly", week], fn: () => fetchWeekly(week) }];
   }
-  if (href.startsWith("/expressions")) return [{ key: ["moments", "all"], fn: fetchAllMoments }];
+  if (href.startsWith("/expressions")) return [{ key: ["moments", "all"], fn: () => syncMoments(qc.getQueryData(["moments", "all"])) }];
   if (href.startsWith("/people")) return [{ key: ["people"], fn: () => fetchPeople() }];
   if (href.startsWith("/insights")) return [{ key: ["insights", date], fn: () => fetchInsights(date) }];
   if (href.startsWith("/commitment")) return [{ key: ["commitment"], fn: fetchCommitment }];
@@ -79,7 +79,7 @@ function plan(href: string): Planned[] {
 }
 
 export function prefetchScreen(qc: QueryClient, href: string) {
-  for (const q of plan(href)) {
+  for (const q of plan(qc, href)) {
     qc.prefetchQuery({ queryKey: q.key, queryFn: q.fn, staleTime: q.fresh ?? FRESH }).catch(() => {});
   }
 }

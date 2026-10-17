@@ -1,18 +1,33 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Moment } from "./moment-types";
-import { fetchAllMoments } from "./journal";
+import { syncMoments, type MomentsCopy } from "./journal";
 import { plainText } from "@/components/moments/RichText";
 
 export type MomentFilters = { person?: string; kind?: string; q?: string; stamp?: string; sort?: "newest" | "oldest" };
 
 const PAGE = 20;
 
-/** Every moment, opened on the device (words are sealed, so search and filters run here). */
+export const MOMENTS_KEY = ["moments", "all"] as const;
+
+/**
+ * Every moment, opened on the device (words are sealed, so search and filters run here). The
+ * copy is kept (encrypted) on the device; each refresh fetches only what changed.
+ */
 export function useAllMoments() {
-  return useQuery({ queryKey: ["moments", "all"], queryFn: fetchAllMoments });
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: MOMENTS_KEY,
+    queryFn: () => syncMoments(qc.getQueryData<MomentsCopy>(MOMENTS_KEY)),
+    select: (copy) => copy.items,
+  });
+}
+
+/** Change the device's copy of the moments directly (after saving or deleting one). */
+export function updateMomentsCopy(qc: ReturnType<typeof useQueryClient>, change: (items: Moment[]) => Moment[]) {
+  qc.setQueryData<MomentsCopy>(MOMENTS_KEY, (copy) => (copy ? { ...copy, items: change(copy.items) } : copy));
 }
 
 export function filterMoments(all: Moment[], f: MomentFilters) {

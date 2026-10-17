@@ -100,6 +100,25 @@ export function isUnlocked() {
   return state.status === "unlocked" && !!state.key;
 }
 
+/** Resolves true once this device is unlocked, or false if it turns out locked (or not set up) or takes too long. */
+export function waitForUnlock(timeoutMs = 4000): Promise<boolean> {
+  if (isUnlocked()) return Promise.resolve(true);
+  if (state.status === "none" || state.status === "locked") return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const done = (v: boolean) => {
+      clearTimeout(timer);
+      listeners.delete(check);
+      resolve(v);
+    };
+    const check = () => {
+      if (isUnlocked()) done(true);
+      else if (state.status === "none" || state.status === "locked") done(false);
+    };
+    const timer = setTimeout(() => done(false), timeoutMs);
+    listeners.add(check);
+  });
+}
+
 function key() {
   if (!state.key) throw new VaultLockedError();
   return state.key;

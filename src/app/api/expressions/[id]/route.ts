@@ -72,6 +72,8 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   const files = await db.attachment.findMany({ where: { expressionId: id, userId: user.id } });
   const removed = await db.expression.deleteMany({ where: { id, userId: user.id } });
   if (removed.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // So your other devices drop their copy when they next fetch what changed.
+  await db.deletion.create({ data: { userId: user.id, kind: "moment", recordId: id } });
   await Promise.all(files.map(removeAttachmentFiles));
   return NextResponse.json({ ok: true });
 }

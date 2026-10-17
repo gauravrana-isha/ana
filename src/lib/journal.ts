@@ -156,9 +156,43 @@ export async function saveWeekly(weekStart: string, r: Omit<WeeklyReflection, "w
 
 // ---------- moments ----------
 
+/** The device's copy of every moment, and when it last caught up with the server. */
+export interface MomentsCopy {
+  items: Moment[];
+  syncedAt: string | null;
+}
+
+const newestFirst = (a: Moment, b: Moment) => b.occurredAt.localeCompare(a.occurredAt) || b.createdAt.localeCompare(a.createdAt);
+
+/**
+ * Bring the copy up to date: only what changed since it last caught up (edits, new moments,
+ * people renamed or removed, deletions), or everything when there's no copy yet.
+ */
+export async function syncMoments(copy?: MomentsCopy): Promise<MomentsCopy> {
+  const since = copy?.syncedAt;
+  const res = await fetch(since ? `/api/expressions?since=${encodeURIComponent(since)}` : "/api/expressions");
+  if (!res.ok) {
+    if (copy) return copy;
+    throw new Error("Couldn't load moments");
+  }
+  type Reply = { items: Moment[]; deleted?: string[]; deletedPeople?: string[]; full?: boolean; now: string };
+  const d = await openDeep((await res.json()) as Reply);
+  const changed = d.items.map(normaliseMoment);
+  if (d.full || !copy) return { items: changed.sort(newestFirst), syncedAt: d.now };
+  const gone = new Set(d.deleted ?? []);
+  const gonePeople = new Set(d.deletedPeople ?? []);
+  const byId = new Map(copy.items.map((m) => [m.id, m]));
+  for (const m of changed) byId.set(m.id, m);
+  const items = [...byId.values()]
+    .filter((m) => !gone.has(m.id))
+    .map((m) => (gonePeople.size && m.people.some((p) => gonePeople.has(p.id)) ? { ...m, people: m.people.filter((p) => !gonePeople.has(p.id)) } : m))
+    .sort(newestFirst);
+  return { items, syncedAt: d.now };
+}
+
+/** Every moment, freshly fetched (for one-off jobs like importing). */
 export async function fetchAllMoments(): Promise<Moment[]> {
-  const d = await getOpen<{ items?: Moment[] }>("/api/expressions", {});
-  return (d.items ?? []).map(normaliseMoment);
+  return (await syncMoments()).items;
 }
 
 export async function fetchMoment(id: string): Promise<Moment | null> {
@@ -377,7 +411,11 @@ export async function fetchProfileStats(date: string) {
   return { memberSince: raw.memberSince, month: { daily, weekly: m.weekly, expressions: m.expressions, tracker } };
 }
 
-/** Everything search looks through, opened (fetched once and kept briefly). */
-export async function fetchSearchIndex(): Promise<SearchIndex> {
-  return getOpen<SearchIndex>("/api/search", { moments: [], people: [], daily: [], weekly: [] });
+/** Everything search looks through, opened: people and reflections from the server, moments from the device's copy. */
+export async function fetchSearchIndex(moments: Moment[]): Promise<SearchIndex> {
+  const rest = await getOpen<Omit<SearchIndex, "moments">>("/api/search", { people: [], daily: [], weekly: [] });
+  return {
+    ...rest,
+    moments: moments.map((m) => ({ id: m.id, title: m.title, body: m.body, kind: m.kind, occurredAt: m.occurredAt, date: m.occurredAt, place: m.place, people: m.people.map((p) => ({ person: { name: p.name } })) })),
+  };
 }

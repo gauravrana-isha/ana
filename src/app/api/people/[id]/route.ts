@@ -100,6 +100,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   if (!person) return NextResponse.json({ error: "Not found" }, { status: 404 });
   // Moments stay; they just no longer mention this person.
   await db.person.delete({ where: { id } });
+  await db.deletion.create({ data: { userId: user.id, kind: "person", recordId: id } });
   if (person.photoId) {
     const photo = await db.attachment.findUnique({ where: { id: person.photoId } });
     if (photo) {

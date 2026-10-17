@@ -4,18 +4,44 @@ import { resolveUser } from "@/lib/session";
 import { MomentSchema, lookBackData, momentInclude, ownedIds, serializeMoment } from "@/lib/moments";
 import { MUST_SEAL } from "@/lib/sealed";
 
-/** All of the caller's moments, newest first. Words are sealed, so searching and filtering happen on the device. */
-export async function GET() {
-  const user = await resolveUser("expressions");
-  if (!user) return NextResponse.json({ items: [], hasMore: false });
+const KEEP_DELETIONS_MS = 90 * 24 * 3600_000;
 
-  const rows = await db.expression.findMany({
-    where: { userId: user.id },
-    relationLoadStrategy: "join",
-    include: momentInclude,
-    orderBy: [{ occurredAt: { sort: "desc", nulls: "last" } }, { date: "desc" }, { createdAt: "desc" }],
+/**
+ * The caller's moments, newest first. Words are sealed, so searching and filtering happen on
+ * the device, which keeps its own (encrypted) copy. With ?since=<time from the last reply>, only
+ * what changed since: moments edited or added (or whose people changed), and what was deleted.
+ * A copy older than the deletion record gets everything again (`full: true`).
+ */
+export async function GET(req: NextRequest) {
+  const user = await resolveUser("expressions");
+  if (!user) return NextResponse.json({ items: [], deleted: [], full: true, now: new Date().toISOString() });
+
+  const now = new Date();
+  const sinceParam = req.nextUrl.searchParams.get("since");
+  const since = sinceParam ? new Date(sinceParam) : null;
+  const full = !since || isNaN(since.getTime()) || now.getTime() - since.getTime() > KEEP_DELETIONS_MS;
+  // A little overlap, so nothing saved at the same moment as the last reply is missed.
+  const after = full ? null : new Date(since!.getTime() - 5_000);
+
+  const [rows, deletions] = await Promise.all([
+    db.expression.findMany({
+      where: {
+        userId: user.id,
+        ...(after ? { OR: [{ updatedAt: { gt: after } }, { people: { some: { person: { updatedAt: { gt: after } } } } }] } : {}),
+      },
+      relationLoadStrategy: "join",
+      include: momentInclude,
+      orderBy: [{ occurredAt: { sort: "desc", nulls: "last" } }, { date: "desc" }, { createdAt: "desc" }],
+    }),
+    after ? db.deletion.findMany({ where: { userId: user.id, at: { gt: after } }, select: { kind: true, recordId: true } }) : [],
+  ]);
+  return NextResponse.json({
+    items: rows.map(serializeMoment),
+    deleted: deletions.filter((d) => d.kind === "moment").map((d) => d.recordId),
+    deletedPeople: deletions.filter((d) => d.kind === "person").map((d) => d.recordId),
+    full,
+    now: now.toISOString(),
   });
-  return NextResponse.json({ items: rows.map(serializeMoment), hasMore: false, nextCursor: null });
 }
 
 export async function POST(req: NextRequest) {
