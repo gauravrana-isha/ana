@@ -94,6 +94,21 @@ export function PullToRefresh() {
     };
   }, [qc, router]);
 
+  // The page follows the pull (and springs back), opening room for the coil above it.
+  // Only while pulling (a transform on the page would unpin anything fixed inside it); after
+  // springing back, the page is left untransformed again.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--ptr", `${pull}px`);
+    root.classList.toggle("ptr-drag", dragging);
+    if (pull > 0) {
+      root.classList.add("ptr-on");
+      return;
+    }
+    const t = setTimeout(() => root.classList.remove("ptr-on"), 320);
+    return () => clearTimeout(t);
+  }, [pull, dragging]);
+
   if (!pull && !busy) return null;
   const amount = Math.min(1, pull / READY);
   return (
@@ -105,18 +120,19 @@ export function PullToRefresh() {
         className="lg:hidden fixed left-1/2 z-[70] pointer-events-none"
         style={{
           top: "var(--safe-top)",
-          transform: `translate(-50%, ${Math.max(0, pull - 28)}px)`,
+          transform: `translate(-50%, ${Math.max(0, (pull - 48) / 2)}px)`,
           transition: dragging ? "none" : "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        <span className="grid place-items-center w-11 h-11 rounded-full bg-bg border border-line shadow-[var(--shadow-lift)] text-accent">
+        {/* No bubble: the page slides down as you pull, and the coil sits in the space that opens above it. */}
+        <span className="grid place-items-center w-12 h-12 text-accent">
           {/* Turning: with the pull while dragging (a full turn by the mark), on its own while refreshing. */}
           <span
             aria-hidden="true"
             className={cn("block", busy ? "ana-coil" : "ana-coil-shape")}
             style={{
-              width: 24,
-              height: 30,
+              width: 32,
+              height: 40,
               ...(busy ? {} : { transform: `rotate(${Math.round(pull * 4)}deg) scale(${amount >= 1 ? 1.08 : 0.85 + amount * 0.15})`}),
             }}
           />

@@ -566,3 +566,9 @@ body:has([data-bare]) .ana-tabbar { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .ana-ink ellipse { animation-duration: 2.4s; }
 }
+
+/* Pull to refresh: the page slides down with the pull and springs back after. */
+@media (max-width: 1023px) {
+  html.ptr-on .ana-page { transform: translateY(var(--ptr, 0px)); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  html.ptr-on.ptr-drag .ana-page { transition: none; }
+}
