@@ -33,6 +33,8 @@ model User {
   place               String?
   /// "Who am I?" comes back every this many months (0 = never).
   portraitEveryMonths Int         @default(3)
+  /// When this person last used the app (updated at most every 10 minutes).
+  lastSeenAt          DateTime?
   /// IANA time zone from the browser (e.g. "Asia/Kolkata"), so reminders arrive at a sensible hour.
   timeZone            String?
   createdAt           DateTime    @default(now())

@@ -34,13 +34,17 @@ interface AdminUser {
 const QUOTA = 200 * 1024 * 1024;
 
 /** "Today", "Yesterday", "3 days ago", or a date: sign-in activity is known to the day. */
+/** Calendar days in your own time: "Today, 4:12 pm", "Yesterday, 9:40 am", "Tue 13 Oct", then a full date. */
 function activeLabel(iso: string | null) {
   if (!iso) return "Not signed in";
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 30) return `${days} days ago`;
-  return dateFmt.format(new Date(iso));
+  const at = new Date(iso);
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((day(new Date()) - day(at)) / 86_400_000);
+  const time = at.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }).toLowerCase();
+  if (days <= 0) return `Today, ${time}`;
+  if (days === 1) return `Yesterday, ${time}`;
+  if (days < 7) return at.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  return dateFmt.format(at);
 }
 
 const TABS: { key: Status | "ALL"; label: string }[] = [

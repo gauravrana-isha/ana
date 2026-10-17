@@ -18,14 +18,16 @@ export async function GET() {
       role: true,
       status: true,
       onboardedAt: true,
+      lastSeenAt: true,
       createdAt: true,
       features: { select: { feature: true, allowed: true, enabled: true } },
     },
   });
 
   // Admins see what they need to let people in and look after storage, never anything
-  // people write or track: when they were last active (from sign-in sessions), when they
-  // joined, and how much storage they use.
+  // people write or track: when they were last active, when they joined, and how much
+  // storage they use. "Last active" is the app's own last-seen time (to ~10 minutes), or for
+  // people not seen since it was added, their latest sign-in session.
   const ids = users.map((u) => u.id);
   const [storage, sessions] = await Promise.all([
     db.attachment.groupBy({ by: ["userId"], where: { userId: { in: ids } }, _sum: { size: true } }),
@@ -34,11 +36,11 @@ export async function GET() {
   const used = new Map(storage.map((s) => [s.userId, s._sum.size ?? 0]));
   const seen = new Map(sessions.map((s) => [s.userId, s._max.updatedAt]));
   return NextResponse.json({
-    users: users.map((u) => ({
-      ...u,
-      storageBytes: used.get(u.id) ?? 0,
-      lastActiveAt: seen.get(u.id)?.toISOString() ?? null,
-    })),
+    users: users.map(({ lastSeenAt, ...u }) => {
+      const session = seen.get(u.id) ?? null;
+      const last = lastSeenAt && (!session || lastSeenAt > session) ? lastSeenAt : session;
+      return { ...u, storageBytes: used.get(u.id) ?? 0, lastActiveAt: last?.toISOString() ?? null };
+    }),
     me: admin.id,
   });
 }

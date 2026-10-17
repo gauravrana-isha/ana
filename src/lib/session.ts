@@ -9,6 +9,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** Same as Auth.js: sessions last 30 days and are pushed forward at most once a day. */
 const SESSION_MAX_AGE_MS = 30 * DAY_MS;
 const SESSION_UPDATE_AGE_MS = DAY_MS;
+const SEEN_EVERY_MS = 10 * 60 * 1000;
 
 /**
  * The signed-in user with their feature rows, whatever their status.
@@ -35,6 +36,10 @@ export const getCurrentUser = cache(async () => {
       .catch(() => {});
   }
   const user = session.user;
+  // "Last seen" for the admin page: at most one small write every 10 minutes. Not awaited.
+  if (!user.lastSeenAt || Date.now() - user.lastSeenAt.getTime() > SEEN_EVERY_MS) {
+    db.user.update({ where: { id: user.id }, data: { lastSeenAt: new Date() } }).catch(() => {});
+  }
   return { ...user, effective: effectiveFeatures(user.features) };
 });
 
