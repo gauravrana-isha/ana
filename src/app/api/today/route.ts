@@ -77,7 +77,10 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => a.inDays - b.inDays);
 
   const answers = (daily?.answers ?? {}) as Record<string, string>;
-  const answered = Object.values(answers).filter((v) => typeof v === "string" && v.trim()).length;
+  // A question counts as answered with words written or a stamp chosen.
+  const stamps = (daily?.stamps ?? {}) as Record<string, string[]>;
+  const keys = new Set([...Object.keys(answers), ...Object.keys(stamps)]);
+  const answered = [...keys].filter((k) => (typeof answers[k] === "string" && answers[k].trim()) || (stamps[k]?.length ?? 0) > 0).length;
 
   return NextResponse.json({
     lookBack: lookBack.map(serializeMoment),

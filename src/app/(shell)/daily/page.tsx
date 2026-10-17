@@ -99,6 +99,9 @@ function DailyContent() {
       setSyncedFrom(qc.getQueryData(["daily", date]));
       if (version === edits.current) setDirty(false);
       if (close) setEditing(null);
+      // Today shows "x of 7 answered", Profile counts reflection days: refresh both.
+      qc.invalidateQueries({ queryKey: ["today"] });
+      qc.invalidateQueries({ queryKey: ["profile-stats"] });
     },
   });
   const save = (close: boolean) => mutation.mutate({ close, version: edits.current });

@@ -47,7 +47,8 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
   const isMood = step === prompts.length;
   const prompt = prompts[step];
   const last = step === total - 1;
-  const answered = (i: number) => (i < prompts.length ? !!answers[prompts[i].key]?.trim() : !!mood);
+  // Words or a stamp both count as an answer.
+  const answered = (i: number) => (i < prompts.length ? !!answers[prompts[i].key]?.trim() || (stamps[prompts[i].key]?.length ?? 0) > 0 : !!mood);
 
   function go(to: number) {
     if (to < 0 || to >= total || to === step) return;

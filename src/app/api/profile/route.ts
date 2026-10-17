@@ -14,13 +14,18 @@ export async function GET(req: NextRequest) {
   const end = new Date(Date.UTC(y, m, 1));
 
   const [dailies, weeklies, moments, logs] = await Promise.all([
-    db.dailyReflection.findMany({ where: { userId: user.id, date: { gte: start, lt: end } }, select: { answers: true, moodKey: true } }),
+    db.dailyReflection.findMany({ where: { userId: user.id, date: { gte: start, lt: end } }, select: { answers: true, stamps: true, moodKey: true } }),
     db.weeklyReflection.count({ where: { userId: user.id, weekStart: { gte: start, lt: end } } }),
     db.expression.count({ where: { userId: user.id, OR: [{ occurredAt: { gte: start, lt: end } }, { occurredAt: null, date: { gte: start, lt: end } }] } }),
     db.dayLog.findMany({ where: { userId: user.id, date: { gte: start, lt: end } }, select: { entries: true } }),
   ]);
 
-  const answeredDays = dailies.filter((d) => d.moodKey || Object.values((d.answers ?? {}) as Record<string, string>).some((v) => typeof v === "string" && v.trim())).length;
+  const answeredDays = dailies.filter(
+    (d) =>
+      d.moodKey ||
+      Object.values((d.answers ?? {}) as Record<string, string>).some((v) => typeof v === "string" && v.trim()) ||
+      Object.values((d.stamps ?? {}) as Record<string, string[]>).some((v) => v?.length)
+  ).length;
   const practiceDays = logs.filter((l) =>
     Object.values((l.entries ?? {}) as Record<string, { done?: boolean; values?: Record<string, unknown> }>).some(
       (e) => e?.done || Object.values(e?.values ?? {}).some((v) => v !== "" && v !== 0 && v != null)
