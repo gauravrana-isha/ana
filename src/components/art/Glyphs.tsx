@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { CalendarMark, TimeMark } from "./PenMarks";
 
 /*
  * ana's line icons, drawn in the same hand as the navigation and moment glyphs: a 48-unit
@@ -102,6 +103,9 @@ function Drawing({ k }: { k: GlyphKey }) {
 }
 
 export function Glyph({ k, size = 18, className, strokeWidth = 2.6 }: { k: GlyphKey; size?: number; className?: string; strokeWidth?: number }) {
+  // Dates and times are pen-drawn, like the tick and the other marks.
+  if (k === "calendar") return <CalendarMark size={size} className={cn("shrink-0", className)} />;
+  if (k === "clock") return <TimeMark size={size} className={cn("shrink-0", className)} />;
   const solid = SOLID.has(k);
   return (
     <svg
