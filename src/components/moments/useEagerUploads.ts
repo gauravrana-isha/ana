@@ -28,7 +28,7 @@ async function discard(id: string) {
  * by the time you've written a title and tagged people, the file is usually already up.
  * Removed items are deleted (or cancelled), and `discardAll` cleans up if the moment is abandoned.
  */
-export function useEagerUploads(items: Item[], me: { id: string; storage: "r2" | "blob" | "local" } | undefined) {
+export function useEagerUploads(items: Item[], me: { id: string; storage: "r2" | "local" } | undefined) {
   const [states, setStates] = useState<Record<string, UploadState>>({});
   const jobs = useRef(new Map<string, Job>());
   /** Jobs whose item was removed (or the sheet closed) before the upload finished. */

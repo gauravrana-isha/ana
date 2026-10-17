@@ -4,24 +4,19 @@ import { createReadStream } from "node:fs";
 import { mkdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { del, get, head } from "@vercel/blob";
 import { AwsClient } from "aws4fetch";
 import { db } from "./db";
 
 /**
- * Where moment media lives. New files go to a private Cloudflare R2 bucket (R2_BUCKET set),
- * otherwise to the private Vercel Blob store (older files stay readable where they are).
- * Files are never public: every read goes through /api/media/[id] after an ownership check.
- * Local development without either falls back to a folder on disk.
+ * Where moment media lives: a private Cloudflare R2 bucket (R2_BUCKET set). Files are never
+ * public: every read goes through /api/media/[id] after an ownership check. Local
+ * development without R2 falls back to a folder on disk.
  */
-export type StorageMode = "r2" | "blob" | "local";
+export type StorageMode = "r2" | "local";
 
 export function storageMode(): StorageMode {
   if (process.env.R2_BUCKET) return "r2";
-  if (process.env.BLOB_READ_WRITE_TOKEN) return "blob";
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("BLOB_READ_WRITE_TOKEN is required in production");
-  }
+  if (process.env.NODE_ENV === "production") throw new Error("R2_BUCKET is required in production");
   return "local";
 }
 
@@ -123,16 +118,6 @@ function r2Fetch(pathname: string, init: RequestInit = {}) {
   return r2.fetch(r2Url(pathname), init);
 }
 
-/** Copy a file from the Blob store to R2 under the same name (moving storage over). */
-export async function copyBlobToR2(pathname: string, contentType: string) {
-  const res = await get(pathname, { access: "private" });
-  if (!res || res.statusCode !== 200) throw new Error("Not in Blob");
-  const body = Buffer.from(await new Response(res.stream).arrayBuffer());
-  const out = await r2Fetch(pathname, { method: "PUT", body, headers: { "Content-Type": contentType, "Content-Length": String(body.length) } });
-  if (!out.ok) throw new Error(`R2 refused (${out.status})`);
-  return body.length;
-}
-
 // ---------------------------------------------------------------- local (dev only)
 
 const LOCAL_ROOT = path.join(process.cwd(), ".uploads");
@@ -158,7 +143,6 @@ export async function uploadedSize(storage: StorageMode, pathname: string): Prom
       const res = await r2Fetch(pathname, { method: "HEAD" });
       return res.ok ? Number(res.headers.get("content-length") ?? 0) : null;
     }
-    if (storage === "blob") return (await head(pathname)).size;
     return (await stat(localPath(pathname))).size;
   } catch {
     return null;
@@ -168,7 +152,6 @@ export async function uploadedSize(storage: StorageMode, pathname: string): Prom
 export async function removeStored(storage: string, pathname: string) {
   try {
     if (storage === "r2") await r2Fetch(pathname, { method: "DELETE" });
-    else if (storage === "blob") await del(pathname);
     else await unlink(localPath(pathname));
   } catch {
     /* already gone */
@@ -223,15 +206,6 @@ export async function streamStored(
     const res = await r2Fetch(file.pathname, { headers: partial ? { Range: `bytes=${start}-${end}` } : {} });
     if (!res.ok || !res.body) return new Response("Not found", { status: 404 });
     return new Response(res.body, { status: partial ? 206 : 200, headers });
-  }
-
-  if (file.storage === "blob") {
-    const res = await get(file.pathname, {
-      access: "private",
-      headers: partial ? { Range: `bytes=${start}-${end}` } : undefined,
-    });
-    if (!res || res.statusCode !== 200) return new Response("Not found", { status: 404 });
-    return new Response(res.stream, { status: partial ? 206 : 200, headers });
   }
 
   const node = createReadStream(localPath(file.pathname), { start, end });

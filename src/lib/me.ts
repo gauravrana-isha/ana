@@ -13,7 +13,7 @@ export interface Me {
   status: string;
   features: FeatureKey[];
   allowedFeatures: FeatureKey[];
-  storage: "r2" | "blob" | "local";
+  storage: "r2" | "local";
   intention: string | null;
   preferredName: string | null;
   photoId: string | null;

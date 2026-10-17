@@ -119,7 +119,6 @@ export default function AdminPage() {
         />
       </div>
 
-      <StorageStatus />
       <RecentErrors />
 
       <div className="mt-6 flex flex-col gap-2">
@@ -268,64 +267,6 @@ export default function AdminPage() {
           );
         })}
       </div>
-    </div>
-  );
-}
-
-/**
- * Where files are stored: always shown, so a problem is visible instead of hidden. While R2
- * is set up and older files are still in the Blob store, it offers to move them.
- */
-function StorageStatus() {
-  const qc = useQueryClient();
-  const { toast } = useToast();
-  const [moving, setMoving] = useState(false);
-  const { data, error, isPending } = useQuery({
-    queryKey: ["admin-storage"],
-    queryFn: async (): Promise<{ mode: string; onBlob: number }> => {
-      const res = await fetch("/api/admin/storage", { cache: "no-store" });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? `status ${res.status}`);
-      return body;
-    },
-    retry: 1,
-  });
-
-  async function move() {
-    setMoving(true);
-    try {
-      for (;;) {
-        const res = await fetch("/api/admin/storage", { method: "POST" });
-        const batch: { moved: number; failed: number; onBlob: number; error?: string } = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(batch.error ?? `status ${res.status}`);
-        qc.setQueryData(["admin-storage"], { mode: "r2", onBlob: batch.onBlob });
-        if (!batch.onBlob) return toast("All files are on R2 now", "success");
-        if (!batch.moved) return toast(`${batch.onBlob} files couldn't be moved. Try again later.`, "error");
-      }
-    } catch (e) {
-      toast(`Moving stopped (${e instanceof Error ? e.message : "error"}). Try again.`, "error");
-    } finally {
-      setMoving(false);
-    }
-  }
-
-  const where = data?.mode === "r2" ? "Cloudflare R2" : data?.mode === "blob" ? "Vercel Blob" : data?.mode;
-  return (
-    <div className="mt-4 flex items-center gap-3 rounded-[16px] bg-surface px-4 py-3">
-      <Glyph k="storage" size={20} className="text-accent shrink-0" />
-      <p className="flex-1 min-w-0 font-ui text-[13.5px] text-ink">
-        {isPending ? (
-          <span className="text-ink-soft">Checking storage…</span>
-        ) : error ? (
-          <span className="text-danger">Couldn&rsquo;t check storage ({error.message}).</span>
-        ) : (
-          <>
-            New files go to <span className="font-semibold">{where}</span>.
-            {data!.mode === "r2" && (data!.onBlob ? <> <span className="font-semibold tabular">{data!.onBlob}</span> older {data!.onBlob === 1 ? "file is" : "files are"} still on Vercel Blob.</> : " Every file is there.")}
-          </>
-        )}
-      </p>
-      {data?.mode === "r2" && data.onBlob > 0 && <Button size="sm" onClick={move} loading={moving}>Move to R2</Button>}
     </div>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { upload } from "@vercel/blob/client";
 import { encryptFile } from "./vault/files";
 import { isUnlocked } from "./vault/vault";
 import { reportError } from "./report";
@@ -34,10 +33,10 @@ export function mediaUrl(id: string) {
 
 /**
  * Store a file: encrypted on the device first (once the journal has a key), then straight to
- * private storage (R2, or Blob for older setups) in production, so large videos never touch our server, or to the
+ * private R2 storage in production, so large videos never touch our server, or to the
  * dev server's disk locally. Returns where it landed.
  */
-type Storage = "r2" | "blob" | "local";
+type Storage = "r2" | "local";
 
 /** Where uploads go right now, straight from the server (the app's copy can be out of date). */
 async function currentStorage(): Promise<Storage | null> {
@@ -83,16 +82,6 @@ async function storeAt(
     if (!res.ok) throw new Error(`${data.error ?? "Upload refused"} (link ${res.status})`);
     await putWithProgress(data.url, body, body.type || contentType, opts.onProgress);
     pathname = data.pathname;
-  } else if (opts.storage === "blob") {
-    const res = await upload(`u/${opts.userId}/${kind}/${Date.now()}.${ext}`, body, {
-      access: "private",
-      handleUploadUrl: "/api/uploads",
-      clientPayload: JSON.stringify({ kind, replacing: opts.replacing }),
-      contentType: body.type || contentType,
-      multipart: body.size > 16 * 1024 * 1024,
-      onUploadProgress: (e) => opts.onProgress?.(Math.round(e.percentage)),
-    });
-    pathname = res.pathname;
   } else {
     const form = new FormData();
     form.set("kind", kind);
@@ -143,11 +132,16 @@ export async function uploadMedia(
   opts: { userId: string; storage: Storage; durationSec?: number; onProgress?: (pct: number) => void; thumbnail?: boolean }
 ): Promise<AttachmentDTO> {
   const photo = kind === "photo" && file.type !== "image/gif";
-  const full = photo ? await scalePhoto(file, PHOTO_MAX) : file;
-  const small = photo && opts.thumbnail !== false ? await scalePhoto(file, THUMB_MAX, 0.8) : null;
+  const [full, small] = await Promise.all([
+    photo ? scalePhoto(file, PHOTO_MAX) : file,
+    photo && opts.thumbnail !== false ? scalePhoto(file, THUMB_MAX, 0.8) : null,
+  ]);
 
-  const stored = await storeFile(full ?? file, kind, opts);
-  const thumb = small ? await storeFile(small, kind, { ...opts, onProgress: undefined }).catch(() => null) : null;
+  // The small copy goes up alongside the photo, not after it.
+  const [stored, thumb] = await Promise.all([
+    storeFile(full ?? file, kind, opts),
+    small ? storeFile(small, kind, { ...opts, onProgress: undefined }).catch(() => null) : null,
+  ]);
   const reg = await fetch("/api/attachments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
