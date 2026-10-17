@@ -7,12 +7,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowCounterClockwise, CaretLeft, CaretRight, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
-import { StampIcon, type StampKey } from "@/components/art/StampIcon";
+import { StampChip } from "@/components/art/StampIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { MomentComposer } from "@/components/moments/MomentComposer";
 import { AudioPlayer } from "@/components/moments/Media";
 import { RichText, plainText } from "@/components/moments/RichText";
-import { STAMP_LABEL, lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
+import { lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
 import { MomentPageSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { mediaUrl } from "@/lib/media-client";
 import type { Moment } from "@/lib/moment-types";
@@ -134,10 +134,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
           {moment.stamps.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {moment.stamps.map((s) => (
-                <span key={s} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-line font-ui text-[13px] text-ink-soft">
-                  {s in STAMP_LABEL && <StampIcon k={s as StampKey} size={14} />}
-                  {STAMP_LABEL[s] ?? s}
-                </span>
+                <StampChip key={s} k={s} />
               ))}
             </div>
           )}

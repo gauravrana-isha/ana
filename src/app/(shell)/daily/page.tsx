@@ -10,8 +10,7 @@ import { MoodBadge, type MoodKey } from "@/components/art/MoodFace";
 import { ReflectionStepper } from "@/components/reflection/ReflectionStepper";
 import { PromptCard } from "@/components/reflection/PromptCard";
 import { MoodPicker } from "@/components/reflection/MoodPicker";
-import { STAMP_GUIDE } from "@/components/reflection/StampRow";
-import { StampIcon, type StampKey } from "@/components/art/StampIcon";
+import { StampChip } from "@/components/art/StampIcon";
 import { Busy } from "@/components/ui/Busy";
 import { Button } from "@/components/ui/Button";
 import { ReflectionSkeleton } from "@/components/skeletons/ScreenSkeletons";
@@ -174,10 +173,7 @@ function DailyContent() {
                     {stamps.length > 0 && (
                       <span className="mt-3 flex flex-wrap gap-1.5">
                         {stamps.map((st) => (
-                          <span key={st} className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-line bg-bg/60 font-ui text-[12.5px] text-ink-soft">
-                            {isStamp(st) && <StampIcon k={st} size={13} />}
-                            {STAMP_LABEL[st] ?? st}
-                          </span>
+                          <StampChip key={st} k={st} size="sm" />
                         ))}
                       </span>
                     )}
@@ -251,8 +247,6 @@ function DailyContent() {
   );
 }
 
-const STAMP_LABEL: Record<string, string> = Object.fromEntries(STAMP_GUIDE.map((s) => [s.key, s.label]));
-const isStamp = (s: string): s is StampKey => s in STAMP_LABEL;
 
 /** Bring the item that was tapped into view once the editor opens. */
 function scrollIntoView(el: HTMLElement | null) {

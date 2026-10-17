@@ -8,7 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Check, MagnifyingGlass, Plus, Cards, List, SlidersHorizontal, X } from "@phosphor-icons/react";
 import { MomentGlyph } from "@/components/art/MomentIcon";
-import { StampIcon, type StampKey } from "@/components/art/StampIcon";
+import { StampChip } from "@/components/art/StampIcon";
 import { STAMP_GUIDE } from "@/components/reflection/StampRow";
 import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PickerPanel } from "@/components/ui/pickers";
@@ -230,9 +230,7 @@ function ExpressionsContent() {
             <p className="font-ui text-[13px] font-semibold text-ink mb-2">What it carries</p>
             <div className="flex flex-wrap gap-1.5">
               {STAMP_GUIDE.map((st) => (
-                <button key={st.key} type="button" aria-pressed={stamp === st.key} onClick={() => setStamp(stamp === st.key ? "" : st.key)} className={cn("press inline-flex items-center gap-1.5 h-9 px-3 rounded-full border font-ui text-[13px] font-semibold transition-colors", stamp === st.key ? "bg-accent text-bg border-accent" : "border-line text-ink-soft hover:text-ink")}>
-                  <StampIcon k={st.key as StampKey} size={15} /> {st.label}
-                </button>
+                <StampChip key={st.key} k={st.key} selected={stamp === st.key} onToggle={() => setStamp(stamp === st.key ? "" : st.key)} />
               ))}
             </div>
           </div>

@@ -30,11 +30,11 @@ const KINDS: { id: MomentKind; label: string }[] = [
 ];
 
 const LOOK_BACK = [
-  { id: "none", label: "No" },
-  { id: "1m", label: "In a month" },
-  { id: "6m", label: "In 6 months" },
-  { id: "1y", label: "In a year" },
-  { id: "date", label: "Pick a date" },
+  { id: "none", label: "No", tiny: "No", full: "Don't bring it back" },
+  { id: "1m", label: "1 month", tiny: "1 mo", full: "In a month" },
+  { id: "6m", label: "6 months", tiny: "6 mo", full: "In 6 months" },
+  { id: "1y", label: "1 year", tiny: "1 yr", full: "In a year" },
+  { id: "date", label: "Date", tiny: "Date", full: "On a date I pick" },
 ] as const;
 
 /** Now plus some months, at the same time of day (worked out when saving, not when opened). */
@@ -327,21 +327,30 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
 
         <div>
           <span className="font-ui text-[13px] font-semibold text-ink">Bring it back to me</span>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {LOOK_BACK.map((o) => (
-              <button
-                key={o.id}
-                type="button"
-                aria-pressed={lookBack === o.id}
-                onClick={() => setLookBack(o.id)}
-                className={cn(
-                  "press h-9 px-3.5 rounded-full font-ui text-[13px] font-semibold border transition-colors",
-                  lookBack === o.id ? "bg-accent text-bg border-accent" : "border-line text-ink-soft hover:text-ink"
-                )}
-              >
-                {o.label}
-              </button>
-            ))}
+          {/* One choice, so one control: the filled pill glides to the chosen option. */}
+          <div role="radiogroup" aria-label="Bring it back to me" className="mt-2 grid grid-cols-5 p-1 rounded-full bg-surface">
+            {LOOK_BACK.map((o) => {
+              const on = lookBack === o.id;
+              return (
+                <button
+                  key={o.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  aria-label={o.full}
+                  title={o.full}
+                  onClick={() => setLookBack(o.id)}
+                  className={cn("press relative h-10 rounded-full font-ui text-[12.5px] font-semibold whitespace-nowrap transition-colors", on ? "text-bg" : "text-ink-soft hover:text-ink")}
+                >
+                  {on && <motion.span layoutId="look-back-pill" className="absolute inset-0 rounded-full bg-accent" transition={{ type: "spring", stiffness: 520, damping: 40 }} />}
+                  <span className="relative inline-flex items-center justify-center gap-1">
+                    {on && o.id !== "none" && <ReturnMark key={o.id} date={o.id === "date"} />}
+                    <span className="max-[440px]:hidden">{o.label}</span>
+                    <span className="min-[441px]:hidden">{o.tiny}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
           {lookBack === "date" && (
             <>
@@ -356,5 +365,37 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
         </div>
       </div>
     </Sheet>
+  );
+}
+
+/** The small mark on the chosen "bring it back" option: a returning arrow (half-turn as it lands), or a calendar for a picked date. */
+function ReturnMark({ date }: { date: boolean }) {
+  return (
+    <motion.svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      initial={{ rotate: date ? 0 : -180, scale: 0.6, opacity: 0 }}
+      animate={{ rotate: 0, scale: 1, opacity: 1 }}
+      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {date ? (
+        <>
+          <rect x="4" y="5.5" width="16" height="14.5" rx="3" />
+          <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+        </>
+      ) : (
+        <>
+          <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+          <path d="M19.8 4.2v3.6h-3.6" />
+        </>
+      )}
+    </motion.svg>
   );
 }

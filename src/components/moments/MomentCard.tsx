@@ -11,7 +11,7 @@ import type { Moment } from "@/lib/moment-types";
 import { dayHeading } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { MediaPreview } from "./Media";
-import { StampIcon, type StampKey } from "@/components/art/StampIcon";
+import { StampChip } from "@/components/art/StampIcon";
 import { BusyBar } from "@/components/ui/Busy";
 import { plainText } from "./RichText";
 
@@ -159,10 +159,7 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
             </Link>
           ))}
           {moment.stamps.map((s) => (
-            <span key={s} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-line font-ui text-[12.5px] text-ink-soft">
-              {s in STAMP_LABEL && <StampIcon k={s as StampKey} size={14} />}
-              {STAMP_LABEL[s] ?? s}
-            </span>
+            <StampChip key={s} k={s} />
           ))}
         </footer>
       )}

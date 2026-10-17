@@ -1,7 +1,6 @@
 "use client";
 
-import { StampIcon, type StampKey } from "@/components/art/StampIcon";
-import { cn } from "@/lib/utils";
+import { StampChip, type StampKey } from "@/components/art/StampIcon";
 
 const STAMPS = [
   { key: "growth", label: "Growth" },
@@ -19,27 +18,9 @@ interface StampRowProps {
 export function StampRow({ selected, onToggle }: StampRowProps) {
   return (
     <div className="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-2 mt-2">
-      {STAMPS.map((stamp) => {
-        const isOn = selected.includes(stamp.key);
-        return (
-          <button
-            key={stamp.key}
-            onClick={() => onToggle(stamp.key)}
-            className={cn(
-              "press flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 h-8 px-1.5 sm:px-3 min-w-0 rounded-full border transition-colors text-[12px] sm:text-[12.5px] font-medium",
-              isOn
-                ? "bg-accent-soft border-accent text-accent"
-                : "border-line text-ink-soft hover:text-ink hover:border-ink-soft/40"
-            )}
-            aria-label={stamp.label}
-            aria-pressed={isOn}
-            title={stamp.label}
-          >
-            <StampIcon k={stamp.key} size={14} />
-            <span className="font-ui truncate">{stamp.label}</span>
-          </button>
-        );
-      })}
+      {STAMPS.map((stamp) => (
+        <StampChip key={stamp.key} k={stamp.key} selected={selected.includes(stamp.key)} onToggle={() => onToggle(stamp.key)} className="max-sm:px-1.5 max-sm:gap-1 max-sm:text-[12px]" />
+      ))}
     </div>
   );
 }

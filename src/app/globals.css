@@ -428,3 +428,25 @@ html.kb-open .ana-fab {
 @keyframes ana-tick-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 .ana-tick-reveal { animation: ana-tick-reveal 0.26s cubic-bezier(0.65, 0, 0.35, 1) 0.03s both; }
 @media (prefers-reduced-motion: reduce) { .ana-tick-reveal { animation: none; } }
+
+/* Stamps: each drawing acts once when chosen (.stamp-play is set on the freshly mounted
+   icon), and lifts a touch on hover where hover exists. */
+.stamp-glyph { transition: transform 200ms var(--ease-out-expo); }
+@media (hover: hover) { .stamp-chip:hover .stamp-glyph { transform: translateY(-1px); } }
+.stamp-play .st-leaf-b { transform-box: fill-box; transform-origin: 100% 100%; animation: st-unfold 0.42s var(--ease-out-expo) both; }
+.stamp-play .st-path { stroke-dasharray: 1; animation: st-draw 0.45s cubic-bezier(0.65, 0, 0.35, 1) both; }
+.stamp-play .st-sun { animation: st-rise 0.4s var(--ease-out-expo) both; }
+.stamp-play .st-rays { animation: st-rays 0.4s ease-out 0.12s both; }
+.stamp-play .st-ripple { transform-box: fill-box; transform-origin: center; animation: st-ripple 0.6s ease-out both; }
+.stamp-play .st-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: st-flicker 0.5s ease-out both; }
+.st-ripple { opacity: 0; }
+@keyframes st-unfold { from { transform: rotate(35deg) scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes st-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes st-rise { from { transform: translateY(3px); } to { transform: none; } }
+@keyframes st-rays { from { opacity: 0; } to { opacity: 1; } }
+@keyframes st-ripple { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes st-flicker { 0% { transform: scale(0.6, 0.5); } 45% { transform: scale(1.08, 1.2); } 70% { transform: scale(0.96, 0.94); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .stamp-play .st-leaf-b, .stamp-play .st-path, .stamp-play .st-sun, .stamp-play .st-rays, .stamp-play .st-ripple, .stamp-play .st-flame { animation: none; }
+  .stamp-chip:hover .stamp-glyph { transform: none; }
+}
