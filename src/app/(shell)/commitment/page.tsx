@@ -6,7 +6,7 @@ import { Busy, BusyBar } from "@/components/ui/Busy";
 import { useEffect, useState } from "react";
 import { HELP_EVENT } from "@/components/shell/Topbar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CaretDown, PencilSimple } from "@phosphor-icons/react";
+import { CaretDown } from "@phosphor-icons/react";
 import { Sheet } from "@/components/ui/Sheet";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { usePersistentState } from "@/lib/persist";
@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 import { fetchCommitment, saveCommitment, type Letter } from "@/lib/journal";
+import { EditMark } from "@/components/art/PenMarks";
 
 const REVISIT = [
   { id: "monthly", label: "Every month" },
@@ -167,7 +168,7 @@ export default function CommitmentPage() {
             <div className="flex gap-2">
               {data.due && <Button variant="secondary" onClick={() => patch({ revisited: true })}>I&rsquo;ve read it again</Button>}
               <Button variant="ghost" onClick={() => { setDraft(current.body); setRevisit(current.revisit); setWriting(true); }}>
-                <PencilSimple size={16} /> Rewrite
+                <EditMark size={18} /> Rewrite
               </Button>
             </div>
           </div>

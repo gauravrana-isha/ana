@@ -4,7 +4,7 @@ import { usePersistentState } from "@/lib/persist";
 
 import { useState, useCallback, useMemo } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { PencilSimple, DotsSixVertical } from "@phosphor-icons/react";
+import { DotsSixVertical } from "@phosphor-icons/react";
 import {
   DndContext,
   closestCenter,
@@ -36,6 +36,7 @@ import { today, addDays, weekStart } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { DayLogEntry, DayLogEntries, Practice } from "@/lib/types";
 import { fetchWeek, reorderPractices, saveDay } from "@/lib/journal";
+import { EditMark } from "@/components/art/PenMarks";
 
 export default function TrackerPage() {
   const [date, setDate] = useState(today());
@@ -266,7 +267,7 @@ export default function TrackerPage() {
             onClick={() => setDialogOpen(true)}
             className="font-ui text-[13px] text-accent mt-3 inline-flex items-center gap-1.5"
           >
-            <PencilSimple size={14} />
+            <EditMark size={16} />
             Edit practices
           </button>
         </>

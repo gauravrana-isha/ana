@@ -5,7 +5,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowCounterClockwise, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, MapPin } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { PersonAvatar } from "@/components/people/People";
@@ -20,7 +20,7 @@ import type { Moment } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
 import { Portal } from "@/components/ui/Portal";
 import { CloseButton } from "@/components/ui/CloseButton";
-import { BackMark } from "@/components/art/PenMarks";
+import { BackMark, DeleteMark, EditMark } from "@/components/art/PenMarks";
 
 /**
  * One moment, in full: its media at full size (photos open fullscreen), the whole text, the
@@ -66,18 +66,18 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
   return (
     <article data-bare inert={deleting} className={cn("pb-10 transition-opacity", deleting && "opacity-50")}>
       {/* No page header here: back, Edit and Delete float at the top and stay in reach while reading. */}
-      <div className="sticky top-[max(12px,calc(env(safe-area-inset-top)+6px))] lg:top-6 z-20 -mx-1 mb-4 flex items-center justify-between pointer-events-none">
+      <div className="sticky top-[max(12px,calc(var(--safe-top)+6px))] lg:top-6 z-20 -mx-1 mb-4 flex items-center justify-between pointer-events-none">
         <button type="button" onClick={back} aria-label="Back to moments" className={cn(FLOAT, "pointer-events-auto")}>
           <BackMark size={18} />
         </button>
         {/* Only two things to do here, so both are out in the open: icons on phones, labelled from sm up. */}
         <div className="flex items-center gap-2 pointer-events-auto">
           <button type="button" onClick={() => setEditing(true)} aria-label="Edit moment" className={cn(FLOAT, "sm:w-auto sm:px-4 sm:gap-1.5 sm:flex sm:text-accent")}>
-            <PencilSimple size={17} />
+            <EditMark size={19} />
             <span className="hidden sm:inline font-ui text-[14px] font-semibold">Edit</span>
           </button>
           <button type="button" onClick={remove} aria-label="Delete moment" className={cn(FLOAT, "sm:w-auto sm:px-4 sm:gap-1.5 sm:flex hover:text-danger")}>
-            <Trash size={17} />
+            <DeleteMark size={19} />
             <span className="hidden sm:inline font-ui text-[14px] font-semibold">Delete</span>
           </button>
         </div>
@@ -217,7 +217,7 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
           <AnimatePresence mode="wait" initial={false}>
             <ViewerPhoto key={index} id={photos[index]} />
           </AnimatePresence>
-          <CloseButton onClick={() => onIndex(null)} onDark className="absolute top-[max(14px,env(safe-area-inset-top))] right-4" />
+          <CloseButton onClick={() => onIndex(null)} onDark className="absolute top-[max(14px,var(--safe-top))] right-4" />
           {photos.length > 1 && (
             <>
               <span className="absolute bottom-[max(18px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 font-ui text-[13px] text-white/80 tabular">{index + 1} / {photos.length}</span>

@@ -5,7 +5,7 @@ import { Ornament } from "@/components/art/Ornament";
 import { useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { PencilSimple } from "@phosphor-icons/react";
+
 import { MoodBadge, type MoodKey } from "@/components/art/MoodFace";
 import { ReflectionStepper } from "@/components/reflection/ReflectionStepper";
 import { PromptCard } from "@/components/reflection/PromptCard";
@@ -17,6 +17,7 @@ import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
 import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
 import { fetchDaily, saveDaily } from "@/lib/journal";
+import { EditMark } from "@/components/art/PenMarks";
 
 const DAILY_PROMPTS = [
   { key: "1", q: "How many times a day am I doing the Inner Engineering Crash Course?", hint: undefined },
@@ -190,7 +191,7 @@ function DailyContent() {
                        shadow-[0_6px_16px_var(--accent-soft)] z-20"
             aria-label="Edit reflection"
           >
-            <PencilSimple size={22} weight="thin" />
+            <EditMark size={24} />
           </button>
         </>
       ) : (
@@ -238,7 +239,6 @@ function DailyContent() {
     </div>
   );
 }
-
 
 /** Bring the item that was tapped into view once the editor opens. */
 function scrollIntoView(el: HTMLElement | null) {

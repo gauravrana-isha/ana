@@ -5,7 +5,7 @@ import { usePersistentState } from "@/lib/persist";
 import { useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FloppyDisk, PencilSimple } from "@phosphor-icons/react";
+import { FloppyDisk } from "@phosphor-icons/react";
 import { PromptCard } from "@/components/reflection/PromptCard";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { ButtonLoader } from "@/components/ui/Loader";
@@ -14,6 +14,7 @@ import { WeekReview } from "@/components/weekly/WeekReview";
 import { weekStart as getWeekStart, today, addDays } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchWeekly, saveWeekly } from "@/lib/journal";
+import { EditMark } from "@/components/art/PenMarks";
 
 const WEEKLY_PROMPTS = [
   { key: "1", q: "How is my experience of Sadhana?", hint: "Sitting still with more ease, for longer? Stronger? During or after Pradakshina?" },
@@ -212,7 +213,7 @@ function WeeklyReflectionView({
                      shadow-[0_6px_16px_var(--accent-soft)] z-20"
           aria-label="Edit reflection"
         >
-          <PencilSimple size={22} weight="thin" />
+          <EditMark size={24} />
         </button>
       </div>
     );

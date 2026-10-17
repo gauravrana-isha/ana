@@ -11,7 +11,7 @@ import { NotificationSettings } from "@/components/push/Notifications";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Moon, Sun, Trash, PencilSimple, DownloadSimple, UploadSimple } from "@phosphor-icons/react";
+import { Moon, Sun, DownloadSimple, UploadSimple } from "@phosphor-icons/react";
 import { usePractices } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
 import { Avatar } from "@/components/shell/Sidebar";
@@ -35,6 +35,8 @@ import type { Practice } from "@/lib/types";
 import { deletePractice, fetchProfileStats } from "@/lib/journal";
 import { exportJournal, importJournal } from "@/lib/importer";
 import { PrivacySettings } from "@/components/vault/PrivacySettings";
+import { DeleteMark, EditMark } from "@/components/art/PenMarks";
+import { useConfirm } from "@/components/ui/Confirm";
 
 export default function ProfilePage() {
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as ThemeName);
@@ -191,7 +193,7 @@ export default function ProfilePage() {
               onClick={() => setLibraryOpen(true)}
               className="press inline-flex items-center gap-1.5 h-9 px-3 -mt-3 rounded-[11px] font-ui text-[13px] font-semibold text-accent hover:bg-accent-soft"
             >
-              <PencilSimple size={15} /> Edit practices
+              <EditMark size={17} /> Edit practices
             </button>
           </div>
           <ManagePractices practices={practiceList} />
@@ -258,9 +260,10 @@ function ManagePractices({ practices }: { practices: Practice[] }) {
   const { toast } = useToast();
   const [editing, setEditing] = useState<Practice | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const ask = useConfirm();
 
   async function remove(p: Practice) {
-    if (!confirm(`Remove ${p.name}? Days you've already logged stay as they are.`)) return;
+    if (!(await ask({ title: `Remove ${p.name}?`, body: "Days you've already logged stay as they are.", confirmLabel: "Remove", tone: "danger" }))) return;
     setBusyId(p.id);
     try {
       await deletePractice(p.id);
@@ -290,10 +293,10 @@ function ManagePractices({ practices }: { practices: Practice[] }) {
               </span>
             </button>
             <button type="button" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-surface-2">
-              <PencilSimple size={17} />
+              <EditMark size={19} />
             </button>
             <button type="button" aria-label={`Remove ${p.name}`} onClick={() => remove(p)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10">
-              <Trash size={17} />
+              <DeleteMark size={19} />
             </button>
           </li>
         ))}
@@ -358,7 +361,7 @@ function ProfileHeader({ me }: { me: Me | undefined }) {
         <div className="mt-4 sm:pl-[80px] flex flex-col items-start gap-3">
           {me?.intention && <p className="font-serif italic text-[16.5px] leading-[1.55] text-ink max-w-[52ch] text-pretty">&ldquo;{me.intention}&rdquo;</p>}
           <button type="button" onClick={() => setEditing(true)} disabled={!me} className="press inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-line font-ui text-[13px] font-semibold text-ink hover:bg-bg disabled:opacity-50">
-            <PencilSimple size={14} /> Edit profile
+            <EditMark size={16} /> Edit profile
           </button>
         </div>
         <SignOutButton className="absolute top-4 right-3 sm:top-5 sm:right-4" labelClassName="hidden sm:inline" />
@@ -385,7 +388,6 @@ function ProfileHeader({ me }: { me: Me | undefined }) {
     </section>
   );
 }
-
 
 function readTheme(): ThemeName {
   return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";

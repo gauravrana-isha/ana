@@ -5,7 +5,7 @@ import Link from "next/link";
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cake, Camera, Feather, Handshake, Microphone, PencilSimple, Trash, VideoCamera } from "@phosphor-icons/react";
+import { Cake, Camera, Feather, Handshake, Microphone, VideoCamera } from "@phosphor-icons/react";
 import { Ornament } from "@/components/art/Ornament";
 import { Chevron } from "@/components/ui/Arrows";
 import { Button } from "@/components/ui/Button";
@@ -20,8 +20,11 @@ import { timeAgo } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "@/components/ui/Busy";
 import { deletePerson, fetchPerson } from "@/lib/journal";
+import { DeleteMark, EditMark } from "@/components/art/PenMarks";
+import { useConfirm } from "@/components/ui/Confirm";
 
 export default function PersonPage({ params }: { params: Promise<{ id: string }> }) {
+  const ask = useConfirm();
   const { id } = use(params);
   const router = useRouter();
   const qc = useQueryClient();
@@ -37,7 +40,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
   const [composer, setComposer] = useState<{ open: boolean; moment: Moment | null; kind: MomentKind }>({ open: false, moment: null, kind: "writing" });
 
   async function remove() {
-    if (!person || !confirm(`Remove ${person.name}? Your moments stay; they just won't mention ${person.name} any more.`)) return;
+    if (!person || !(await ask({ title: `Remove ${person.name}?`, body: `Your moments stay; they just won't mention ${person.name} any more.`, confirmLabel: "Remove", tone: "danger" }))) return;
     setRemoving(true);
     try {
       await deletePerson(id);
@@ -84,8 +87,8 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
             </p>
           </div>
           <div className="absolute right-0 top-0 flex gap-1 -mr-1.5 -mt-1">
-            <button type="button" aria-label="Edit" onClick={() => setEditing(true)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-surface-2"><PencilSimple size={18} /></button>
-            <button type="button" aria-label="Remove person" onClick={remove} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10"><Trash size={18} /></button>
+            <button type="button" aria-label="Edit" onClick={() => setEditing(true)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-surface-2"><EditMark size={20} /></button>
+            <button type="button" aria-label="Remove person" onClick={remove} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10"><DeleteMark size={20} /></button>
           </div>
         </div>
 

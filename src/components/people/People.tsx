@@ -144,7 +144,7 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
   }
 
   return (
-    <div ref={boxRef} className="relative">
+    <div ref={boxRef} className="relative" data-keep-room="230">
       <div
         className="flex flex-wrap items-center gap-1.5 min-h-12 p-1.5 rounded-[14px] bg-surface-2 border border-transparent focus-within:border-accent transition-colors cursor-text"
         onClick={() => inputRef.current?.focus()}

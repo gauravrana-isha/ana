@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { ConnectivityIndicator } from "@/components/shell/ConnectivityIndicator";
 import { ThemeColor } from "@/components/shell/ThemeColor";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ConfirmProvider } from "@/components/ui/Confirm";
 
 export const QUERY_CACHE_KEY = "ana-query-cache";
 const DAY = 24 * 60 * 60 * 1000;
@@ -70,9 +71,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <RestoreAfterHydration client={queryClient} options={persistOptions}>
         <ToastProvider>
-          <ThemeColor />
-          <ConnectivityIndicator />
-          {children}
+          <ConfirmProvider>
+            <ThemeColor />
+            <ConnectivityIndicator />
+            {children}
+          </ConfirmProvider>
         </ToastProvider>
       </RestoreAfterHydration>
     </QueryClientProvider>

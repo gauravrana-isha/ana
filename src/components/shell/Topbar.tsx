@@ -42,7 +42,7 @@ export function Topbar() {
   }, [pathname]);
 
   // Phones: a solid strip behind the status bar, so nothing scrolls under the clock.
-  const statusStrip = <div ref={statusRef} aria-hidden="true" className="lg:hidden fixed top-0 inset-x-0 z-30 h-[env(safe-area-inset-top)] bg-bg/95 backdrop-blur-md" />;
+  const statusStrip = <div ref={statusRef} aria-hidden="true" className="lg:hidden fixed top-0 inset-x-0 z-30 h-[var(--safe-top)] bg-bg/95 backdrop-blur-md" />;
   if (bare) return statusStrip;
 
   return (

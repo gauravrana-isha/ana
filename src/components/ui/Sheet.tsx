@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "./Busy";
@@ -26,6 +26,56 @@ interface SheetProps {
 export function Sheet({ open, onClose, title, children, footer, header, size = "md", busy = false }: SheetProps) {
   const reduce = useReducedMotion();
   const area = useVisibleArea(open);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // Keep what you're typing in view. With the keyboard up the sheet is short, and iOS doesn't
+  // always scroll the sheet's own body to the field or the cursor, so it could sit hidden
+  // behind the footer. On focus, typing and keyboard resizes, scroll it into the visible part.
+  useEffect(() => {
+    if (!open) return;
+    let frame = 0;
+    const keep = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const body = bodyRef.current;
+        const el = document.activeElement as HTMLElement | null;
+        if (!body || !el || !body.contains(el)) return;
+        let target = el.getBoundingClientRect();
+        // In rich text, follow the cursor itself rather than the whole editor.
+        const sel = document.getSelection();
+        if (el.isContentEditable && sel?.rangeCount) {
+          const r = sel.getRangeAt(0).getBoundingClientRect();
+          if (r.height || r.top) target = r;
+        }
+        const box = body.getBoundingClientRect();
+        // A field with suggestions below it (the people picker) asks for that room too.
+        const wants = el.closest<HTMLElement>("[data-keep-room]");
+        if (wants) {
+          const r = wants.getBoundingClientRect();
+          const room = Math.min(Number(wants.dataset.keepRoom) || 0, Math.max(0, box.height - r.height - 28));
+          target = new DOMRect(r.left, r.top, r.width, r.height + room);
+        }
+        if (target.height > box.height - 28) {
+          // Taller than the space (a long note): bring its top into view; the cursor is near.
+          if (target.top < box.top || target.top > box.bottom - 40) body.scrollTop += target.top - box.top - 12;
+        } else if (target.bottom > box.bottom - 16) {
+          body.scrollTop += target.bottom - box.bottom + 16;
+        } else if (target.top < box.top + 12) {
+          body.scrollTop -= box.top + 12 - target.top;
+        }
+      });
+    };
+    const late = () => setTimeout(keep, 280); // after the keyboard finishes sliding in
+    document.addEventListener("focusin", late);
+    document.addEventListener("selectionchange", keep);
+    window.visualViewport?.addEventListener("resize", keep);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("focusin", late);
+      document.removeEventListener("selectionchange", keep);
+      window.visualViewport?.removeEventListener("resize", keep);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +114,7 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
               </div>
               <div inert={busy}>{header}</div>
             </header>
-            <div inert={busy} aria-busy={busy || undefined} className={cn("flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 pt-4 pb-6 transition-opacity duration-200", busy && "opacity-60 select-none")}>
+            <div ref={bodyRef} inert={busy} aria-busy={busy || undefined} className={cn("flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 pt-4 pb-6 transition-opacity duration-200", busy && "opacity-60 select-none")}>
               {children}
             </div>
             {footer && (

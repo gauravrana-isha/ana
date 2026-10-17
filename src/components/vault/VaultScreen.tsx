@@ -22,7 +22,7 @@ export function VaultScreen({
   const reduce = useReducedMotion();
   return (
     <div className="min-h-dvh flex flex-col bg-bg">
-      <header className="pt-[max(18px,env(safe-area-inset-top))]">
+      <header className="pt-[max(18px,var(--safe-top))]">
         <div className="max-w-[520px] mx-auto px-5 h-12 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-accent">
             <Lotus size={24} />

@@ -86,6 +86,13 @@ export const viewport: Viewport = {
 };
 
 // Runs before first paint: show the splash once per browser session.
+/*
+ * iPhone home-screen app: the page draws under the status bar, and some iOS versions report
+ * its height (safe-area-inset-top) as 0, so the top of the app sat under the clock. When that
+ * happens, use the status bar's real height (by screen size) instead. Runs before first paint.
+ */
+const SAFE_TOP_SCRIPT = `try{var n=navigator,d=document.documentElement,H=Math.max(screen.width,screen.height);if(/iPhone|iPod/.test(n.userAgent)&&(n.standalone||matchMedia('(display-mode: standalone)').matches)&&matchMedia('(orientation: portrait)').matches&&innerHeight>=H-2){var p=document.createElement('div');p.style.cssText='position:fixed;top:0;visibility:hidden;padding-top:env(safe-area-inset-top)';d.appendChild(p);var e=parseFloat(getComputedStyle(p).paddingTop)||0;p.remove();if(e<1)d.style.setProperty('--safe-top-fix',(H>=852?60:H>=812?50:20)+'px')}}catch(x){}`;
+
 const SPLASH_SCRIPT = `try{if(!sessionStorage.getItem('ana-splash')){sessionStorage.setItem('ana-splash','1');document.documentElement.classList.add('splash')}}catch(e){}`;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -101,6 +108,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     >
       <head>
         {/* Written into the page's head on the server, so it runs before the first paint. */}
+        <Script id="ana-safe-top" strategy="beforeInteractive">
+          {SAFE_TOP_SCRIPT}
+        </Script>
         <Script id="ana-splash" strategy="beforeInteractive">
           {SPLASH_SCRIPT}
         </Script>

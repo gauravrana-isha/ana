@@ -3,7 +3,7 @@
 import { WhoSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Trash } from "@phosphor-icons/react";
+
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { Busy } from "@/components/ui/Busy";
@@ -14,6 +14,8 @@ import { useMe } from "@/lib/me";
 import { MAX_WORDS, REVISIT_CHOICES, RINGS, SCALE_WEIGHTS, WEIGHT_SCALE, toneStyle, type PortraitDTO, type RingKey, type Weights } from "@/lib/portrait";
 import { cn } from "@/lib/utils";
 import { savePortrait } from "@/lib/journal";
+import { DeleteMark } from "@/components/art/PenMarks";
+import { useConfirm } from "@/components/ui/Confirm";
 
 /** Words in their own colours, separated by quiet dots. */
 function Words({ words, weights, className }: { words: string[]; weights?: Weights; className?: string }) {
@@ -34,6 +36,7 @@ type Draft = Record<RingKey, { words: string[]; note: string }> & { weights: Wei
 const EMPTY: Draft = { body: { words: [], note: "" }, mind: { words: [], note: "" }, emotion: { words: [], note: "" }, weights: {} };
 
 export default function WhoAmIPage() {
+  const ask = useConfirm();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: me } = useMe();
@@ -76,7 +79,7 @@ export default function WhoAmIPage() {
   }
 
   async function remove(p: PortraitDTO) {
-    if (!confirm(`Remove the portrait from ${longDate(p.createdAt)}?`)) return;
+    if (!(await ask({ title: `Remove the portrait from ${longDate(p.createdAt)}?`, body: "It can't be brought back.", confirmLabel: "Remove", tone: "danger" }))) return;
     const res = await fetch("/api/portraits", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id }) });
     if (!res.ok) return toast("Couldn't remove it.", "error");
     if (compareId === p.id) setCompareId(null);
@@ -251,7 +254,7 @@ export default function WhoAmIPage() {
                   <p className="font-ui text-[12.5px] text-ink-soft truncate">{RINGS.map((r) => p[r.key].words[0]).filter(Boolean).join(" · ") || "…"}</p>
                 </div>
                 <button type="button" onClick={() => remove(p)} aria-label={`Remove portrait from ${longDate(p.createdAt)}`} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10">
-                  <Trash size={16} />
+                  <DeleteMark size={18} />
                 </button>
               </li>
             ))}

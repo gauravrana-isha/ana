@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Trash } from "@phosphor-icons/react";
+
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -14,7 +14,8 @@ import { describeTracking } from "@/lib/practiceCatalog";
 import type { Practice } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PracticeIcon } from "./PracticeIcon";
-import { MinusMark, PlusMark } from "@/components/art/PenMarks";
+import { DeleteMark, MinusMark, PlusMark } from "@/components/art/PenMarks";
+import { useConfirm } from "@/components/ui/Confirm";
 
 type Draft = Record<string, { default?: string | number | null; fill?: number | null }>;
 
@@ -25,6 +26,7 @@ type Draft = Record<string, { default?: string | number | null; fill?: number | 
 export function PracticeEditor({ practice, open, onClose }: { practice: Practice | null; open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const ask = useConfirm();
   const [name, setName] = useState("");
   const [draft, setDraft] = useState<Draft>({});
   const [saving, setSaving] = useState<null | "save" | "remove">(null);
@@ -61,7 +63,7 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
   }
 
   async function remove() {
-    if (!practice || !confirm(`Remove ${practice.name}? Days you've already logged stay as they are.`)) return;
+    if (!practice || !(await ask({ title: `Remove ${practice.name}?`, body: "Days you've already logged stay as they are.", confirmLabel: "Remove", tone: "danger" }))) return;
     setSaving("remove");
     try {
       await deletePractice(practice.id);
@@ -84,7 +86,7 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
       footer={
         <div className="flex items-center gap-3">
           <Button variant="danger" onClick={remove} loading={saving === "remove"} disabled={!!saving}>
-            <Trash size={16} /> Remove
+            <DeleteMark size={18} /> Remove
           </Button>
           <span className="flex-1" />
           <Button variant="secondary" onClick={onClose} disabled={!!saving}>Cancel</Button>

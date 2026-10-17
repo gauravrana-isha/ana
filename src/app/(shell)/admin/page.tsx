@@ -14,6 +14,7 @@ import { BusyBar } from "@/components/ui/Busy";
 import { useToast } from "@/components/ui/Toast";
 import { FEATURES, type FeatureKey } from "@/lib/features";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/Confirm";
 
 type Status = "PENDING" | "APPROVED" | "SUSPENDED";
 
@@ -256,6 +257,7 @@ export default function AdminPage() {
 }
 
 function StatusActions({ u, isMe, busy, onChange }: { u: AdminUser; isMe: boolean; busy: boolean; onChange: (body: { status: Status }) => void }) {
+  const ask = useConfirm();
   if (isMe) return <span className="font-ui text-[12.5px] text-ink-soft px-2">You</span>;
   if (u.status === "PENDING") {
     if (!u.onboardedAt) {
@@ -283,7 +285,7 @@ function StatusActions({ u, isMe, busy, onChange }: { u: AdminUser; isMe: boolea
   }
   if (u.status === "APPROVED") {
     return (
-      <Button size="sm" variant="danger" disabled={busy} onClick={() => confirm(`Pause access for ${u.name ?? u.email}? They'll be signed out.`) && onChange({ status: "SUSPENDED" })}>
+      <Button size="sm" variant="danger" disabled={busy} onClick={async () => (await ask({ title: `Pause access for ${u.name ?? u.email}?`, body: "They'll be signed out. Their journal stays as it is.", confirmLabel: "Pause", tone: "danger" })) && onChange({ status: "SUSPENDED" })}>
         Pause
       </Button>
     );

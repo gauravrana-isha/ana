@@ -14,7 +14,7 @@ export function ConnectivityIndicator() {
   return (
     <div
       role="status"
-      className="fixed top-[max(8px,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 h-8 px-3.5 rounded-full bg-surface border border-line shadow-[var(--shadow-lift)]"
+      className="fixed top-[max(8px,var(--safe-top))] left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 h-8 px-3.5 rounded-full bg-surface border border-line shadow-[var(--shadow-lift)]"
     >
       {!online ? (
         <>

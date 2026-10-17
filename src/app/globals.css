@@ -489,3 +489,7 @@ html.kb-open .ana-fab {
 /* Reading pages (a moment) fill the screen without the tab bar: no extra height for the logo
    row to tuck into, and no room kept for the bar. */
 .ana-page:has([data-bare]) { min-height: 0; padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+
+/* The status bar's height: what iOS reports, or (when it wrongly reports 0 in a home-screen
+   app) the height set by SAFE_TOP_SCRIPT in the root layout. Use this, not env(), for the top. */
+:root { --safe-top: max(env(safe-area-inset-top), var(--safe-top-fix, 0px)); }

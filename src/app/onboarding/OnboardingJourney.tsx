@@ -141,7 +141,7 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
   return (
     <div className="min-h-dvh flex flex-col">
       {/* Progress */}
-      <header className="sticky top-0 z-10 bg-bg/90 backdrop-blur-md pt-[max(14px,env(safe-area-inset-top))]" inert={saving}>
+      <header className="sticky top-0 z-10 bg-bg/90 backdrop-blur-md pt-[max(14px,var(--safe-top))]" inert={saving}>
         <BusyBar show={saving} className="absolute bottom-0 inset-x-0" />
         <div className="max-w-[560px] mx-auto px-5 h-14 flex items-center gap-3">
           <button

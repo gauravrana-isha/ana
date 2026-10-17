@@ -23,6 +23,7 @@ import {
 import { PassphraseForm } from "./KeySetup";
 import { RecoveryWords } from "./RecoveryWords";
 import { FieldError } from "./VaultScreen";
+import { useConfirm } from "@/components/ui/Confirm";
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
 
@@ -35,6 +36,7 @@ export function PrivacySettings() {
   const [support, setSupport] = useState<"yes" | "no" | "maybe">("no");
   const [sheet, setSheet] = useState<null | "passphrase" | "words" | "device">(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const ask = useConfirm();
   const refresh = () => qc.invalidateQueries({ queryKey: ["vault-status"] });
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export function PrivacySettings() {
 
   async function remove(k: VaultKey) {
     const what = k.kind === "passkey" ? k.label ?? "this passkey" : "your passphrase";
-    if (!confirm(`Remove ${what}? It won't unlock your journal any more.`)) return;
+    if (!(await ask({ title: `Remove ${what}?`, body: "It won't unlock your journal any more. Your other ways in stay.", confirmLabel: "Remove", tone: "danger" }))) return;
     setBusy(k.id);
     try {
       await removeKey(k.id);
@@ -81,7 +83,14 @@ export function PrivacySettings() {
   }
 
   async function lockDevice() {
-    if (!confirm("Lock ana on this device? You'll need your passkey, passphrase, recovery words or another device to open it here again.")) return;
+    if (
+      !(await ask({
+        title: "Lock ana on this device?",
+        body: "To open it here again you'll need your passkey, passphrase, recovery words or another device.",
+        confirmLabel: "Lock it",
+      }))
+    )
+      return;
     await forgetDevice();
     location.reload();
   }

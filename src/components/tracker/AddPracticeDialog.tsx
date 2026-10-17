@@ -5,7 +5,7 @@ import { Busy } from "@/components/ui/Busy";
 import { createElement, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import { Trash } from "@phosphor-icons/react";
+
 import { practiceIcon } from "./practiceIcons";
 import type { IconProps } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/Button";
@@ -26,8 +26,9 @@ import { ButtonLoader } from "@/components/ui/Loader";
 import type { Practice } from "@/lib/types";
 
 import { PaintedTile, PracticeIcon } from "./PracticeIcon";
-import { PlusMark } from "@/components/art/PenMarks";
+import { DeleteMark, PlusMark } from "@/components/art/PenMarks";
 import { createPractice, deletePractice } from "@/lib/journal";
+import { useConfirm } from "@/components/ui/Confirm";
 
 const ICON_OPTIONS = [
   "Leaf", "Flower", "FlowerLotus", "Sun", "SunHorizon", "Moon", "Star", "Sparkle",
@@ -284,9 +285,10 @@ function YoursTab({ onAdd }: { onAdd: () => void }) {
   const { data: practices = [], isPending: isLoading } = usePractices();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Practice | null>(null);
+  const ask = useConfirm();
 
   async function remove(p: Practice) {
-    if (!confirm(`Remove ${p.name}? Days you've already logged stay as they are.`)) return;
+    if (!(await ask({ title: `Remove ${p.name}?`, body: "Days you've already logged stay as they are.", confirmLabel: "Remove", tone: "danger" }))) return;
     setBusyId(p.id);
     try {
       await deletePractice(p.id);
@@ -325,7 +327,7 @@ function YoursTab({ onAdd }: { onAdd: () => void }) {
                 </span>
               </button>
               <button type="button" aria-label={`Remove ${p.name}`} onClick={() => remove(p)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10">
-                <Trash size={17} />
+                <DeleteMark size={19} />
               </button>
             </li>
           );

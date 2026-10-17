@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowCounterClockwise, CaretDown, CaretRight, MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, CaretDown, CaretRight, MapPin } from "@phosphor-icons/react";
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { PersonAvatar } from "@/components/people/People";
 import { useToast } from "@/components/ui/Toast";
@@ -14,8 +14,9 @@ import { MediaPreview } from "./Media";
 import { StampChip } from "@/components/art/StampIcon";
 import { BusyBar } from "@/components/ui/Busy";
 import { plainText } from "./RichText";
-import { DotsMark } from "@/components/art/PenMarks";
+import { DeleteMark, DotsMark, EditMark } from "@/components/art/PenMarks";
 import { deleteMoment } from "@/lib/journal";
+import { useConfirm } from "@/components/ui/Confirm";
 
 export const STAMP_LABEL: Record<string, string> = {
   growth: "Growth", struggle: "Struggle", insight: "Insight", stillness: "Stillness", devotion: "Devotion",
@@ -44,8 +45,9 @@ function headline(m: Moment, text: string) {
 export function useDeleteMoment() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const ask = useConfirm();
   return async (moment: Moment) => {
-    if (!confirm("Delete this moment? Its recordings and photos are deleted too.")) return false;
+    if (!(await ask({ title: "Delete this moment?", body: "Its recordings and photos are deleted too. This can't be undone.", confirmLabel: "Delete", tone: "danger" }))) return false;
     try {
       await deleteMoment(moment.id);
     } catch {
@@ -100,10 +102,10 @@ export function MomentMenu({ onEdit, onDelete, className }: { onEdit: () => void
       {open && (
         <div className="absolute right-0 top-10 z-20 w-40 p-1 rounded-[14px] bg-bg border border-line shadow-[var(--shadow-lift)]">
           <button type="button" onClick={() => { setOpen(false); onEdit(); }} className="w-full flex items-center gap-2 h-10 px-3 rounded-[10px] font-ui text-[14px] text-ink hover:bg-surface">
-            <PencilSimple size={16} /> Edit
+            <EditMark size={18} /> Edit
           </button>
           <button type="button" onClick={() => { setOpen(false); onDelete(); }} className="w-full flex items-center gap-2 h-10 px-3 rounded-[10px] font-ui text-[14px] text-danger hover:bg-danger/10">
-            <Trash size={16} /> Delete
+            <DeleteMark size={18} /> Delete
           </button>
         </div>
       )}
