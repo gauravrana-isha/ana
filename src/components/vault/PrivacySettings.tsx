@@ -123,7 +123,7 @@ export function PrivacySettings() {
 
       <div className="rounded-[18px] bg-surface divide-y divide-line">
         {passkeys.map((k) => (
-          <Row key={k.id} icon={<Fingerprint size={19} />} title={k.label ?? "Passkey"} line={k.signsIn ? `Signs you in and unlocks · ${used(k)}` : `Unlocks only · ${used(k)}`}>
+          <Row key={k.id} icon={<Fingerprint size={19} />} title={k.label ?? "Passkey"} line={used(k)}>
             {!k.signsIn && support !== "no" && (
               <Button size="sm" variant="ghost" loading={busy === "upgrade:" + k.id} onClick={() => upgrade(k)}>Use to sign in</Button>
             )}
@@ -170,8 +170,7 @@ export function PrivacySettings() {
 }
 
 function used(k: VaultKey) {
-  const added = `Added ${dateFmt.format(new Date(k.createdAt))}`;
-  return k.lastUsedAt ? `${added} · last used ${dateFmt.format(new Date(k.lastUsedAt))}` : added;
+  return `Added ${dateFmt.format(new Date(k.createdAt))}`;
 }
 
 function Row({ icon, title, line, children }: { icon: React.ReactNode; title: string; line: string; children?: React.ReactNode }) {
