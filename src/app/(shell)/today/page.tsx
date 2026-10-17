@@ -59,7 +59,7 @@ export default function TodayPage() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-5">
         <TodaySearchBar />
-        <p className="font-serif italic text-[17px] text-ink-soft">{greeting(callName(me))}.</p>
+        <p className="font-serif italic text-[17px] text-ink-soft">{greeting(callName(me))}</p>
       </div>
 
       {/* The day's quote */}
