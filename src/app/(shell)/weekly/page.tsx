@@ -12,10 +12,10 @@ import { ButtonLoader } from "@/components/ui/Loader";
 import { Busy } from "@/components/ui/Busy";
 import { WeekReview } from "@/components/weekly/WeekReview";
 import { weekStart as getWeekStart, today, addDays } from "@/lib/dates";
-import { cn } from "@/lib/utils";
 import { fetchWeekly, saveWeekly } from "@/lib/journal";
 import { EditMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
+import { Segmented } from "@/components/ui/Segmented";
 
 const WEEKLY_PROMPTS = [
   { key: "1", q: "How is my experience of Sadhana?", hint: "Sitting still with more ease, for longer? Stronger? During or after Pradakshina?" },
@@ -113,27 +113,16 @@ function WeeklyContent() {
         mode="week"
       />
 
-      {/* Tabs */}
-      <div className="inline-flex gap-0.5 p-[3px] rounded-[30px] bg-surface-2 mb-[22px]">
-        <button
-          className={cn(
-            "font-ui text-[13px] font-medium px-5 py-2 rounded-[30px] transition-all",
-            tab === "reflection" ? "text-ink bg-surface" : "text-ink-soft"
-          )}
-          onClick={() => setTab("reflection")}
-        >
-          Reflection
-        </button>
-        <button
-          className={cn(
-            "font-ui text-[13px] font-medium px-5 py-2 rounded-[30px] transition-all",
-            tab === "digest" ? "text-ink bg-surface" : "text-ink-soft"
-          )}
-          onClick={() => setTab("digest")}
-        >
-          Week in review
-        </button>
-      </div>
+      <Segmented
+        label="Weekly"
+        className="mb-[22px]"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "reflection", label: "Reflection" },
+          { value: "digest", label: "Week in review" },
+        ]}
+      />
 
       {tab === "reflection" ? (
         <WeeklyReflectionView

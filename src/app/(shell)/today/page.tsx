@@ -56,7 +56,7 @@ export default function TodayPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <p className="-mt-3 font-serif italic text-[17px] text-ink-soft">{greeting(callName(me))}.</p>
+      <p className="font-serif italic text-[17px] text-ink-soft">{greeting(callName(me))}.</p>
 
       {/* The day's quote */}
       {quoteData?.quote && (

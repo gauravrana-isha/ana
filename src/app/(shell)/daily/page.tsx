@@ -15,7 +15,7 @@ import { Busy } from "@/components/ui/Busy";
 import { Button } from "@/components/ui/Button";
 import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
 import { useQuote } from "@/lib/queries";
-import { today } from "@/lib/dates";
+import { formatDateHand, today } from "@/lib/dates";
 import { fetchDaily, saveDaily } from "@/lib/journal";
 import { EditMark } from "@/components/art/PenMarks";
 
@@ -127,6 +127,11 @@ function DailyContent() {
 
   return (
     <div className="pb-20">
+      {/* Which day this is (the page has no header; a past day can be opened from search). */}
+      <p className="mb-3 inline-flex items-center gap-1.5 font-ui text-[13px] font-medium text-ink-soft tabular">
+        <span className="w-1.5 h-1.5 rounded-full bg-saffron" aria-hidden="true" />
+        {date === today() ? `Today, ${formatDateHand(date).replace(" · ", " ")}` : formatDateHand(date).replace(" · ", ", ")}
+      </p>
       {/* Quote */}
       {/* Quote and heading frame the read-back; while answering, the question has the room. */}
       {showSavedView && quoteData?.quote && (

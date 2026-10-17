@@ -41,7 +41,7 @@ export default function InsightsPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <p className="-mt-3 font-serif italic text-[16.5px] text-ink-soft max-w-[52ch]">
+      <p className="font-serif italic text-[16.5px] text-ink-soft max-w-[52ch]">
         Patterns, not scores. Nothing here is a grade; it&rsquo;s a way of seeing how the days have been.
       </p>
 

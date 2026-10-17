@@ -9,6 +9,7 @@ import { BellBadge } from "@/components/push/Notifications";
 import { timeAgo } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { CloseButton } from "@/components/ui/CloseButton";
+import { FLOAT_BUTTON } from "@/components/ui/DetailBar";
 
 interface Item {
   id: string;
@@ -47,7 +48,7 @@ export function useNotifications() {
  * The bell. A dot (never a count) when something is new. Opens a list: new first, then
  * earlier; tapping one opens it and marks it read. Things end on their own (see lib/notify).
  */
-export function NotificationBell({ className }: { className?: string }) {
+export function NotificationBell({ className, floating = false }: { className?: string; floating?: boolean }) {
   const qc = useQueryClient();
   const router = useRouter();
   const reduce = useReducedMotion();
@@ -84,10 +85,10 @@ export function NotificationBell({ className }: { className?: string }) {
         onClick={() => setOpen((o) => !o)}
         aria-label={unread ? `Notifications, ${unread} new` : "Notifications"}
         aria-expanded={open}
-        className="press relative grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-surface"
+        className={floating ? cn(FLOAT_BUTTON, "relative") : "press relative grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-surface"}
       >
         <FeatureGlyph k="bell" size={21} />
-        {unread > 0 && <span className="absolute top-[7px] right-[8px] w-2 h-2 rounded-full bg-saffron ring-2 ring-bg" aria-hidden="true" />}
+        {unread > 0 && <span className={cn("absolute w-2 h-2 rounded-full bg-saffron ring-2 ring-bg", floating ? "top-[8px] right-[9px]" : "top-[7px] right-[8px]")} aria-hidden="true" />}
       </button>
 
       <AnimatePresence>

@@ -11,6 +11,7 @@ import { toISODate, today } from "@/lib/dates";
 import { Chevron, RoundArrowButton } from "./Arrows";
 import { CrossMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
+import { Segmented } from "@/components/ui/Segmented";
 
 /*
  * ana's own date and time pickers. Used everywhere instead of the browser/device pickers so
@@ -213,16 +214,18 @@ export function TimeDial({ value, onChange }: { value: string; onChange: (hhmm: 
         <span className="font-display text-[40px] font-semibold text-ink leading-none pb-1">:</span>
         <DigitInput label="Minute" value={m} min={0} max={59} pad onCommit={(v) => set(hour12, v, pm)} />
       </div>
-      <div role="radiogroup" aria-label="Morning or evening" className="mx-auto mb-4 grid grid-cols-2 p-1 rounded-full bg-surface w-[168px]">
-        {(["am", "pm"] as const).map((p) => {
-          const on = pm === (p === "pm");
-          return (
-            <button key={p} type="button" role="radio" aria-checked={on} onClick={() => set(hour12, m, p === "pm")} className={cn("press h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors", on ? "bg-accent text-bg" : "text-ink-soft hover:text-ink")}>
-              {p}
-            </button>
-          );
-        })}
-      </div>
+      <Segmented
+        label="Morning or evening"
+        tone="accent"
+        fill
+        className="mx-auto mb-4 w-[168px]"
+        value={pm ? "pm" : "am"}
+        onChange={(v) => set(hour12, m, v === "pm")}
+        options={[
+          { value: "am", label: "am" },
+          { value: "pm", label: "pm" },
+        ]}
+      />
       <p className="font-ui text-[12px] font-semibold text-ink-soft mb-1.5">Hour</p>
       <div className="grid grid-cols-6 gap-1.5 mb-3">
         {HOURS.map((h) => (

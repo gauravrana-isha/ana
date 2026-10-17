@@ -37,7 +37,7 @@ const EXPLAIN: Record<Exclude<PushState, "loading" | "on" | "off">, string> = {
 };
 
 /** Profile section: notifications on this device, with a test button. */
-export function NotificationSettings() {
+export function NotificationSettings({ bare = false }: { bare?: boolean } = {}) {
   const { toast } = useToast();
   const push = usePush();
   const [testing, setTesting] = useState(false);
@@ -67,7 +67,7 @@ export function NotificationSettings() {
 
   return (
     <section>
-      <h2 className="font-display text-[19px] font-semibold text-ink mb-3">Notifications</h2>
+      {!bare && <h2 className="font-display text-[19px] font-semibold text-ink mb-3">Notifications</h2>}
       <div className="rounded-[18px] bg-surface">
         <label className={cn("flex items-center gap-3.5 px-4 py-3.5", available ? "cursor-pointer" : "opacity-80")}>
           <BellBadge />

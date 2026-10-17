@@ -17,6 +17,7 @@ import { useConfirm } from "@/components/ui/Confirm";
 import { Chevron } from "@/components/ui/Arrows";
 import { TickMark } from "@/components/tracker/FieldInput";
 import { Glyph } from "@/components/art/Glyphs";
+import { Segmented } from "@/components/ui/Segmented";
 
 type Status = "PENDING" | "APPROVED" | "SUSPENDED";
 
@@ -98,29 +99,22 @@ export default function AdminPage() {
 
   return (
     <div>
-      <div role="tablist" aria-label="Filter people" className="flex gap-1 p-1 rounded-full bg-surface w-fit max-w-full overflow-x-auto no-scrollbar">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            role="tab"
-            aria-selected={tab === t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "press relative h-9 px-3 sm:px-4 rounded-full font-ui text-[13px] sm:text-[13.5px] font-semibold whitespace-nowrap transition-colors",
-              tab === t.key ? "text-ink" : "text-ink-soft hover:text-ink"
-            )}
-          >
-            {tab === t.key && (
-              <motion.span layoutId="admin-tab" className="absolute inset-0 rounded-full bg-bg shadow-[var(--shadow-soft)]" transition={{ type: "spring", stiffness: 500, damping: 40 }} />
-            )}
-            <span className="relative">
-              {t.label}
-              <span className={cn("ml-1.5 tabular", t.key === "PENDING" && counts.PENDING > 0 ? "text-saffron" : "text-ink-soft")}>
-                {counts[t.key]}
-              </span>
-            </span>
-          </button>
-        ))}
+      <div className="max-w-full overflow-x-auto no-scrollbar">
+        <Segmented
+          label="Filter people"
+          value={tab}
+          onChange={setTab}
+          options={TABS.map((t) => ({
+            value: t.key,
+            name: `${t.label}, ${counts[t.key]}`,
+            label: (
+              <>
+                {t.label}
+                <span className={cn("tabular", t.key === "PENDING" && counts.PENDING > 0 ? "text-saffron" : "text-ink-soft")}>{counts[t.key]}</span>
+              </>
+            ),
+          }))}
+        />
       </div>
 
       <div className="mt-6 flex flex-col gap-2">

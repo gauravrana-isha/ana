@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { DateField } from "@/components/ui/pickers";
 import { Avatar } from "@/components/shell/Sidebar";
-import { mediaUrl, shrinkPhoto, uploadMedia } from "@/lib/media-client";
+import { mediaUrl, uploadMedia } from "@/lib/media-client";
+import { PhotoCropper } from "@/components/ui/PhotoCropper";
 import type { Me } from "@/lib/me";
 import { today } from "@/lib/dates";
 import { sealFields } from "@/lib/vault/vault";
@@ -30,8 +31,9 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
   const [intention, setIntention] = useState("");
   const [birthday, setBirthday] = useState("");
   const [place, setPlace] = useState("");
-  // undefined: unchanged · null: back to the Google picture · File: a new photo
-  const [photo, setPhoto] = useState<File | null | undefined>(undefined);
+  // undefined: unchanged · null: back to the Google picture · Blob: a new (cropped) photo
+  const [photo, setPhoto] = useState<Blob | null | undefined>(undefined);
+  const [picked, setPicked] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -58,7 +60,7 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
     setSaving(true);
     try {
       let photoId: string | null | undefined = undefined;
-      if (photo instanceof File) photoId = (await uploadMedia(await shrinkPhoto(photo), "photo", { userId: me.id, storage: me.storage })).id;
+      if (photo instanceof Blob) photoId = (await uploadMedia(photo, "photo", { userId: me.id, storage: me.storage })).id;
       else if (photo === null) photoId = null;
       const personal = await sealFields(
         { intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null },
@@ -124,8 +126,16 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
               e.target.value = "";
               if (!f) return;
               if (f.size > 15 * 1024 * 1024) return toast("That photo is too large (up to 15 MB).", "error");
-              setPhoto(f);
-              setPreview(URL.createObjectURL(f));
+              setPicked(f);
+            }}
+          />
+          <PhotoCropper
+            file={picked}
+            onCancel={() => setPicked(null)}
+            onDone={(cropped) => {
+              setPicked(null);
+              setPhoto(cropped);
+              setPreview(URL.createObjectURL(cropped));
             }}
           />
         </div>

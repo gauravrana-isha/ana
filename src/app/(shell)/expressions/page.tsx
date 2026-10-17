@@ -23,6 +23,7 @@ import { CrossMark, FiltersMark, PlusMark } from "@/components/art/PenMarks";
 import { FeatureGlyph } from "@/components/art/FeatureBadge";
 import { TickMark } from "@/components/tracker/FieldInput";
 import { Glyph } from "@/components/art/Glyphs";
+import { Segmented } from "@/components/ui/Segmented";
 
 const FILTERS = [
   { id: "", label: "All" },
@@ -105,26 +106,20 @@ function ExpressionsContent() {
 
       <div className="flex items-center gap-2 mb-3">
         {/* Phones: one segmented row, icons only, so every kind is in view. Wider: labelled chips. */}
-        <div role="group" aria-label="Kind of moment" className="flex-1 min-w-0 flex max-sm:justify-between max-sm:p-1 max-sm:rounded-full max-sm:bg-surface sm:gap-1.5">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              aria-pressed={kind === f.id}
-              aria-label={f.id ? f.label : "All moments"}
-              title={f.label}
-              onClick={() => setKind(f.id)}
-              className={cn(
-                "press shrink-0 inline-flex items-center justify-center gap-1.5 h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors",
-                "max-sm:flex-1 max-sm:max-w-[64px] sm:px-3.5 sm:border",
-                kind === f.id ? "bg-accent text-bg sm:border-accent" : "text-ink-soft hover:text-ink sm:border-line"
-              )}
-            >
-              {f.id && <MomentGlyph kind={f.id} size={f.id ? 17 : 15} strokeWidth={kind === f.id ? 3 : 2.6} className="sm:w-[15px] sm:h-[15px]" />}
-              <span className={cn(f.id && "max-sm:sr-only")}>{f.label}</span>
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Kind of moment"
+          tone="accent"
+          fill="mobile"
+          className="flex-1 min-w-0 sm:flex-none"
+          value={kind}
+          onChange={setKind}
+          options={FILTERS.map((f) => ({
+            value: f.id,
+            name: f.id ? f.label : "All moments",
+            icon: f.id ? <MomentGlyph kind={f.id} size={17} strokeWidth={kind === f.id ? 3 : 2.6} className="sm:w-[15px] sm:h-[15px]" /> : undefined,
+            label: <span className={cn(f.id && "max-sm:sr-only")}>{f.label}</span>,
+          }))}
+        />
         <button
           type="button"
           onClick={() => setFiltersOpen(true)}
@@ -134,13 +129,19 @@ function ExpressionsContent() {
           <FiltersMark size={19} />
           {extraFilters > 0 && <span className="absolute -top-1 -right-1 grid place-items-center min-w-[17px] h-[17px] px-1 rounded-full bg-accent text-bg font-ui text-[10.5px] font-bold tabular">{extraFilters}</span>}
         </button>
-        <div role="radiogroup" aria-label="View" className="shrink-0 hidden sm:flex p-0.5 rounded-full border border-line">
-          {([["full", "Full moments", "cards"], ["folded", "One line each", "list"]] as const).map(([id, label, Icon]) => (
-            <button key={id} type="button" role="radio" aria-checked={view === id} aria-label={label} title={label} onClick={() => setView(id)} className={cn("press grid place-items-center w-8 h-8 rounded-full transition-colors", view === id ? "bg-accent text-bg" : "text-ink-soft hover:text-ink")}>
-              <Glyph k={Icon} size={18} />
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="View"
+          tone="outline"
+          size="sm"
+          iconOnly
+          className="shrink-0 hidden sm:inline-flex"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "full", label: "Full moments", icon: <Glyph k="cards" size={18} /> },
+            { value: "folded", label: "One line each", icon: <Glyph k="list" size={18} /> },
+          ]}
+        />
       </div>
 
       {extraFilters > 0 && (
@@ -203,29 +204,43 @@ function ExpressionsContent() {
         <div className="flex flex-col gap-5">
           <div className="sm:hidden">
             <p className="font-ui text-[13px] font-semibold text-ink mb-2">View</p>
-            <div className="grid grid-cols-2 p-1 rounded-full bg-surface-2">
-              {([["full", "Full moments", "cards"], ["folded", "One line each", "list"]] as const).map(([id, label, Icon]) => (
-                <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)} className={cn("press inline-flex items-center justify-center gap-1.5 h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors", view === id ? "bg-bg text-ink shadow-[var(--shadow-soft)]" : "text-ink-soft")}>
-                  <Glyph k={Icon} size={17} /> {label}
-                </button>
-              ))}
-            </div>
+            <Segmented
+              label="View"
+              fill
+              value={view}
+              onChange={setView}
+              options={[
+                { value: "full", label: "Full moments", icon: <Glyph k="cards" size={17} /> },
+                { value: "folded", label: "One line each", icon: <Glyph k="list" size={17} /> },
+              ]}
+            />
           </div>
           <div>
             <p className="font-ui text-[13px] font-semibold text-ink mb-2">Group by</p>
-            <div className="grid grid-cols-3 p-1 rounded-full bg-surface-2">
-              {([["month", "Month"], ["year", "Year"], ["none", "None"]] as const).map(([id, label]) => (
-                <button key={id} type="button" aria-pressed={group === id} onClick={() => setGroup(id)} className={cn("press h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors", group === id ? "bg-bg text-ink shadow-[var(--shadow-soft)]" : "text-ink-soft")}>{label}</button>
-              ))}
-            </div>
+            <Segmented
+              label="Group by"
+              fill
+              value={group}
+              onChange={setGroup}
+              options={[
+                { value: "month", label: "Month" },
+                { value: "year", label: "Year" },
+                { value: "none", label: "None" },
+              ]}
+            />
           </div>
           <div>
             <p className="font-ui text-[13px] font-semibold text-ink mb-2">Order</p>
-            <div className="grid grid-cols-2 p-1 rounded-full bg-surface-2">
-              {([["newest", "Newest first"], ["oldest", "Oldest first"]] as const).map(([id, label]) => (
-                <button key={id} type="button" aria-pressed={sort === id} onClick={() => setSort(id)} className={cn("press h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors", sort === id ? "bg-bg text-ink shadow-[var(--shadow-soft)]" : "text-ink-soft")}>{label}</button>
-              ))}
-            </div>
+            <Segmented
+              label="Order"
+              fill
+              value={sort}
+              onChange={setSort}
+              options={[
+                { value: "newest", label: "Newest first" },
+                { value: "oldest", label: "Oldest first" },
+              ]}
+            />
           </div>
           <div>
             <p className="font-ui text-[13px] font-semibold text-ink mb-2">What it carries</p>

@@ -16,13 +16,13 @@ import { type AttachmentDTO, type MediaKind } from "@/lib/media-client";
 import type { Moment, MomentKind } from "@/lib/moment-types";
 import { saveMoment } from "@/lib/journal";
 import { toLocalInput } from "@/lib/dates";
-import { cn } from "@/lib/utils";
 import { DateField, DateTimeField, TimeField } from "@/components/ui/pickers";
 import { NotifyNudge } from "@/components/push/Notifications";
 import { AudioCapture, MediaView, PhotoCapture, UploadStrip, VideoCapture, type CapturedMedia } from "./Media";
 import { useEagerUploads } from "./useEagerUploads";
 import { plainText } from "./RichText";
 import { CrossMark } from "@/components/art/PenMarks";
+import { Segmented } from "@/components/ui/Segmented";
 
 const KINDS: { id: MomentKind; label: string }[] = [
   { id: "writing", label: "Write" },
@@ -211,26 +211,19 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
       size="lg"
       busy={!!saving}
       header={
-        <div role="tablist" aria-label="Kind of moment" className="mt-4 p-1 rounded-full bg-surface grid grid-cols-4">
-          {KINDS.map((k) => (
-            <button
-              key={k.id}
-              role="tab"
-              type="button"
-              aria-selected={kind === k.id}
-              onClick={() => setKind(k.id)}
-              className={cn("relative h-10 rounded-full font-ui text-[13.5px] font-semibold transition-colors", kind === k.id ? "text-ink" : "text-ink-soft hover:text-ink")}
-            >
-              {kind === k.id && (
-                <motion.span layoutId="composer-kind" className="absolute inset-0 rounded-full bg-bg shadow-[var(--shadow-soft)]" transition={{ type: "spring", stiffness: 500, damping: 40 }} />
-              )}
-              <span className="relative inline-flex items-center gap-1.5">
-                <MomentGlyph kind={k.id} size={17} strokeWidth={kind === k.id ? 3 : 2.5} />
-                <span className="hidden min-[380px]:inline">{k.label}</span>
-              </span>
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Kind of moment"
+          fill
+          className="mt-4"
+          value={kind}
+          onChange={setKind}
+          options={KINDS.map((k) => ({
+            value: k.id,
+            name: k.label,
+            icon: <MomentGlyph kind={k.id} size={17} strokeWidth={kind === k.id ? 3 : 2.5} />,
+            label: <span className="hidden min-[380px]:inline">{k.label}</span>,
+          }))}
+        />
       }
       footer={
         <div className="flex items-center gap-3">
@@ -335,30 +328,26 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
         <div>
           <span className="font-ui text-[13px] font-semibold text-ink">Bring it back to me</span>
           {/* One choice, so one control: the filled pill glides to the chosen option. */}
-          <div role="radiogroup" aria-label="Bring it back to me" className="mt-2 grid grid-cols-5 p-1 rounded-full bg-surface">
-            {LOOK_BACK.map((o) => {
-              const on = lookBack === o.id;
-              return (
-                <button
-                  key={o.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  aria-label={o.full}
-                  title={o.full}
-                  onClick={() => setLookBack(o.id)}
-                  className={cn("press relative h-10 rounded-full font-ui text-[12.5px] font-semibold whitespace-nowrap transition-colors", on ? "text-bg" : "text-ink-soft hover:text-ink")}
-                >
-                  {on && <motion.span layoutId="look-back-pill" className="absolute inset-0 rounded-full bg-accent" transition={{ type: "spring", stiffness: 520, damping: 40 }} />}
-                  <span className="relative inline-flex items-center justify-center gap-1">
-                    {on && o.id !== "none" && <ReturnMark key={o.id} date={o.id === "date"} />}
-                    <span className="max-[440px]:hidden">{o.label}</span>
-                    <span className="min-[441px]:hidden">{o.tiny}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <Segmented
+            label="Bring it back to me"
+            tone="accent"
+            size="sm"
+            fill
+            className="mt-2"
+            value={lookBack}
+            onChange={setLookBack}
+            options={LOOK_BACK.map((o) => ({
+              value: o.id,
+              name: o.full,
+              icon: lookBack === o.id && o.id !== "none" ? <ReturnMark key={o.id} date={o.id === "date"} /> : undefined,
+              label: (
+                <>
+                  <span className="max-[440px]:hidden">{o.label}</span>
+                  <span className="min-[441px]:hidden">{o.tiny}</span>
+                </>
+              ),
+            }))}
+          />
           {lookBack === "date" && (
             <>
               <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-[380px]">

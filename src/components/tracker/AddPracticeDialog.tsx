@@ -29,6 +29,7 @@ import { PaintedTile, PracticeIcon } from "./PracticeIcon";
 import { DeleteMark, PlusMark } from "@/components/art/PenMarks";
 import { createPractice, deletePractice } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
+import { Segmented } from "@/components/ui/Segmented";
 
 const ICON_OPTIONS = [
   "Leaf", "Flower", "FlowerLotus", "Sun", "SunHorizon", "Moon", "Star", "Sparkle",
@@ -97,31 +98,18 @@ export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
               <CloseButton onClick={onClose} />
             </header>
 
-            <div role="tablist" className="mx-5 sm:mx-6 mt-4 p-1 rounded-full bg-surface grid grid-cols-3">
-              {(
-                [
-                  ["yours", "Yours"],
-                  ["library", "Library"],
-                  ["custom", "Create"],
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  role="tab"
-                  aria-selected={tab === id}
-                  onClick={() => setTab(id)}
-                  className={cn(
-                    "relative h-9 rounded-full font-ui text-[13.5px] font-semibold transition-colors",
-                    tab === id ? "text-ink" : "text-ink-soft hover:text-ink"
-                  )}
-                >
-                  {tab === id && (
-                    <motion.span layoutId="add-practice-tab" className="absolute inset-0 rounded-full bg-bg shadow-[var(--shadow-soft)]" transition={{ type: "spring", stiffness: 500, damping: 40 }} />
-                  )}
-                  <span className="relative">{label}</span>
-                </button>
-              ))}
-            </div>
+            <Segmented
+              label="Practices"
+              fill
+              className="mx-5 sm:mx-6 mt-4"
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: "yours", label: "Yours" },
+                { value: "library", label: "Library" },
+                { value: "custom", label: "Create" },
+              ]}
+            />
 
             <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
               {tab === "yours" ? <YoursTab onAdd={() => setTab("library")} /> : tab === "library" ? <LibraryTab /> : <CustomTab onDone={() => setTab("yours")} />}

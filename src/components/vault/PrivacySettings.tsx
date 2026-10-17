@@ -31,7 +31,7 @@ import { Glyph } from "@/components/art/Glyphs";
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 /** Profile → Privacy & keys: the ways to unlock, letting in a new device, locking this one. */
-export function PrivacySettings() {
+export function PrivacySettings({ bare = false }: { bare?: boolean } = {}) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: me } = useMe();
@@ -118,7 +118,7 @@ export function PrivacySettings() {
 
   return (
     <section>
-      <h2 className="font-display text-[19px] font-semibold text-ink mb-1.5">Privacy &amp; keys</h2>
+      {!bare && <h2 className="font-display text-[19px] font-semibold text-ink mb-1.5">Privacy &amp; keys</h2>}
       <p className="font-ui text-[13.5px] leading-[1.55] text-ink-soft mb-3 max-w-[60ch]">
         Your journal is locked with your own key. Only your devices can read it; the people who run ana can&rsquo;t.
       </p>

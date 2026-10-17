@@ -37,6 +37,7 @@ import type { DayLogEntry, DayLogEntries, Practice } from "@/lib/types";
 import { fetchWeek, reorderPractices, saveDay } from "@/lib/journal";
 import { EditMark, GripMark, ReorderMark } from "@/components/art/PenMarks";
 import { TickMark } from "@/components/tracker/FieldInput";
+import { Segmented } from "@/components/ui/Segmented";
 
 export default function TrackerPage() {
   const [date, setDate] = useState(today());
@@ -128,26 +129,15 @@ export default function TrackerPage() {
     <div>
       {/* View toggle + reorder toggle */}
       <div className="flex items-center justify-between mb-4">
-        <div className="inline-flex gap-0.5 p-[3px] rounded-[30px] bg-surface-2">
-          <button
-            className={cn(
-              "font-ui text-[13px] font-medium px-4 py-1.5 rounded-[30px] transition-all",
-              view === "daily" ? "text-ink bg-surface" : "text-ink-soft"
-            )}
-            onClick={() => setView("daily")}
-          >
-            Daily
-          </button>
-          <button
-            className={cn(
-              "font-ui text-[13px] font-medium px-4 py-1.5 rounded-[30px] transition-all",
-              view === "weekly" ? "text-ink bg-surface" : "text-ink-soft"
-            )}
-            onClick={() => setView("weekly")}
-          >
-            Weekly
-          </button>
-        </div>
+        <Segmented
+          label="View"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "daily", label: "Daily" },
+            { value: "weekly", label: "Weekly" },
+          ]}
+        />
 
         {view === "daily" && (
           <button

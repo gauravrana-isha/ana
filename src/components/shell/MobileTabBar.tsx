@@ -29,18 +29,21 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
   const primary = fits ? all : all.slice(0, MAX_TABS - 1);
   const rest = fits ? [] : all.slice(MAX_TABS - 1);
 
-  // A section opened from "More" takes the first slot and stays there (the first section,
-  // usually Today, moves under "More") until another is chosen, or that one is opened again.
+  // A section opened from "More" takes the middle slot and stays there (the last section
+  // steps under "More") until another is chosen, or that one is opened again.
   const [savedPin, setSavedPin] = usePersistentState<string>("tabbar.pinned", "");
   const here = rest.find((i) => pathname.startsWith(i.href));
-  const backToFirst = !!primary[0] && pathname.startsWith(primary[0].href);
-  const pinKey = here ? here.key : backToFirst ? "" : savedPin;
+  const displaced = primary[primary.length - 1];
+  const backToIt = !!displaced && pathname.startsWith(displaced.href);
+  const pinKey = here ? here.key : backToIt ? "" : savedPin;
   useEffect(() => {
     if (pinKey !== savedPin) setSavedPin(pinKey);
   }, [pinKey, savedPin, setSavedPin]);
   const pinned = rest.find((i) => i.key === pinKey);
-  const tabs = pinned ? [pinned, ...primary.slice(1)] : primary;
-  const overflow = pinned ? [primary[0], ...rest.filter((i) => i.key !== pinned.key)] : rest;
+  const middle = Math.floor((primary.length + 1) / 2); // with "More", the centre of the bar
+  const kept = primary.slice(0, -1);
+  const tabs = pinned ? [...kept.slice(0, middle), pinned, ...kept.slice(middle)] : primary;
+  const overflow = pinned ? [displaced, ...rest.filter((i) => i.key !== pinned.key)] : rest;
   const moreActive = overflow.some((i) => pathname.startsWith(i.href));
   // Reading pages (a moment) take the whole screen; they bring their own way back.
   const bare = BARE_PAGES.some((p) => pathname.startsWith(p));

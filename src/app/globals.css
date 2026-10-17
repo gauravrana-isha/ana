@@ -513,3 +513,12 @@ html { overscroll-behavior-y: none; }
 .ana-ptr-line { animation: ana-ptr 1.1s ease-in-out infinite; }
 @keyframes ana-ptr { 0% { transform: scaleX(0.05); transform-origin: left; } 50% { transform: scaleX(1); transform-origin: left; } 50.01% { transform-origin: right; } 100% { transform: scaleX(0.05); transform-origin: right; } }
 @media (prefers-reduced-motion: reduce) { .ana-ptr-line { animation: none; } }
+
+/* The photo cropper's zoom slider: a thin track, filled up to the thumb, with a round white thumb. */
+.ana-zoom { -webkit-appearance: none; appearance: none; height: 28px; background: transparent; cursor: pointer; touch-action: none; }
+.ana-zoom::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: linear-gradient(to right, #fff var(--fill), rgb(255 255 255 / 0.25) var(--fill)); }
+.ana-zoom::-moz-range-track { height: 3px; border-radius: 3px; background: linear-gradient(to right, #fff var(--fill), rgb(255 255 255 / 0.25) var(--fill)); }
+.ana-zoom::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9.5px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 0.35); }
+.ana-zoom::-moz-range-thumb { width: 22px; height: 22px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 0.35); }
+.ana-zoom:focus-visible { outline: none; }
+.ana-zoom:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgb(255 255 255 / 0.3); }

@@ -16,6 +16,7 @@ import { fetchSearchIndex } from "@/lib/journal";
 import { searchIndex } from "@/lib/compute/search";
 import { Glyph } from "@/components/art/Glyphs";
 import { MomentGlyph } from "@/components/art/MomentIcon";
+import { FLOAT_BUTTON } from "@/components/ui/DetailBar";
 
 interface Results {
   moments: { id: string; title: string; kind: string; at: string; snippet: string }[];
@@ -29,15 +30,16 @@ export function openSearch() {
 }
 
 /** A search button for headers. */
-export function SearchButton({ className, withLabel = false }: { className?: string; withLabel?: boolean }) {
+export function SearchButton({ className, withLabel = false, floating = false }: { className?: string; withLabel?: boolean; floating?: boolean }) {
   return (
     <button
       type="button"
       onClick={openSearch}
       aria-label="Search"
       className={cn(
-        "press inline-flex items-center gap-2 rounded-[12px] text-ink-soft hover:text-ink hover:bg-surface transition-colors",
-        withLabel ? "w-full h-10 px-3 font-ui text-[14px]" : "justify-center w-9 h-9",
+        floating
+          ? FLOAT_BUTTON
+          : cn("press inline-flex items-center gap-2 rounded-[12px] text-ink-soft hover:text-ink hover:bg-surface transition-colors", withLabel ? "w-full h-10 px-3 font-ui text-[14px]" : "justify-center w-9 h-9"),
         className
       )}
     >

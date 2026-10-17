@@ -7,7 +7,8 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
-import { shrinkPhoto, uploadMedia } from "@/lib/media-client";
+import { uploadMedia } from "@/lib/media-client";
+import { PhotoCropper } from "@/components/ui/PhotoCropper";
 import { PersonAvatar } from "./People";
 import { DateField } from "@/components/ui/pickers";
 import { today } from "@/lib/dates";
@@ -42,6 +43,7 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
   const [birthday, setBirthday] = useState("");
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null);
+  const [picked, setPicked] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   const openKey = open ? person?.id ?? "new" : null;
@@ -64,7 +66,7 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
     setSaving(true);
     try {
       let photoId: string | undefined;
-      if (photo) photoId = (await uploadMedia(await shrinkPhoto(photo.blob), "photo", { userId: me.id, storage: me.storage })).id;
+      if (photo) photoId = (await uploadMedia(photo.blob, "photo", { userId: me.id, storage: me.storage })).id;
       const saved = await savePerson(person ?? null, {
         name: name.trim(),
         relation: relation.trim() || null,
@@ -117,7 +119,8 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
               <MomentGlyph kind="photo" size={16} />
             </span>
           </button>
-          <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setPhoto({ blob: f, url: URL.createObjectURL(f) }); }} />
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) setPicked(f); }} />
+          <PhotoCropper file={picked} onCancel={() => setPicked(null)} onDone={(blob) => { setPicked(null); setPhoto({ blob, url: URL.createObjectURL(blob) }); }} />
           <label className="flex-1">
             <span className="font-ui text-[13px] font-semibold text-ink">Name</span>
             <input autoFocus value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} className={field} placeholder="Their name" />
