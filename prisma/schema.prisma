@@ -65,6 +65,7 @@ model User {
   portraits         Portrait[]
   vaultKeys         VaultKey[]
   vaultLinks        VaultLink[]
+  passkeys          Passkey[]
 
   @@index([status])
 }
@@ -388,6 +389,22 @@ model VaultLink {
   response  String?
   createdAt DateTime @default(now())
   expiresAt DateTime
+
+  @@index([userId])
+}
+
+/// A passkey that can sign in (WebAuthn): its public key, checked against a fresh challenge each
+/// time. The same passkey's PRF secret unlocks the journal (its VaultKey has the same credentialId).
+model Passkey {
+  /// The credential id (base64url).
+  id         String    @id
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publicKey  String
+  counter    Int       @default(0)
+  transports String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 
   @@index([userId])
 }

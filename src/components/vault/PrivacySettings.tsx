@@ -15,6 +15,7 @@ import {
   fetchStatus,
   forgetDevice,
   passkeySupport,
+  preparePasskey,
   removeKey,
   replacePhrase,
   type VaultKey,
@@ -40,7 +41,10 @@ export function PrivacySettings() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["vault-status"] });
 
   useEffect(() => {
-    passkeySupport().then(setSupport);
+    passkeySupport().then((s) => {
+      setSupport(s);
+      if (s !== "no") preparePasskey().catch(() => {});
+    });
   }, []);
 
   const passkeys = status?.keys.filter((k) => k.kind === "passkey") ?? [];
@@ -51,7 +55,7 @@ export function PrivacySettings() {
     if (!me) return;
     setBusy("passkey");
     try {
-      await addKey("passkey", { who: { name: me.name ?? "", email: me.email ?? "" } });
+      await addKey("passkey");
       toast("Passkey added", "success", 1800);
       refresh();
     } catch (e) {
@@ -63,6 +67,21 @@ export function PrivacySettings() {
             : "Couldn't add the passkey. Please try again.",
         "error"
       );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** A passkey from before passkey sign-in: make a new one that signs in too, and retire the old. */
+  async function upgrade(k: VaultKey) {
+    setBusy("upgrade:" + k.id);
+    try {
+      await addKey("passkey");
+      await removeKey(k.id);
+      toast("Your passkey now signs you in too", "success", 2200);
+      refresh();
+    } catch (e) {
+      toast(e instanceof DOMException && e.name === "NotAllowedError" ? "No passkey was made." : "Couldn't set that up. Please try again.", "error");
     } finally {
       setBusy(null);
     }
@@ -104,7 +123,10 @@ export function PrivacySettings() {
 
       <div className="rounded-[18px] bg-surface divide-y divide-line">
         {passkeys.map((k) => (
-          <Row key={k.id} icon={<Fingerprint size={19} />} title={k.label ?? "Passkey"} line={used(k)}>
+          <Row key={k.id} icon={<Fingerprint size={19} />} title={k.label ?? "Passkey"} line={k.signsIn ? `Signs you in and unlocks · ${used(k)}` : `Unlocks only · ${used(k)}`}>
+            {!k.signsIn && support !== "no" && (
+              <Button size="sm" variant="ghost" loading={busy === "upgrade:" + k.id} onClick={() => upgrade(k)}>Use to sign in</Button>
+            )}
             <Button size="sm" variant="ghost" className="text-ink-soft hover:text-danger" loading={busy === k.id} onClick={() => remove(k)}>Remove</Button>
           </Row>
         ))}

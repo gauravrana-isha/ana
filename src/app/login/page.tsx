@@ -5,6 +5,7 @@ import { Lotus } from "@/components/art/Lotus";
 import { Ornament } from "@/components/art/Ornament";
 import { SadhguruSignature } from "@/components/art/SadhguruSignature";
 import { GoogleButton } from "@/components/auth/GoogleButton";
+import { SignInChoices } from "@/components/auth/PasskeySignIn";
 import { signInWithGoogle } from "@/app/actions";
 import { getCurrentUser, homeFor } from "@/lib/session";
 
@@ -57,9 +58,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             Your sadhana, and the moments worth keeping.
           </h1>
 
-          <form action={signInWithGoogle} className="mt-9">
-            <GoogleButton />
-          </form>
+          <div className="mt-9">
+            <SignInChoices
+              google={
+                <form action={signInWithGoogle}>
+                  <GoogleButton />
+                </form>
+              }
+            />
+          </div>
 
           {message && (
             <p role="alert" className="mt-4 font-ui text-[13px] leading-[1.5] text-danger">
@@ -68,7 +75,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           )}
 
           <p className="mt-6 font-ui text-[13px] leading-[1.6] text-ink-soft">
-            New here? Sign in and an admin will let you in.
+            New here? Continue with Google and an admin will let you in. After that, your passkey signs you in.
           </p>
         </div>
       </main>

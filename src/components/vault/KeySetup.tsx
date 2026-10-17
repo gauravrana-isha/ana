@@ -12,6 +12,7 @@ import {
   newDraft,
   newPhrase,
   passkeySupport,
+  preparePasskey,
   phraseWords,
 } from "@/lib/vault/vault";
 import { ChoiceCard, FieldError, ScreenTitle, VaultScreen } from "./VaultScreen";
@@ -42,7 +43,11 @@ export function KeySetup({
   const [method, setMethod] = useState<"passkey" | "passphrase" | null>(null);
 
   useEffect(() => {
-    passkeySupport().then(setSupport);
+    passkeySupport().then((s) => {
+      setSupport(s);
+      // Ready ahead, so the tap opens the passkey prompt straight away (Safari needs that).
+      if (s !== "no") preparePasskey().catch(() => {});
+    });
   }, []);
 
   function go(to: Step) {
@@ -55,7 +60,7 @@ export function KeySetup({
     setBusy(true);
     setError("");
     try {
-      await draftAddPasskey(draft, { name: user.name, email: user.email });
+      await draftAddPasskey(draft);
       setMethod("passkey");
       go("words");
     } catch (e) {

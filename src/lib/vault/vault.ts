@@ -42,6 +42,8 @@ export interface VaultKey {
   credentialId: string | null;
   createdAt: string;
   lastUsedAt: string | null;
+  /** A passkey that also signs in (made since passkey sign-in). */
+  signsIn?: boolean;
 }
 
 export interface VaultStatus {
@@ -331,17 +333,48 @@ async function prfFrom(credentialId: Uint8Array<ArrayBuffer>, salt: Uint8Array<A
   return new Uint8Array(out);
 }
 
-async function passkeyKey(journal: Uint8Array<ArrayBuffer>, who: { name: string; email: string }): Promise<NewKey> {
+// Passkeys are made through the server, so they can sign in as well as unlock. Safari only
+// shows the passkey prompt straight after a tap, so the options (with their challenge) are
+// fetched ahead, when the screen opens (`preparePasskey`), and used on the tap.
+type CreationJSON = {
+  challenge: string;
+  rp: { name: string; id?: string };
+  user: { id: string; name: string; displayName: string };
+  pubKeyCredParams: PublicKeyCredentialParameters[];
+  timeout?: number;
+  excludeCredentials?: { id: string; type: "public-key"; transports?: AuthenticatorTransport[] }[];
+  authenticatorSelection?: AuthenticatorSelectionCriteria;
+  attestation?: AttestationConveyancePreference;
+};
+let prepared: { at: number; options: Promise<CreationJSON> } | null = null;
+const FRESH_MS = 4 * 60 * 1000;
+
+/** Fetch the options for making a passkey now, so the tap can go straight to the prompt. */
+export function preparePasskey() {
+  if (!prepared || Date.now() - prepared.at > FRESH_MS) {
+    const options = fetch("/api/passkeys/register", { cache: "no-store" }).then((r) => {
+      if (!r.ok) throw new Error("Couldn't start making a passkey.");
+      return r.json() as Promise<CreationJSON>;
+    });
+    options.catch(() => (prepared = null));
+    prepared = { at: Date.now(), options };
+  }
+  return prepared.options;
+}
+
+async function passkeyKey(journal: Uint8Array<ArrayBuffer>): Promise<NewKey> {
+  const o = await preparePasskey();
   const cred = (await navigator.credentials.create({
     publicKey: {
-      challenge: randomBytes(32),
-      rp: { name: "ana" },
-      user: { id: randomBytes(16), name: who.email || who.name, displayName: who.name || who.email },
-      pubKeyCredParams: [
-        { type: "public-key", alg: -7 },
-        { type: "public-key", alg: -257 },
-      ],
-      authenticatorSelection: { residentKey: "preferred", userVerification: "required" },
+      challenge: fromB64(o.challenge),
+      rp: o.rp,
+      // The server's user id is plain text (SimpleWebAuthn 9), not base64.
+      user: { id: new TextEncoder().encode(o.user.id), name: o.user.name, displayName: o.user.displayName },
+      pubKeyCredParams: o.pubKeyCredParams,
+      timeout: o.timeout,
+      excludeCredentials: (o.excludeCredentials ?? []).map((c) => ({ type: "public-key" as const, id: fromB64(c.id), transports: c.transports })),
+      authenticatorSelection: o.authenticatorSelection,
+      attestation: o.attestation,
       extensions: { prf: { eval: { first: PRF_SALT } } } as PrfInputs as AuthenticationExtensionsClientInputs,
     },
   })) as PublicKeyCredential | null;
@@ -349,11 +382,117 @@ async function passkeyKey(journal: Uint8Array<ArrayBuffer>, who: { name: string;
   const prf = (cred.getClientExtensionResults() as { prf?: PrfResults }).prf;
   if (prf && prf.enabled === false) throw new PasskeyUnsupportedError();
   const id = new Uint8Array(cred.rawId);
+
+  // Register it with the server (its public key, for signing in).
+  const att = cred.response as AuthenticatorAttestationResponse;
+  prepared = null;
+  await postJSON("/api/passkeys/register", {
+    response: {
+      id: cred.id,
+      rawId: toB64(id),
+      type: "public-key",
+      response: {
+        clientDataJSON: toB64(new Uint8Array(att.clientDataJSON)),
+        attestationObject: toB64(new Uint8Array(att.attestationObject)),
+        transports: att.getTransports?.() ?? [],
+      },
+      clientExtensionResults: {},
+      authenticatorAttachment: (cred as PublicKeyCredential & { authenticatorAttachment?: string }).authenticatorAttachment ?? undefined,
+    },
+  });
+  rememberPasskeyHere();
+
   // Some authenticators give the secret at creation; others only when the passkey is used.
   const secret = prf?.results?.first ? new Uint8Array(prf.results.first) : await prfFrom(id, PRF_SALT);
   const salt = randomBytes(16);
   const wk = await wrappingKeyFromSecret(secret, salt, "ana passkey v1");
   return { kind: "passkey", label: deviceLabel(), wrapped: await wrap(wk, journal), salt: toB64(salt), iterations: null, credentialId: toB64(id) };
+}
+
+// ---------- signing in with a passkey ----------
+
+const PASSKEY_HERE = "ana:passkey-here";
+
+/** This device has (or has used) a passkey for ana: the login page leads with it. */
+function rememberPasskeyHere() {
+  try {
+    localStorage.setItem(PASSKEY_HERE, "1");
+  } catch {
+    /* fine */
+  }
+}
+
+export function passkeyUsedHere() {
+  try {
+    return localStorage.getItem(PASSKEY_HERE) === "1";
+  } catch {
+    return false;
+  }
+}
+
+type RequestJSON = { challenge: string; rpId?: string; timeout?: number; userVerification?: UserVerificationRequirement };
+let preparedSignIn: { at: number; options: Promise<RequestJSON> } | null = null;
+
+/** Fetch a sign-in challenge now, so the tap goes straight to the passkey prompt. */
+export function prepareSignIn() {
+  if (!preparedSignIn || Date.now() - preparedSignIn.at > FRESH_MS) {
+    const options = fetch("/api/passkeys/login", { cache: "no-store" }).then((r) => {
+      if (!r.ok) throw new Error("Couldn't start signing in.");
+      return r.json() as Promise<RequestJSON>;
+    });
+    options.catch(() => (preparedSignIn = null));
+    preparedSignIn = { at: Date.now(), options };
+  }
+  return preparedSignIn.options;
+}
+
+/**
+ * One tap: sign in with a passkey and, from the same tap, unlock the journal on this device.
+ * Resolves once signed in (and unlocked, when this passkey holds the journal key).
+ */
+export async function signInWithPasskey() {
+  const o = await prepareSignIn();
+  const assertion = (await navigator.credentials.get({
+    publicKey: {
+      challenge: fromB64(o.challenge),
+      rpId: o.rpId,
+      timeout: o.timeout,
+      userVerification: "required",
+      extensions: { prf: { eval: { first: PRF_SALT } } } as PrfInputs as AuthenticationExtensionsClientInputs,
+    },
+  })) as PublicKeyCredential | null;
+  if (!assertion) throw new Error("No passkey was used.");
+  preparedSignIn = null;
+  const r = assertion.response as AuthenticatorAssertionResponse;
+  const { userId } = (await postJSON("/api/passkeys/login", {
+    response: {
+      id: assertion.id,
+      rawId: toB64(new Uint8Array(assertion.rawId)),
+      type: "public-key",
+      response: {
+        clientDataJSON: toB64(new Uint8Array(r.clientDataJSON)),
+        authenticatorData: toB64(new Uint8Array(r.authenticatorData)),
+        signature: toB64(new Uint8Array(r.signature)),
+        userHandle: r.userHandle ? toB64(new Uint8Array(r.userHandle)) : undefined,
+      },
+      clientExtensionResults: {},
+    },
+  })) as { userId: string };
+  rememberPasskeyHere();
+
+  // The same tap's secret unlocks the journal (if this passkey holds its key).
+  const out = (assertion.getClientExtensionResults() as { prf?: PrfResults }).prf?.results?.first;
+  if (!out) return;
+  try {
+    const status = await fetchStatus();
+    const k = status.keys.find((x) => x.kind === "passkey" && x.credentialId === toB64(new Uint8Array(assertion.rawId)));
+    if (!k) return;
+    const wk = await wrappingKeyFromSecret(new Uint8Array(out), fromB64(k.salt!), "ana passkey v1");
+    await become(userId, await unwrap(wk, k.wrapped), status.check);
+    markUsed(k.id);
+  } catch {
+    /* signed in; the journal asks to be unlocked */
+  }
 }
 
 export async function unlockWithPasskey(userId: string, status: VaultStatus) {
@@ -376,6 +515,7 @@ export async function unlockWithPasskey(userId: string, status: VaultStatus) {
   const wk = await wrappingKeyFromSecret(new Uint8Array(out), fromB64(k.salt!), "ana passkey v1");
   await become(userId, await unwrap(wk, k.wrapped), status.check);
   markUsed(k.id);
+  rememberPasskeyHere();
 }
 
 function deviceLabel() {
@@ -400,8 +540,8 @@ export function newDraft(): VaultDraft {
   return { journal: newJournalKey(), keys: [] };
 }
 
-export async function draftAddPasskey(draft: VaultDraft, who: { name: string; email: string }) {
-  draft.keys = [...draft.keys.filter((k) => k.kind !== "passkey"), await passkeyKey(draft.journal, who)];
+export async function draftAddPasskey(draft: VaultDraft) {
+  draft.keys = [...draft.keys.filter((k) => k.kind !== "passkey"), await passkeyKey(draft.journal)];
 }
 
 export async function draftAddPassphrase(draft: VaultDraft, passphrase: string) {
@@ -417,9 +557,9 @@ export async function finishVault(userId: string, draft: VaultDraft, phrase: str
 }
 
 /** Add a way to unlock (needs the journal unlocked here). */
-export async function addKey(kind: "passkey" | "passphrase", opts: { passphrase?: string; who?: { name: string; email: string } }) {
+export async function addKey(kind: "passkey" | "passphrase", opts: { passphrase?: string } = {}) {
   if (!raw) throw new VaultLockedError();
-  const k = kind === "passkey" ? await passkeyKey(raw, opts.who!) : await passphraseKey(opts.passphrase!, raw);
+  const k = kind === "passkey" ? await passkeyKey(raw) : await passphraseKey(opts.passphrase!, raw);
   return postJSON("/api/vault/keys", k);
 }
 

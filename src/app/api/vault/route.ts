@@ -22,11 +22,16 @@ const keyFields = {
 export async function GET() {
   const user = await getCurrentUser();
   if (!user || user.status === "SUSPENDED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const keys = await db.vaultKey.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: keyFields });
+  const [keys, signIns] = await Promise.all([
+    db.vaultKey.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" }, select: keyFields }),
+    db.passkey.findMany({ where: { userId: user.id }, select: { id: true } }),
+  ]);
+  const canSignIn = new Set(signIns.map((p) => p.id));
   return NextResponse.json({
     set: !!user.vaultAt,
     check: user.vaultCheck,
-    keys,
+    // Passkeys made before passkey sign-in only unlock; the others sign in too.
+    keys: keys.map((k) => ({ ...k, signsIn: !!k.credentialId && canSignIn.has(k.credentialId) })),
     legacy: user.vaultAt ? (await legacyLeft(user.id)) > 0 : false,
   });
 }

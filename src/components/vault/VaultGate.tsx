@@ -101,6 +101,15 @@ function Sealing({ me, first, onDone }: { me: { id: string; storage: "blob" | "l
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState("");
   const [round, setRound] = useState(0);
+  const [finished, setFinished] = useState(false);
+  // The count shown ticks up one by one towards the real count (the work lands in batches).
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    if (shown >= progress.done) return;
+    const step = Math.max(1, Math.ceil((progress.done - shown) / 40));
+    const t = setTimeout(() => setShown((n) => Math.min(progress.done, n + step)), 28);
+    return () => clearTimeout(t);
+  }, [shown, progress.done]);
 
   // Runs once per try (the latest `me` and `onDone` are read through a ref).
   const latest = useRef({ me, onDone });
@@ -110,12 +119,18 @@ function Sealing({ me, first, onDone }: { me: { id: string; storage: "blob" | "l
   useEffect(() => {
     let live = true;
     sealEverything(latest.current.me, (done, total) => live && setProgress({ done, total }))
-      .then(() => live && latest.current.onDone())
+      .then(() => live && setFinished(true))
       .catch((e) => live && setError(e instanceof Error ? e.message : "Something went wrong."));
     return () => {
       live = false;
     };
   }, [round]);
+  // Done once the work is done and the count has caught up (with a beat to see it full).
+  useEffect(() => {
+    if (!finished || shown < progress.total) return;
+    const t = setTimeout(() => latest.current.onDone(), 450);
+    return () => clearTimeout(t);
+  }, [finished, shown, progress.total]);
 
   // Leaving now would stop it half way (it picks up again next time, but say so).
   useEffect(() => {
@@ -124,7 +139,7 @@ function Sealing({ me, first, onDone }: { me: { id: string; storage: "blob" | "l
     return () => window.removeEventListener("beforeunload", warn);
   }, []);
 
-  const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
+  const pct = progress.total ? Math.round((shown / progress.total) * 100) : 0;
   return (
     <VaultScreen step="sealing">
       <div className="pt-6">
@@ -135,9 +150,9 @@ function Sealing({ me, first, onDone }: { me: { id: string; storage: "blob" | "l
           lead="Everything you've written, tracked and recorded is being encrypted on this device. Keep ana open; it takes a moment."
         />
         <div className="mt-8 h-2 rounded-full bg-line overflow-hidden" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-          <div className="h-full bg-accent rounded-full transition-[width] duration-500 ease-out" style={{ width: `${Math.max(4, pct)}%` }} />
+          <div className="h-full bg-accent rounded-full transition-[width] duration-150 ease-out" style={{ width: `${Math.max(4, pct)}%` }} />
         </div>
-        <p className="mt-2.5 font-ui text-[13px] text-ink-soft tabular">{progress.total ? `${progress.done} of ${progress.total}` : "Getting ready…"}</p>
+        <p className="mt-2.5 font-ui text-[13px] text-ink-soft tabular">{progress.total ? `${shown} of ${progress.total}` : "Getting ready…"}</p>
         {error && (
           <div className="mt-6">
             <p role="alert" className="font-ui text-[14px] text-danger">{error}</p>

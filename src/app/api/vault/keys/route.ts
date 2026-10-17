@@ -35,7 +35,12 @@ export async function DELETE(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = z.object({ id: z.string().max(40) }).safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  const removed = await db.vaultKey.deleteMany({ where: { id: parsed.data.id, userId: user.id, kind: { not: "phrase" } } });
-  if (!removed.count) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const key = await db.vaultKey.findFirst({ where: { id: parsed.data.id, userId: user.id, kind: { not: "phrase" } }, select: { credentialId: true } });
+  if (!key) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // A removed passkey stops signing in too.
+  await db.$transaction([
+    db.vaultKey.deleteMany({ where: { id: parsed.data.id, userId: user.id } }),
+    ...(key.credentialId ? [db.passkey.deleteMany({ where: { id: key.credentialId, userId: user.id } })] : []),
+  ]);
   return NextResponse.json({ ok: true });
 }
