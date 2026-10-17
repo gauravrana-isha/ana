@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { ConnectivityIndicator } from "@/components/shell/ConnectivityIndicator";
 import { ThemeColor } from "@/components/shell/ThemeColor";
 import { ToastProvider } from "@/components/ui/Toast";
+import { reportError } from "@/lib/report";
 import { ConfirmProvider } from "@/components/ui/Confirm";
 
 export const QUERY_CACHE_KEY = "ana-query-cache";
@@ -49,6 +50,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       throttleTime: 1500,
     })
   );
+
+  // Errors nothing else caught: reported to the admins (technical details only).
+  useEffect(() => {
+    const onError = (e: ErrorEvent) => reportError("app", e.error ?? e.message);
+    const onRejection = (e: PromiseRejectionEvent) => reportError("app-promise", e.reason);
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
 
   // Register service worker
   useEffect(() => {

@@ -119,7 +119,8 @@ export default function AdminPage() {
         />
       </div>
 
-      <MoveToR2 />
+      <StorageStatus />
+      <RecentErrors />
 
       <div className="mt-6 flex flex-col gap-2">
         {isLoading &&
@@ -271,42 +272,99 @@ export default function AdminPage() {
   );
 }
 
-/** Shown only while R2 is set up and older files are still in the Blob store. */
-function MoveToR2() {
+/**
+ * Where files are stored: always shown, so a problem is visible instead of hidden. While R2
+ * is set up and older files are still in the Blob store, it offers to move them.
+ */
+function StorageStatus() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [moving, setMoving] = useState(false);
-  const { data } = useQuery({
+  const { data, error, isPending } = useQuery({
     queryKey: ["admin-storage"],
-    queryFn: async (): Promise<{ mode: string; onBlob: number }> => (await fetch("/api/admin/storage")).json(),
+    queryFn: async (): Promise<{ mode: string; onBlob: number }> => {
+      const res = await fetch("/api/admin/storage", { cache: "no-store" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? `status ${res.status}`);
+      return body;
+    },
+    retry: 1,
   });
-  if (data?.mode !== "r2" || !data.onBlob) return null;
 
   async function move() {
     setMoving(true);
     try {
       for (;;) {
         const res = await fetch("/api/admin/storage", { method: "POST" });
-        const batch: { moved: number; failed: number; onBlob: number } = await res.json();
-        if (!res.ok) throw new Error();
+        const batch: { moved: number; failed: number; onBlob: number; error?: string } = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(batch.error ?? `status ${res.status}`);
         qc.setQueryData(["admin-storage"], { mode: "r2", onBlob: batch.onBlob });
         if (!batch.onBlob) return toast("All files are on R2 now", "success");
         if (!batch.moved) return toast(`${batch.onBlob} files couldn't be moved. Try again later.`, "error");
       }
-    } catch {
-      toast("Moving stopped. Try again.", "error");
+    } catch (e) {
+      toast(`Moving stopped (${e instanceof Error ? e.message : "error"}). Try again.`, "error");
     } finally {
       setMoving(false);
     }
   }
 
+  const where = data?.mode === "r2" ? "Cloudflare R2" : data?.mode === "blob" ? "Vercel Blob" : data?.mode;
   return (
     <div className="mt-4 flex items-center gap-3 rounded-[16px] bg-surface px-4 py-3">
       <Glyph k="storage" size={20} className="text-accent shrink-0" />
       <p className="flex-1 min-w-0 font-ui text-[13.5px] text-ink">
-        <span className="font-semibold tabular">{data.onBlob}</span> {data.onBlob === 1 ? "file is" : "files are"} still on Vercel Blob.
+        {isPending ? (
+          <span className="text-ink-soft">Checking storage…</span>
+        ) : error ? (
+          <span className="text-danger">Couldn&rsquo;t check storage ({error.message}).</span>
+        ) : (
+          <>
+            New files go to <span className="font-semibold">{where}</span>.
+            {data!.mode === "r2" && (data!.onBlob ? <> <span className="font-semibold tabular">{data!.onBlob}</span> older {data!.onBlob === 1 ? "file is" : "files are"} still on Vercel Blob.</> : " Every file is there.")}
+          </>
+        )}
       </p>
-      <Button size="sm" onClick={move} loading={moving}>Move to R2</Button>
+      {data?.mode === "r2" && data.onBlob > 0 && <Button size="sm" onClick={move} loading={moving}>Move to R2</Button>}
+    </div>
+  );
+}
+
+/** The latest errors from the app and server (technical details only), newest first. */
+function RecentErrors() {
+  const [open, setOpen] = useState(false);
+  const { data = [] } = useQuery({
+    queryKey: ["admin-errors"],
+    queryFn: async (): Promise<{ id: string; at: string; source: string; message: string; path: string | null }[]> => {
+      const res = await fetch("/api/errors", { cache: "no-store" });
+      return res.ok ? res.json() : [];
+    },
+    refetchInterval: open ? 15_000 : false,
+  });
+  if (!data.length) return null;
+  const time = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  return (
+    <div className="mt-3 rounded-[16px] bg-surface">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="press w-full flex items-center gap-3 px-4 py-3 text-left">
+        <Glyph k="info" size={20} className="text-danger shrink-0" />
+        <span className="flex-1 font-ui text-[13.5px] text-ink">
+          <span className="font-semibold tabular">{data.length}</span> recent {data.length === 1 ? "error" : "errors"}
+        </span>
+        <span className="font-ui text-[13px] font-semibold text-accent">{open ? "Hide" : "Show"}</span>
+      </button>
+      {open && (
+        <ul className="border-t border-line divide-y divide-line max-h-[420px] overflow-y-auto">
+          {data.map((e) => (
+            <li key={e.id} className="px-4 py-2.5">
+              <p className="font-ui text-[12px] text-ink-soft tabular">
+                {time.format(new Date(e.at))} · {e.source}
+                {e.path ? ` · ${e.path}` : ""}
+              </p>
+              <p className="mt-0.5 font-ui text-[13px] leading-[1.45] text-ink break-words">{e.message}</p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

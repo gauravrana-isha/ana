@@ -3,6 +3,7 @@
 import { upload } from "@vercel/blob/client";
 import { encryptFile } from "./vault/files";
 import { isUnlocked } from "./vault/vault";
+import { reportError } from "./report";
 
 export type MediaKind = "audio" | "video" | "photo";
 
@@ -52,6 +53,7 @@ export async function storeFile(
   try {
     return await storeAt(file, kind, opts);
   } catch (err) {
+    reportError("upload", err, `storage=${opts.storage} kind=${kind} type=${file.type} size=${file.size} online=${navigator.onLine}`);
     // If storage moved (say, to R2) since the app loaded, go where it is now.
     const now = await currentStorage();
     if (now && now !== opts.storage) return storeAt(file, kind, { ...opts, storage: now });
@@ -78,7 +80,7 @@ async function storeAt(
       body: JSON.stringify({ kind, contentType, size: body.size, replacing: opts.replacing }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error ?? "Upload refused");
+    if (!res.ok) throw new Error(`${data.error ?? "Upload refused"} (link ${res.status})`);
     await putWithProgress(data.url, body, body.type || contentType, opts.onProgress);
     pathname = data.pathname;
   } else if (opts.storage === "blob") {
@@ -114,8 +116,14 @@ function putWithProgress(url: string, body: Blob, type: string, onProgress?: (pc
     xhr.open("PUT", url);
     xhr.setRequestHeader("Content-Type", type);
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(Math.round((e.loaded / e.total) * 100));
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error("Upload failed. Please try again.")));
-    xhr.onerror = () => reject(new Error("Upload failed. Check your connection and try again."));
+    // The storage's own reason (e.g. an expired or refused link) goes into the error report.
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new Error(`Upload failed (storage said ${xhr.status}: ${(xhr.responseText.match(/<Code>([^<]+)/)?.[1] ?? xhr.responseText).slice(0, 120)}). Please try again.`));
+    // Status 0: the request never got an answer (connection, or the storage refusing this site).
+    xhr.onerror = () => reject(new Error(`Upload failed (no answer from storage, status ${xhr.status}). Check your connection and try again.`));
+    xhr.ontimeout = () => reject(new Error("Upload took too long. Please try again."));
     xhr.send(body);
   });
 }
@@ -145,8 +153,12 @@ export async function uploadMedia(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ kind, pathname: stored.pathname, contentType: stored.contentType, durationSec: opts.durationSec, sealed: stored.sealed, thumbPathname: thumb?.pathname }),
   });
-  const data = await reg.json();
-  if (!reg.ok) throw new Error(data.error ?? "Couldn't save the upload");
+  const data = await reg.json().catch(() => ({}));
+  if (!reg.ok) {
+    const err = new Error(data.error ?? "Couldn't save the upload");
+    reportError("upload-register", err, `status=${reg.status} kind=${kind}`);
+    throw err;
+  }
   return data as AttachmentDTO;
 }
 

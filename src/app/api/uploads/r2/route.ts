@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveUser } from "@/lib/session";
+import { allow } from "@/lib/ratelimit";
 import { MEDIA_RULES, allowedType, isMediaKind, newPathname, presignR2Put, roomFor, storageMode } from "@/lib/storage";
 
 const Schema = z.object({
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (storageMode() !== "r2") return NextResponse.json({ error: "Not available" }, { status: 409 });
+  if (!(await allow(`upload:${user.id}`, 60))) return NextResponse.json({ error: "Too many uploads at once. Wait a minute and try again." }, { status: 429 });
 
   const parsed = Schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success || !isMediaKind(parsed.data.kind)) return NextResponse.json({ error: "Invalid input" }, { status: 400 });

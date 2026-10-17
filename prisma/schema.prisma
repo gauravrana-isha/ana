@@ -45,6 +45,8 @@ model User {
   vaultSealedAt       DateTime?
   /// Birthday, sealed (the plain `birthday` column is left empty once the journal is locked).
   birthdaySealed      String?
+  /// The invite this person joined with, if any.
+  inviteCodeId        String?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @default(now()) @updatedAt
 
@@ -266,25 +268,25 @@ model ExpressionPerson {
 
 /// A stored file. `storage` is "blob" (Vercel Blob, private) or "local" (dev only).
 model Attachment {
-  id           String      @id @default(cuid())
-  userId       String
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expressionId String?
-  expression   Expression? @relation(fields: [expressionId], references: [id], onDelete: Cascade)
-  kind         String
-  storage      String
-  pathname     String      @unique
-  contentType  String
-  size         Int
-  durationSec  Float?
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expressionId  String?
+  expression    Expression? @relation(fields: [expressionId], references: [id], onDelete: Cascade)
+  kind          String
+  storage       String
+  pathname      String      @unique
+  contentType   String
+  size          Int
+  durationSec   Float?
   /// The stored bytes are encrypted on the device (lib/vault/files).
-  sealed       Boolean     @default(false)
+  sealed        Boolean     @default(false)
   /// Photos: a small copy for lists and grids (same storage, also encrypted).
-  thumbPathname String?    @unique
+  thumbPathname String?     @unique
   thumbSize     Int?
-  createdAt    DateTime    @default(now())
-  personPhoto  Person?     @relation("PersonPhoto")
-  userPhoto    User?       @relation("UserPhoto")
+  createdAt     DateTime    @default(now())
+  personPhoto   Person?     @relation("PersonPhoto")
+  userPhoto     User?       @relation("UserPhoto")
 
   @@index([userId])
   @@index([expressionId])
@@ -411,4 +413,41 @@ model Passkey {
   lastUsedAt DateTime?
 
   @@index([userId])
+}
+
+/// Request counts per key per minute window, for rate limits (old windows are swept).
+model RateLimit {
+  key    String
+  window DateTime
+  count  Int      @default(1)
+
+  @@id([key, window])
+  @@index([window])
+}
+
+/// Errors from the app and the server, for admins. Never holds journal content.
+model ErrorLog {
+  id      String   @id @default(cuid())
+  at      DateTime @default(now())
+  source  String
+  message String
+  stack   String?
+  path    String?
+  digest  String?
+  userId  String?
+
+  @@index([at])
+}
+
+/// An invite: whoever joins with it is let in straight away.
+model InviteCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  note        String?
+  maxUses     Int?
+  uses        Int       @default(0)
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
 }
