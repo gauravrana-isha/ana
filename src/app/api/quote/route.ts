@@ -43,17 +43,35 @@ function hashDate(date: string): number {
 }
 
 /*
- * The day's quote is the same for everyone, so Vercel's edge (Mumbai) keeps it for an hour
- * and serves it instantly, refreshing in the background. A fallback quote (the Sadhguru
- * service didn't answer) is kept only briefly, so the real one comes back soon.
+ * Today's quote, by today's date in India (Isha publishes it around 07:31 IST). Two rules,
+ * from the fix in kiran:
+ *   1. Pick the card whose urlAlias is today's IST date (e.g. "october-17-2026"), never just
+ *      "the newest": before it's published, the newest is yesterday's.
+ *   2. Bust Isha's CDN (a changing query parameter, no-store): it has served day-old listings.
+ * Caching follows what was found: today's quote is kept until IST midnight; before it's out,
+ * the latest one is shown and checked again within minutes.
  */
-const EDGE_HOUR = { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" };
-const EDGE_SHORT = { "Cache-Control": "public, s-maxage=300" };
+const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+const IST_OFFSET_MS = 330 * 60 * 1000;
+
+function istToday(now: Date) {
+  const t = new Date(now.getTime() + IST_OFFSET_MS);
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() };
+}
+function secondsToIstMidnight(now: Date) {
+  const t = now.getTime() + IST_OFFSET_MS;
+  const next = Math.floor(t / 86_400_000 + 1) * 86_400_000;
+  return Math.max(60, Math.floor((next - t) / 1000));
+}
+const clean = (s?: string) => (s ?? "").replace(/\s+/g, " ").trim();
+
+type Card = { summary?: string; urlAlias?: string };
 
 export async function GET(req: NextRequest) {
-  const date =
-    req.nextUrl.searchParams.get("date") ??
-    new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const ist = istToday(now);
+  const today = `${ist.y}-${String(ist.m).padStart(2, "0")}-${String(ist.d).padStart(2, "0")}`;
+  const alias = `${MONTHS[ist.m - 1]}-${ist.d}-${ist.y}`;
 
   try {
     const params = new URLSearchParams({
@@ -63,37 +81,38 @@ export async function GET(req: NextRequest) {
       lang: "",
       topic: "",
       start: "0",
-      limit: "1",
+      limit: "7",
       contentType: "quotes",
       sortby: "newest",
+      _: String(Math.floor(now.getTime() / 60_000)), // a fresh listing, not Isha's cached one
     });
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
-    const res = await fetch(`${API_URL}?${params}`, {
-      headers: HEADERS,
-      signal: controller.signal,
-      next: { revalidate: 3600 },
-    });
-
-    clearTimeout(timeout);
-
+    const res = await fetch(`${API_URL}?${params}`, { headers: HEADERS, cache: "no-store", signal: AbortSignal.timeout(6000) });
     if (res.ok) {
-      const data = await res.json();
-      const cards: Array<{ summary?: string }> = data?.posts?.cards ?? [];
-      if (cards.length > 0) {
-        // Always take the most recent quote (today's)
-        const quote = cards[0]?.summary?.trim();
-        if (quote) {
-          return NextResponse.json({ quote, source: "api" }, { headers: EDGE_HOUR });
-        }
+      const cards: Card[] = ((await res.json())?.posts?.cards ?? []).filter(Boolean);
+      const todays = cards.find((c) => c.urlAlias === alias && clean(c.summary));
+      if (todays) {
+        const ttl = secondsToIstMidnight(now);
+        return NextResponse.json(
+          { quote: clean(todays.summary), source: "api", date: today, today: true },
+          { headers: { "Cache-Control": `public, s-maxage=${ttl}, max-age=0` } }
+        );
+      }
+      // Not published yet today: show the latest for now, and look again soon.
+      const latest = cards.find((c) => clean(c.summary));
+      if (latest) {
+        return NextResponse.json(
+          { quote: clean(latest.summary), source: "api", date: today, today: false },
+          { headers: { "Cache-Control": "public, s-maxage=240, max-age=0" } }
+        );
       }
     }
   } catch {
-    // Fall through to fallback
+    // Fall through to a fallback quote
   }
 
-  const idx = hashDate(date) % FALLBACK_QUOTES.length;
-  return NextResponse.json({ quote: FALLBACK_QUOTES[idx], source: "fallback" }, { headers: EDGE_SHORT });
+  const idx = hashDate(req.nextUrl.searchParams.get("date") ?? today) % FALLBACK_QUOTES.length;
+  return NextResponse.json(
+    { quote: FALLBACK_QUOTES[idx], source: "fallback", date: today, today: false },
+    { headers: { "Cache-Control": "public, s-maxage=120, max-age=0" } }
+  );
 }

@@ -100,9 +100,10 @@ export function useQuote(date: string) {
     queryKey: keys.quote(date),
     queryFn: async () => {
       const res = await fetch(`/api/quote?date=${date}`);
-      if (!res.ok) return { quote: "", source: "fallback" };
-      return res.json() as Promise<{ quote: string; source: string }>;
+      if (!res.ok) return { quote: "", source: "fallback", today: false };
+      return res.json() as Promise<{ quote: string; source: string; today?: boolean }>;
     },
-    staleTime: 60 * 60 * 1000, // 1 hour - same quote all day
+    // Today's quote holds for the day; until it's out (before ~07:31 IST), check again soon.
+    staleTime: (q) => (q.state.data?.today ? 6 * 60 * 60 * 1000 : 4 * 60 * 1000),
   });
 }
