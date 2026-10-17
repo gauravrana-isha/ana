@@ -6,7 +6,7 @@ import { usePersistentState } from "@/lib/persist";
 import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Check, MagnifyingGlass, Cards, List, SlidersHorizontal } from "@phosphor-icons/react";
+import { Check, MagnifyingGlass, Cards, List } from "@phosphor-icons/react";
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
 import { STAMP_GUIDE } from "@/components/reflection/StampRow";
@@ -20,7 +20,7 @@ import { useMoments } from "@/lib/moments-client";
 import { fetchMoment } from "@/lib/journal";
 import type { Moment, MomentKind } from "@/lib/moment-types";
 import { cn } from "@/lib/utils";
-import { CrossMark, PlusMark } from "@/components/art/PenMarks";
+import { CrossMark, FiltersMark, PlusMark } from "@/components/art/PenMarks";
 
 const FILTERS = [
   { id: "", label: "All" },
@@ -129,7 +129,7 @@ function ExpressionsContent() {
           aria-label={`Filter and sort${extraFilters ? `, ${extraFilters} on` : ""}`}
           className={cn("press relative shrink-0 grid place-items-center w-9 h-9 rounded-full border transition-colors", extraFilters ? "border-accent text-accent bg-accent-soft" : "border-line text-ink-soft hover:text-ink")}
         >
-          <SlidersHorizontal size={17} />
+          <FiltersMark size={19} />
           {extraFilters > 0 && <span className="absolute -top-1 -right-1 grid place-items-center min-w-[17px] h-[17px] px-1 rounded-full bg-accent text-bg font-ui text-[10.5px] font-bold tabular">{extraFilters}</span>}
         </button>
         <div role="radiogroup" aria-label="View" className="shrink-0 hidden sm:flex p-0.5 rounded-full border border-line">
