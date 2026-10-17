@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -138,35 +138,43 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
   );
 }
 
-/** One photo in the viewer, opened on the device; fades in once it's ready. */
+/** One photo in the viewer, opened on the device. */
 function ViewerPhoto({ id }: { id: string }) {
   const src = useMediaSrc(id);
   if (!src) return <span className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" />;
-  return (
-    <motion.img
-      src={src}
-      alt=""
-      draggable={false}
-      className="absolute inset-0 w-full h-full object-contain select-none"
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.18 }}
-    />
-  );
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" draggable={false} className="max-w-full max-h-full object-contain select-none" />;
 }
 
-/** Photos fullscreen: swipe or use the arrows to move between them; Escape or ✕ closes. */
+/**
+ * Photos fullscreen, as a native swipe: each photo is a page that follows the finger and
+ * snaps into place (the counter follows). Arrows and the keyboard move too; Escape or ✕ closes.
+ */
 function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: number | null; onIndex: (i: number | null) => void }) {
-  const [startX, setStartX] = useState<number | null>(null);
-  const go = (d: number) => index !== null && onIndex(Math.min(photos.length - 1, Math.max(0, index + d)));
+  const track = useRef<HTMLDivElement>(null);
+  const open = index !== null;
+
+  // Opening at a photo: jump straight to it.
+  useLayoutEffect(() => {
+    if (!open || !track.current) return;
+    track.current.scrollTo({ left: (index ?? 0) * track.current.clientWidth, behavior: "instant" });
+    // Only when it opens; later moves come from the swipe itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const go = useCallback((d: number) => {
+    const el = track.current;
+    if (!el) return;
+    const next = Math.min(photos.length - 1, Math.max(0, Math.round(el.scrollLeft / el.clientWidth) + d));
+    el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+  }, [photos.length]);
 
   useEffect(() => {
-    if (index === null) return;
+    if (!open) return;
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") onIndex(null);
-      if (e.key === "ArrowRight") onIndex(Math.min(photos.length - 1, index + 1));
-      if (e.key === "ArrowLeft") onIndex(Math.max(0, index - 1));
+      if (e.key === "ArrowRight") go(1);
+      if (e.key === "ArrowLeft") go(-1);
     };
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
@@ -175,37 +183,45 @@ function PhotoViewer({ photos, index, onIndex }: { photos: string[]; index: numb
       document.body.style.overflow = overflow;
       window.removeEventListener("keydown", key);
     };
-  }, [index, photos.length, onIndex]);
+  }, [open, go, onIndex]);
 
   return (
     <Portal>
     <AnimatePresence>
-      {index !== null && (
+      {open && (
         <motion.div
           role="dialog"
           aria-modal="true"
           aria-label="Photo"
-          className="fixed inset-0 z-[90] bg-black/95 flex items-center justify-center"
+          className="fixed inset-0 z-[90] bg-black/95"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onPointerDown={(e) => setStartX(e.clientX)}
-          onPointerUp={(e) => {
-            if (startX !== null && Math.abs(e.clientX - startX) > 50) go(e.clientX < startX ? 1 : -1);
-            setStartX(null);
-          }}
         >
-          <AnimatePresence mode="wait" initial={false}>
-            <ViewerPhoto key={index} id={photos[index]} />
-          </AnimatePresence>
+          <div
+            ref={track}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const i = Math.round(el.scrollLeft / el.clientWidth);
+              if (i !== index) onIndex(i);
+            }}
+            className="absolute inset-0 flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory overscroll-contain no-scrollbar"
+          >
+            {photos.map((id, i) => (
+              <div key={id} className="relative shrink-0 w-full h-full snap-center snap-always grid place-items-center" aria-hidden={i !== index}>
+                {/* This photo and its neighbours are opened; the rest wait until you get near. */}
+                {Math.abs(i - (index ?? 0)) <= 1 ? <ViewerPhoto id={id} /> : null}
+              </div>
+            ))}
+          </div>
           <CloseButton onClick={() => onIndex(null)} onDark className="absolute z-10 top-[calc(var(--safe-top)+10px)] right-3" />
           {photos.length > 1 && (
             <>
-              <span className="absolute bottom-[max(18px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 font-ui text-[13px] text-white/80 tabular">{index + 1} / {photos.length}</span>
-              {index > 0 && (
+              <span className="absolute bottom-[max(18px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 font-ui text-[13px] text-white/80 tabular pointer-events-none">{(index ?? 0) + 1} / {photos.length}</span>
+              {(index ?? 0) > 0 && (
                 <button type="button" onClick={() => go(-1)} aria-label="Previous photo" className="press hidden sm:grid absolute left-4 top-1/2 -translate-y-1/2 place-items-center w-11 h-11 rounded-full bg-white/15 text-white"><BackMark size={20} /></button>
               )}
-              {index < photos.length - 1 && (
+              {(index ?? 0) < photos.length - 1 && (
                 <button type="button" onClick={() => go(1)} aria-label="Next photo" className="press hidden sm:grid absolute right-4 top-1/2 -translate-y-1/2 place-items-center w-11 h-11 rounded-full bg-white/15 text-white"><BackMark size={20} className="-scale-x-100" /></button>
               )}
             </>
