@@ -40,17 +40,15 @@ export function Loader({ size = "md", className, label, fullScreen = false }: Lo
   return body;
 }
 
-/** Three breathing dots in the button's own colour. */
+/** Three ink dots (the ⋯ mark's, each a little different), breathing in turn, in the button's own colour. */
 export function ButtonLoader({ className }: { className?: string }) {
   return (
-    <span role="status" aria-label="Working" className={cn("inline-flex items-center gap-[5px]", className)}>
-      {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="block w-[6px] h-[6px] rounded-full bg-current ana-dot"
-          style={{ animationDelay: `${i * 160}ms` }}
-        />
-      ))}
+    <span role="status" aria-label="Working" className={cn("inline-flex items-center", className)}>
+      <svg width="26" height="12" viewBox="0 6 24 12" fill="currentColor" aria-hidden="true" className="ana-ink overflow-visible">
+        <ellipse cx="5" cy="12.3" rx="2.15" ry="1.95" transform="rotate(-20 5 12.3)" />
+        <ellipse cx="12" cy="12" rx="2.05" ry="1.9" transform="rotate(15 12 12)" />
+        <ellipse cx="19" cy="11.8" rx="1.9" ry="1.75" transform="rotate(-10 19 11.8)" />
+      </svg>
     </span>
   );
 }

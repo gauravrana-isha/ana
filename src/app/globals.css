@@ -534,16 +534,35 @@ html { overscroll-behavior-y: none; }
 body:has([data-bare]) .ana-tabbar { display: none; }
 
 /* The loader: the splash's coiled snake, turning around its coil, in the accent colour. */
-.ana-coil {
+.ana-coil,
+.ana-coil-shape {
   background: currentColor;
   color: var(--accent);
   -webkit-mask: url("/splash/splash-snake.webp") center / contain no-repeat;
   mask: url("/splash/splash-snake.webp") center / contain no-repeat;
   transform-origin: 44.7% 59.47%;
+}
+.ana-coil {
   animation: ana-coil 2.4s linear infinite;
 }
 @keyframes ana-coil { to { transform: rotate(360deg); } }
 @keyframes ana-coil-fade { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .ana-coil { animation: ana-coil-fade 2.4s ease-in-out infinite; }
+}
+
+/* Small waits: three ink dots (the ⋯ mark's), swelling and settling one after another. */
+@keyframes ana-ink {
+  0%, 70%, 100% { transform: scale(0.72); opacity: 0.5; }
+  35% { transform: scale(1.12); opacity: 1; }
+}
+.ana-ink ellipse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ana-ink 1.2s ease-in-out infinite;
+}
+.ana-ink ellipse:nth-child(2) { animation-delay: 0.16s; }
+.ana-ink ellipse:nth-child(3) { animation-delay: 0.32s; }
+@media (prefers-reduced-motion: reduce) {
+  .ana-ink ellipse { animation-duration: 2.4s; }
 }
