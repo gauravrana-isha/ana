@@ -51,7 +51,7 @@ export type SectionKey = "sections" | "practices" | "device" | "privacy" | "data
 const TITLES: Record<SectionKey, string> = {
   sections: "Sections",
   practices: "Practices",
-  device: "Theme & notifications",
+  device: "Device",
   privacy: "Privacy & keys",
   data: "Your data",
 };
@@ -123,14 +123,13 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 // ---------------------------------------------------------------- the rows
 
 function Rows({ me, active }: { me: Me; active?: SectionKey }) {
-  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as ThemeName);
   const { data: practices } = usePractices();
   const tracker = me.features.includes("tracker");
 
   const rows: { k: SectionKey; icon: React.ReactNode; status: string }[] = [
     { k: "sections", icon: <Glyph k="cards" size={19} />, status: `${me.features.length} on` },
     ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} />, status: practices ? `${practices.length} ${practices.length === 1 ? "practice" : "practices"}` : "" }] : []),
-    { k: "device", icon: theme === "dark" ? <MoonMark size={19} /> : <SunMark size={19} />, status: theme === "dark" ? "Dark" : "Light" },
+    { k: "device", icon: <Glyph k="phone" size={19} />, status: "" },
     { k: "privacy", icon: <Glyph k="lock" size={19} />, status: "" },
     { k: "data", icon: <Glyph k="download" size={19} />, status: "" },
   ];
