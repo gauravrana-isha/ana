@@ -160,7 +160,6 @@ function FieldDefault({ field, rhythm, value, onChange, practiceName }: { field:
       ) : (
         <Stepper
           value={Number(rhythm ? value?.default ?? 0 : value?.fill ?? 0)}
-          unit={field.unit}
           label={`${practiceName}: usual ${field.title}`}
           max={field.max}
           onChange={(n) => onChange(rhythm ? { default: n || null } : { fill: n || null })}
@@ -170,12 +169,13 @@ function FieldDefault({ field, rhythm, value, onChange, practiceName }: { field:
   );
 }
 
-function Stepper({ value, unit, label, max = 99999, onChange }: { value: number; unit: string; label: string; max?: number; onChange: (n: number) => void }) {
+/** The usual number, just the number: the row's own title already names it. */
+function Stepper({ value, label, max = 99999, onChange }: { value: number; label: string; max?: number; onChange: (n: number) => void }) {
   const clamp = (n: number) => Math.min(max, Math.max(0, n));
   return (
     <div className="flex items-center gap-1.5 shrink-0">
       <button type="button" aria-label="Less" onClick={() => onChange(clamp(value - 1))} className="press grid place-items-center w-9 h-9 rounded-full bg-surface-2 text-ink"><MinusMark size={17} /></button>
-      <label className="flex flex-col items-center w-[64px]">
+      <label className="block w-[64px]">
         <input
           aria-label={label}
           inputMode="numeric"
@@ -184,7 +184,6 @@ function Stepper({ value, unit, label, max = 99999, onChange }: { value: number;
           onChange={(e) => onChange(clamp(parseInt(e.target.value.replace(/\D/g, "")) || 0))}
           className="w-full h-9 text-center rounded-[10px] bg-bg font-ui text-[16px] font-semibold text-ink tabular outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/50"
         />
-        <span className="font-ui text-[10.5px] text-ink-soft mt-0.5">{unit}</span>
       </label>
       <button type="button" aria-label="More" onClick={() => onChange(clamp(value + 1))} className="press grid place-items-center w-9 h-9 rounded-full bg-surface-2 text-ink"><PlusMark size={17} /></button>
     </div>

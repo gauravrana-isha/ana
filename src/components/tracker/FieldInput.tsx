@@ -145,7 +145,6 @@ export function NumberSheet({ open, onClose, field, value, practiceName, onSave 
             aria-label={`${field.title} for ${practiceName}`}
             className="w-[120px] text-center bg-transparent outline-none focus-visible:outline-none font-display text-[44px] font-semibold text-ink tabular leading-none placeholder:text-ink-soft/40"
           />
-          <span className="font-ui text-[13px] text-ink-soft mt-1">{field.unit}</span>
         </label>
         <button type="button" aria-label="More" onClick={() => step(1)} className="press grid place-items-center w-11 h-11 rounded-full bg-surface text-ink"><PlusMark size={20} /></button>
       </div>
