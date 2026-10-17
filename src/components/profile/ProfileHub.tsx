@@ -42,8 +42,8 @@ import { BackButton } from "@/components/ui/DetailBar";
 import { QuestionsEditor } from "./QuestionsEditor";
 
 /*
- * Profile, as a short hub: your card and "Who am I?" up top, then one Settings list (each row
- * with a one-line status), then Sign out. On phones a row opens its own full page (with a way
+ * Profile, as a short hub: your card and "Who am I?" up top, then one Settings list, then
+ * Sign out. On phones a row opens its own full page (with a way
  * back); on wider screens the list sits on the left and the open part on the right.
  */
 
@@ -125,19 +125,16 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 // ---------------------------------------------------------------- the rows
 
 function Rows({ me, active }: { me: Me; active?: SectionKey }) {
-  const { data: practices } = usePractices();
   const tracker = me.features.includes("tracker");
   const reflects = me.features.includes("daily") || me.features.includes("weekly");
 
-  const rows: { k: SectionKey; icon: React.ReactNode; status: string }[] = [
-    { k: "sections", icon: <Glyph k="cards" size={19} />, status: `${me.features.length} on` },
-    ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} />, status: practices ? `${practices.length} ${practices.length === 1 ? "practice" : "practices"}` : "" }] : []),
-    ...(reflects
-      ? [{ k: "questions" as const, icon: <FeatureGlyph k="daily" size={19} />, status: "" }]
-      : []),
-    { k: "device", icon: <Glyph k="phone" size={19} />, status: "" },
-    { k: "privacy", icon: <Glyph k="lock" size={19} />, status: "" },
-    { k: "data", icon: <Glyph k="download" size={19} />, status: "" },
+  const rows: { k: SectionKey; icon: React.ReactNode }[] = [
+    { k: "sections", icon: <Glyph k="cards" size={19} /> },
+    ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} /> }] : []),
+    ...(reflects ? [{ k: "questions" as const, icon: <FeatureGlyph k="daily" size={19} /> }] : []),
+    { k: "device", icon: <Glyph k="phone" size={19} /> },
+    { k: "privacy", icon: <Glyph k="lock" size={19} /> },
+    { k: "data", icon: <Glyph k="download" size={19} /> },
   ];
 
   return (
@@ -156,7 +153,6 @@ function Rows({ me, active }: { me: Me; active?: SectionKey }) {
               >
                 <span className={cn("grid place-items-center w-9 h-9 rounded-[11px] shrink-0 transition-colors", on ? "bg-accent text-bg" : "bg-accent-soft text-accent")}>{r.icon}</span>
                 <span className="flex-1 font-ui text-[15px] font-semibold text-ink whitespace-nowrap">{TITLES[r.k]}</span>
-                {r.status && <span className="min-w-0 font-ui text-[13px] text-ink-soft truncate">{r.status}</span>}
                 <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
               </Link>
             </li>
@@ -384,7 +380,7 @@ function ManagePractices({ practices }: { practices: Practice[] }) {
   );
 }
 
-/** "time of day · default 4:30 am", "minutes · fills 15 min". */
+/** One short line: "time of day · default 4:30 am", "minutes · fills 15 min", "1–2× + kapalbhati · fills 1×, 108". */
 function practiceSummary(p: Practice) {
   const spec = specFor(p);
   const what = describeTracking(spec.fields, spec.hasDoneToggle) || "done";
@@ -394,10 +390,12 @@ function practiceSummary(p: Practice) {
       if (v === undefined || v === "" || v === 0) return null;
       if (f.kind === "TIME") return time12(v);
       if (f.kind === "ICONSCALE") return scaleLabel(f, v);
-      return f.taps ? `${v}×` : `${v} ${f.unit}`;
+      if (f.taps) return `${v}×`;
+      // A named count is already named in the first half ("kapalbhati"), so just its number.
+      return f.kind === "MINUTES" ? `${v} min` : String(v);
     })
     .filter(Boolean);
-  return usual.length ? `${what} · ${spec.rhythm ? "default" : "tick fills"} ${usual.join(", ")}` : what;
+  return usual.length ? `${what} · ${spec.rhythm ? "default" : "fills"} ${usual.join(", ")}` : what;
 }
 
 // ---------------------------------------------------------------- your card

@@ -166,7 +166,8 @@ export function describeTracking(fields: PracticeField[], hasDoneToggle: boolean
   for (const f of fields) {
     if (f.kind === "TIME") parts.push("time of day");
     else if (f.kind === "MINUTES") parts.push("minutes");
-    else if (f.kind === "COUNT") parts.push(f.max ? `up to ${f.max}${f.label ? ` ${f.label}` : ""}` : (f.label ?? "count"));
+    // "1–2×" for a few taps a day; other counts by their name ("kapalbhati").
+    else if (f.kind === "COUNT") parts.push(f.max && (!f.label || f.label === "times") ? `1–${f.max}×` : f.max ? `up to ${f.max} ${f.label}` : (f.label ?? "count"));
     else if (f.kind === "ICONSCALE") parts.push("3-level scale");
     else parts.push(f.kind.toLowerCase());
   }
