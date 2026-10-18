@@ -58,6 +58,35 @@ export async function decryptFile(data: ArrayBuffer, type: string): Promise<Blob
 
 // ---------- showing them ----------
 
+/** The photo cache the service worker keeps (same name), so photos still open offline. */
+const PHOTO_CACHE = "ana-v5-photos";
+
+/**
+ * A stored file: from the device's photo cache when it's there, else straight from storage by
+ * a short-lived link (its bytes never pass through the app's server), else streamed by the
+ * app's server as before (when storage can't be reached directly).
+ */
+async function fetchStored(path: string): Promise<Response> {
+  const cache = typeof caches === "undefined" ? null : await caches.open(PHOTO_CACHE).catch(() => null);
+  const hit = await cache?.match(path).catch(() => undefined);
+  if (hit) return hit;
+  try {
+    const link = await fetch(`${path}${path.includes("?") ? "&" : "?"}link=1`);
+    if (link.status === 404) return link;
+    const { url } = link.ok ? ((await link.json()) as { url: string | null }) : { url: null };
+    if (url) {
+      const res = await fetch(url);
+      if (res.ok) {
+        if ((res.headers.get("content-type") ?? "").startsWith("image/")) cache?.put(path, res.clone()).catch(() => {});
+        return res;
+      }
+    }
+  } catch {
+    // Storage not reachable directly (or not allowed from this site yet): the server streams it.
+  }
+  return fetch(path);
+}
+
 const urls = new Map<string, Promise<string>>();
 
 export type MediaVariant = "full" | "thumb";
@@ -71,7 +100,7 @@ export function mediaSrc(id: string, variant: MediaVariant = "full"): Promise<st
   let p = urls.get(key);
   if (!p) {
     p = (async () => {
-      const res = await fetch(variant === "thumb" ? `/api/media/${id}?v=thumb` : `/api/media/${id}`);
+      const res = await fetchStored(variant === "thumb" ? `/api/media/${id}?v=thumb` : `/api/media/${id}`);
       if (!res.ok) throw new Error("Couldn't load");
       const type = res.headers.get("content-type") ?? "application/octet-stream";
       const data = await res.arrayBuffer();

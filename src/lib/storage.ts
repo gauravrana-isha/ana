@@ -9,8 +9,9 @@ import { db } from "./db";
 
 /**
  * Where moment media lives: a private Cloudflare R2 bucket (R2_BUCKET set). Files are never
- * public: every read goes through /api/media/[id] after an ownership check. Local
- * development without R2 falls back to a folder on disk.
+ * public: every read starts at /api/media/[id] with an ownership check, which either streams
+ * the file or (with ?link=1) hands its owner a 10-minute link to fetch it straight from R2.
+ * Local development without R2 falls back to a folder on disk.
  */
 export type StorageMode = "r2" | "local";
 
@@ -111,6 +112,19 @@ export async function presignR2Put(pathname: string) {
   const url = new URL(r2Url(pathname));
   url.searchParams.set("X-Amz-Expires", "900");
   const signed = await r2.sign(new Request(url, { method: "PUT" }), { aws: { signQuery: true } });
+  return signed.url;
+}
+
+/**
+ * A link the browser can GET one file from, for the next 10 minutes, so its bytes come
+ * straight from storage instead of through the app's server. It answers with the file's real
+ * type (encrypted files are stored as opaque bytes). Only ever handed to the file's owner.
+ */
+export async function presignR2Get(pathname: string, contentType: string) {
+  const url = new URL(r2Url(pathname));
+  url.searchParams.set("X-Amz-Expires", "600");
+  url.searchParams.set("response-content-type", contentType);
+  const signed = await r2.sign(new Request(url, { method: "GET" }), { aws: { signQuery: true } });
   return signed.url;
 }
 
