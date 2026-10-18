@@ -54,6 +54,8 @@ export function VaultGate({
       onSynced: () => qc.invalidateQueries(),
       onRejected: (_p, code) =>
         toast(code === 400 ? "A change made offline couldn't be saved. Please make it again." : "A change made offline wasn't accepted.", "error", 5000),
+      onMediaRefused: (kind) =>
+        toast(`A ${kind === "audio" ? "voice note" : kind} added offline couldn't be kept (too large for the space left?). Please add it again.`, "error", 6000),
     });
     void flush();
     // Save the whole journal for offline use (every screen and its data), now and when the

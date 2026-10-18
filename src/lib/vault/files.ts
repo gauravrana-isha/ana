@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { pendingMedia } from "../media-outbox";
 import { journalKeyForFiles } from "./vault";
 
 /*
@@ -100,10 +101,18 @@ export function mediaSrc(id: string, variant: MediaVariant = "full"): Promise<st
   let p = urls.get(key);
   if (!p) {
     p = (async () => {
-      const res = await fetchStored(variant === "thumb" ? `/api/media/${id}?v=thumb` : `/api/media/${id}`);
-      if (!res.ok) throw new Error("Couldn't load");
-      const type = res.headers.get("content-type") ?? "application/octet-stream";
-      const data = await res.arrayBuffer();
+      // Added offline and not up yet: it's kept on this device.
+      const waiting = await pendingMedia(id, variant);
+      let type: string, data: ArrayBuffer;
+      if (waiting) {
+        type = waiting.contentType;
+        data = await waiting.blob.arrayBuffer();
+      } else {
+        const res = await fetchStored(variant === "thumb" ? `/api/media/${id}?v=thumb` : `/api/media/${id}`);
+        if (!res.ok) throw new Error("Couldn't load");
+        type = res.headers.get("content-type") ?? "application/octet-stream";
+        data = await res.arrayBuffer();
+      }
       const blob = isEncryptedFile(new Uint8Array(data, 0, Math.min(4, data.byteLength)))
         ? await decryptFile(data, type)
         : new Blob([data], { type });

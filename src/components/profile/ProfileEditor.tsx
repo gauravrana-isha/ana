@@ -12,6 +12,7 @@ import { Avatar } from "@/components/shell/Sidebar";
 import { mediaUrl, uploadMedia } from "@/lib/media-client";
 import { PhotoCropper } from "@/components/ui/PhotoCropper";
 import type { Me } from "@/lib/me";
+import { send } from "@/lib/outbox";
 import { today } from "@/lib/dates";
 import { sealFields } from "@/lib/vault/vault";
 import { Glyph } from "@/components/art/Glyphs";
@@ -66,19 +67,20 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
         { intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null },
         ["intention", "birthday", "place"]
       );
-      const res = await fetch("/api/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          preferredName: preferredName.trim() || null,
-          ...personal,
-          ...(photoId !== undefined ? { photoId } : {}),
-        }),
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't save");
-      await qc.invalidateQueries({ queryKey: ["me"] });
-      router.refresh(); // the sidebar picture comes from the server
+      const change = {
+        name: name.trim(),
+        preferredName: preferredName.trim() || null,
+        ...(photoId !== undefined ? { photoId } : {}),
+      };
+      // Shown at once; offline it waits in the outbox (a new photo waits too, and goes up first).
+      qc.setQueryData<Me>(["me"], (old) =>
+        old ? { ...old, ...change, intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null } : old
+      );
+      const res = await send("/api/me", "PATCH", { ...change, ...personal }, { queue: true });
+      if (!res.queued) {
+        await qc.invalidateQueries({ queryKey: ["me"] });
+        router.refresh(); // the sidebar picture comes from the server
+      }
       toast("Profile saved", "success", 1600);
       onClose();
     } catch (e) {

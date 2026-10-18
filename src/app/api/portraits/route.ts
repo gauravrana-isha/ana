@@ -23,7 +23,7 @@ function dto(p: Row): PortraitDTO {
 
 // Each word, each ring's line and the weights arrive sealed.
 const Ring = z.object({ words: z.array(sealed(400)).max(MAX_WORDS), note: sealed(2_000).nullable().optional() });
-const Create = z.object({ body: Ring, mind: Ring, emotion: Ring, weights: sealed(4_000).optional() });
+const Create = z.object({ id: z.string().regex(/^[a-z0-9]{20,40}$/).optional(), body: Ring, mind: Ring, emotion: Ring, weights: sealed(4_000).optional() });
 
 /** Your portraits, newest first. */
 export async function GET() {
@@ -41,12 +41,18 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = Create.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
-  const { body, mind, emotion, weights } = parsed.data;
+  const { id, body, mind, emotion, weights } = parsed.data;
+  // Sent again from the outbox (the first try did arrive): already kept.
+  if (id) {
+    const done = await db.portrait.findFirst({ where: { id, userId: user.id } });
+    if (done) return NextResponse.json(dto(done), { status: 200 });
+  }
   if (![body, mind, emotion].some((r) => r.words.length || r.note)) {
     return NextResponse.json({ error: "Choose a word or write a line for at least one ring" }, { status: 400 });
   }
   const row = await db.portrait.create({
     data: {
+      ...(id ? { id } : {}),
       userId: user.id,
       bodyWords: body.words, bodyNote: body.note || null,
       mindWords: mind.words, mindNote: mind.note || null,

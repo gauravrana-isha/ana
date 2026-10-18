@@ -3,6 +3,8 @@
 import { encryptFile } from "./vault/files";
 import { isUnlocked } from "./vault/vault";
 import { reportError } from "./report";
+import { newId } from "./outbox";
+import { queueMedia } from "./media-outbox";
 
 export type MediaKind = "audio" | "video" | "photo";
 
@@ -69,8 +71,21 @@ async function storeAt(
   if (file.size > MAX_BYTES[kind]) throw new Error(`That file is too large (up to ${MAX_BYTES[kind] / 1024 / 1024} MB).`);
   const sealed = isUnlocked();
   const body = sealed ? await encryptFile(file) : file;
-  const ext = EXT[contentType] ?? "bin";
+  const pathname = await putStored(body, kind, contentType, opts.storage, opts.onProgress, opts.replacing);
+  return { pathname, contentType, sealed };
+}
 
+/** Upload bytes as they are (already encrypted, when they should be). Returns where they landed. */
+export async function putStored(
+  body: Blob,
+  kind: MediaKind,
+  contentType: string,
+  storage: Storage,
+  onProgress?: (pct: number) => void,
+  replacing?: string
+): Promise<string> {
+  const ext = EXT[contentType] ?? "bin";
+  const opts = { storage, onProgress, replacing };
   let pathname: string;
   if (opts.storage === "r2") {
     const res = await fetch("/api/uploads/r2", {
@@ -79,7 +94,8 @@ async function storeAt(
       body: JSON.stringify({ kind, contentType, size: body.size, replacing: opts.replacing }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(`${data.error ?? "Upload refused"} (link ${res.status})`);
+    // A refusal (no space left, a type that isn't allowed) won't change by waiting.
+    if (!res.ok) throw Object.assign(new Error(`${data.error ?? "Upload refused"} (link ${res.status})`), { refused: res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429 });
     await putWithProgress(data.url, body, body.type || contentType, opts.onProgress);
     pathname = data.pathname;
   } else {
@@ -95,7 +111,7 @@ async function storeAt(
     pathname = data.pathname;
     opts.onProgress?.(100);
   }
-  return { pathname, contentType, sealed };
+  return pathname;
 }
 
 /** PUT a file to a signed link, reporting progress (fetch can't report upload progress). */
@@ -136,24 +152,37 @@ export async function uploadMedia(
     photo ? scalePhoto(file, PHOTO_MAX) : file,
     photo && opts.thumbnail !== false ? scalePhoto(file, THUMB_MAX, 0.8) : null,
   ]);
+  // Its id is chosen here, so a moment saved offline can name it before it's up.
+  const id = newId();
 
-  // The small copy goes up alongside the photo, not after it.
-  const [stored, thumb] = await Promise.all([
-    storeFile(full ?? file, kind, opts),
-    small ? storeFile(small, kind, { ...opts, onProgress: undefined }).catch(() => null) : null,
-  ]);
-  const reg = await fetch("/api/attachments", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kind, pathname: stored.pathname, contentType: stored.contentType, durationSec: opts.durationSec, sealed: stored.sealed, thumbPathname: thumb?.pathname }),
-  });
-  const data = await reg.json().catch(() => ({}));
-  if (!reg.ok) {
-    const err = new Error(data.error ?? "Couldn't save the upload");
-    reportError("upload-register", err, `status=${reg.status} kind=${kind}`);
-    throw err;
+  // Offline (or the connection drops on the way): kept on this device, encrypted, and sent
+  // with the rest of the outbox once ana is back online. It shows from here meanwhile.
+  const later = () => queueMedia({ id, kind, file: full ?? file, thumb: small, durationSec: opts.durationSec });
+  if (!navigator.onLine) return later();
+
+  try {
+    // The small copy goes up alongside the photo, not after it.
+    const [stored, thumb] = await Promise.all([
+      storeFile(full ?? file, kind, opts),
+      small ? storeFile(small, kind, { ...opts, onProgress: undefined }).catch(() => null) : null,
+    ]);
+    const reg = await fetch("/api/attachments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, kind, pathname: stored.pathname, contentType: stored.contentType, durationSec: opts.durationSec, sealed: stored.sealed, thumbPathname: thumb?.pathname }),
+    });
+    const data = await reg.json().catch(() => ({}));
+    if (!reg.ok) {
+      const err = new Error(data.error ?? "Couldn't save the upload");
+      reportError("upload-register", err, `status=${reg.status} kind=${kind}`);
+      throw Object.assign(err, { refused: true });
+    }
+    return data as AttachmentDTO;
+  } catch (err) {
+    // The storage or the server said no (too large, wrong type): that won't change later.
+    if ((err as { refused?: boolean }).refused || /too large/i.test(String((err as Error)?.message))) throw err;
+    return later();
   }
-  return data as AttachmentDTO;
 }
 
 export function formatDuration(sec: number | null | undefined) {

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { uploadMedia, type AttachmentDTO, type MediaKind } from "@/lib/media-client";
+import { dropPendingMedia } from "@/lib/media-outbox";
+import { send } from "@/lib/outbox";
 import type { CapturedMedia } from "./Media";
 
 export type UploadState =
@@ -19,8 +21,10 @@ interface Job {
   promise: Promise<AttachmentDTO | null>;
 }
 
+/** Remove an upload no longer wanted: forgotten if it never went up, else deleted (offline, later). */
 async function discard(id: string) {
-  await fetch(`/api/attachments/${id}`, { method: "DELETE" }).catch(() => {});
+  if (await dropPendingMedia(id)) return;
+  await send(`/api/attachments/${id}`, "DELETE", undefined, { queue: true }).catch(() => {});
 }
 
 /**

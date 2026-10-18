@@ -5,6 +5,8 @@ import { resolveUser } from "@/lib/session";
 import { MEDIA_RULES, allowedType, baseType, isMediaKind, removeStored, roomFor, storageMode, uploadedSize, userPrefix } from "@/lib/storage";
 
 const Schema = z.object({
+  /** Chosen on the device, so a moment saved offline can name its files before they're up. */
+  id: z.string().regex(/^[a-z0-9]{20,40}$/).optional(),
   kind: z.string(),
   pathname: z.string().max(300),
   contentType: z.string().max(100),
@@ -22,7 +24,12 @@ export async function POST(req: NextRequest) {
 
   const parsed = Schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success || !isMediaKind(parsed.data.kind)) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  const { kind, pathname, contentType, durationSec, sealed, thumbPathname } = parsed.data;
+  const { id, kind, pathname, contentType, durationSec, sealed, thumbPathname } = parsed.data;
+  // Sent again (a connection that dropped after the first try): it's already recorded.
+  if (id) {
+    const done = await db.attachment.findFirst({ where: { id, userId: user.id }, select: { id: true, kind: true, contentType: true, size: true, durationSec: true } });
+    if (done) return NextResponse.json(done, { status: 200 });
+  }
   if (user.vaultAt && !sealed) return NextResponse.json({ error: "Files need to be encrypted on your device first." }, { status: 400 });
 
   const inFolder = (p: string) => p.startsWith(`${userPrefix(user.id)}${kind}/`) && !p.includes("..");
@@ -47,6 +54,7 @@ export async function POST(req: NextRequest) {
 
   const attachment = await db.attachment.create({
     data: {
+      ...(id ? { id } : {}),
       userId: user.id, kind, storage, pathname, contentType: baseType(contentType), size, durationSec, sealed: !!sealed,
       // A small copy that didn't arrive is simply left out; lists fall back to the full photo.
       ...(thumbPathname && thumbSize !== null ? { thumbPathname, thumbSize } : {}),

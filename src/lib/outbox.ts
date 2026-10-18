@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { get, set } from "idb-keyval";
+import { clearPendingMedia, flushMedia } from "./media-outbox";
 
 /*
  * Writes that can wait for a connection. A save made offline (or when the network drops
@@ -25,6 +26,7 @@ let loaded: Promise<void> | null = null;
 let flushing: Promise<FlushResult> | null = null;
 let onSynced: (() => void) | null = null;
 let onRejected: ((p: Pending, status: number) => void) | null = null;
+let onMediaRefused: ((kind: string, reason: string) => void) | null = null;
 
 function emit() {
   listeners.forEach((l) => l());
@@ -59,9 +61,10 @@ export function usePendingCount() {
 }
 
 /** What to do after a flush: refresh what's on screen; tell about a save the server refused. */
-export function configureOutbox(opts: { onSynced: () => void; onRejected: (p: Pending, status: number) => void }) {
+export function configureOutbox(opts: { onSynced: () => void; onRejected: (p: Pending, status: number) => void; onMediaRefused?: (kind: string, reason: string) => void }) {
   onSynced = opts.onSynced;
   onRejected = opts.onRejected;
+  onMediaRefused = opts.onMediaRefused ?? null;
 }
 
 export class HttpError extends Error {
@@ -122,6 +125,12 @@ export function flush(): Promise<FlushResult> {
   flushing ??= (async () => {
     await load();
     let sent = 0;
+    // Photos, voice notes and videos first: the saves below may name them.
+    try {
+      sent += await flushMedia((kind, reason) => onMediaRefused?.(kind, reason));
+    } catch {
+      return { sent: 0, left: queue.length }; // still offline: everything waits
+    }
     while (queue.length) {
       const p = queue[0];
       let status: number;
@@ -151,6 +160,7 @@ export function flush(): Promise<FlushResult> {
 export async function clearOutbox() {
   queue = [];
   await save();
+  await clearPendingMedia();
 }
 
 if (typeof window !== "undefined") {

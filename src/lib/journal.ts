@@ -316,7 +316,8 @@ export async function savePerson(existing: { id: string } | null, p: PersonInput
     ...(p.birthday !== undefined ? { birthdayMD: p.birthday ? p.birthday.slice(5, 10) : null } : {}),
     ...(p.photoId ? { photoId: p.photoId } : {}),
   };
-  const res = await send(existing ? `/api/people/${id}` : "/api/people", existing ? "PATCH" : "POST", body, { queue: !p.photoId });
+  // Offline it waits in the outbox (a new photo waits too, and goes up first).
+  const res = await send(existing ? `/api/people/${id}` : "/api/people", existing ? "PATCH" : "POST", body, { queue: true });
   return { id, queued: res.queued };
 }
 
@@ -358,12 +359,21 @@ export async function savePortrait(p: { body: Ring; mind: Ring; emotion: Ring; w
   const ring = async (r: Ring) => ({ words: await Promise.all(r.words.map((w) => seal(w))), note: r.note ? await seal(r.note) : null });
   const used = new Set([...p.body.words, ...p.mind.words, ...p.emotion.words]);
   const weights = Object.fromEntries(Object.entries(p.weights).filter(([w]) => used.has(w)));
-  return send("/api/portraits", "POST", {
-    body: await ring(p.body),
-    mind: await ring(p.mind),
-    emotion: await ring(p.emotion),
-    ...(Object.keys(weights).length ? { weights: await seal(weights) } : {}),
-  });
+  const id = newId();
+  // On screen straight away, newest first (offline it waits in the outbox).
+  screen?.setQueryData<unknown[]>(["portraits"], (old) => [{ id, body: p.body, mind: p.mind, emotion: p.emotion, weights, createdAt: new Date().toISOString() }, ...(Array.isArray(old) ? old : [])]);
+  return send(
+    "/api/portraits",
+    "POST",
+    {
+      id,
+      body: await ring(p.body),
+      mind: await ring(p.mind),
+      emotion: await ring(p.emotion),
+      ...(Object.keys(weights).length ? { weights: await seal(weights) } : {}),
+    },
+    { queue: true }
+  );
 }
 
 // ---------- today ----------
