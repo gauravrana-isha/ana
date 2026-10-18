@@ -1,6 +1,7 @@
 "use client";
 
-import { IsRestoringProvider, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { IsRestoringProvider, onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { showChangesIn } from "@/lib/journal";
 import {
   persistQueryClientRestore,
   persistQueryClientSubscribe,
@@ -23,14 +24,17 @@ const DAY = 24 * 60 * 60 * 1000;
 // Things that are only useful live, or too personal to keep lying around.
 const NOT_PERSISTED = new Set(["search", "search-index", "admin-users", "vault-status"]);
 
+/** A copy was kept on the device but this page couldn't read it (still locked): leave it be. */
+let unreadCopy = false;
+
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
+  const [queryClient] = useState(() => {
+    const client = new QueryClient({
         defaultOptions: {
           queries: {
             staleTime: 30_000, // show cached data instantly, refresh after 30s
-            gcTime: DAY, // keep it long enough to be persisted and reopened
+            // Kept as long as the copy on the device lasts (7 days), so every screen opens offline.
+            gcTime: 7 * DAY,
             retry: 1,
             refetchOnWindowFocus: true,
           },
@@ -38,8 +42,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
           // waiting in memory, where a reload would lose them.
           mutations: { networkMode: "always" },
         },
-      })
-  );
+      });
+    // Saves update what's on screen straight away (and offline, until they're sent).
+    showChangesIn(client);
+    // Start from the real connection state: TanStack assumes online until the browser says
+    // otherwise, so a page opened offline would try the server and show empty screens instead
+    // of what's kept on the device.
+    if (typeof navigator !== "undefined") onlineManager.setOnline(navigator.onLine);
+    // Screens wait for a refresh after saving (to close a sheet, say). Offline the refresh is
+    // paused until the connection is back, so don't hold the screen for it: the change is
+    // already showing, and the refresh still happens once ana is online.
+    const invalidate = client.invalidateQueries.bind(client);
+    client.invalidateQueries = ((...args: Parameters<typeof invalidate>) => {
+      const refreshed = invalidate(...args);
+      return onlineManager.isOnline() ? refreshed : Promise.resolve();
+    }) as typeof client.invalidateQueries;
+    return client;
+  });
 
   const [persister] = useState(() =>
     createAsyncStoragePersister({
@@ -54,11 +73,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
             await del(k).catch(() => {}); // an older plain copy: dropped
             return null;
           }
-          if (!(await waitForUnlock())) return null;
+          // Unlocking from this device's own key is quick, but give it time on a slow phone.
+          if (!(await waitForUnlock(20_000))) {
+            unreadCopy = true;
+            return null;
+          }
           return openDeep(stored).catch(() => null);
         },
         setItem: async (k, v) => {
-          if (isUnlocked()) await set(k, await seal(v));
+          // Never write over a kept copy this page couldn't read back (it stayed locked): it
+          // would be replaced by a nearly empty one.
+          if (isUnlocked() && !unreadCopy) await set(k, await seal(v));
         },
         removeItem: (k) => del(k),
       },

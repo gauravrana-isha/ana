@@ -1,5 +1,6 @@
 "use client";
 
+import type { QueryClient } from "@tanstack/react-query";
 import type { DayLogEntries, Practice, PracticeField } from "./types";
 import type { Moment } from "./moment-types";
 import type { AttachmentDTO } from "./media-client";
@@ -22,6 +23,17 @@ async function getOpen<T>(url: string, fallback: T): Promise<T> {
   return openDeep((await res.json()) as T);
 }
 
+// ---------- what's on screen ----------
+
+/** The app's query cache, so a change shows at once (and stays, offline, until it's sent). */
+let screen: QueryClient | null = null;
+export function showChangesIn(qc: QueryClient) {
+  screen = qc;
+}
+function onScreenPractices(change: (list: Practice[]) => Practice[]) {
+  screen?.setQueryData<Practice[]>(["practices"], (old) => change(Array.isArray(old) ? old : []));
+}
+
 // ---------- practices ----------
 
 export async function fetchPractices(): Promise<Practice[]> {
@@ -36,17 +48,20 @@ export async function createPractice(p: {
   hasDoneToggle: boolean;
   fields: PracticeField[];
 }) {
-  const body = await sealFields(
-    { id: newId(), name: p.name, iconName: p.iconName, catalogId: p.catalogId ?? null, fields: p.fields, tier: p.catalogId ? "FIXED" : "CUSTOM", hasDoneToggle: p.hasDoneToggle },
-    ["name", "iconName", "catalogId", "fields"]
-  );
-  const { data } = await send<Practice>("/api/practices", "POST", body);
-  return data ? openDeep(data) : null;
+  const plain = { id: newId(), name: p.name, iconName: p.iconName, catalogId: p.catalogId ?? null, fields: p.fields, tier: (p.catalogId ? "FIXED" : "CUSTOM") as Practice["tier"], hasDoneToggle: p.hasDoneToggle };
+  const body = await sealFields(plain, ["name", "iconName", "catalogId", "fields"]);
+  // On screen straight away (offline it waits in the outbox; its id makes a resend safe).
+  const now = new Date().toISOString();
+  const local: Practice = { ...plain, userId: "", order: Number.MAX_SAFE_INTEGER, createdAt: now, updatedAt: now };
+  onScreenPractices((list) => (list.some((x) => x.id === local.id) ? list : [...list, { ...local, order: list.length }]));
+  const res = await send<Practice>("/api/practices", "POST", body, { queue: true });
+  return res.queued ? local : openDeep(res.data);
 }
 
 /** Change a practice's name or fields (the whole field list, already merged here). */
 export async function editPractice(id: string, change: { name?: string; fields?: PracticeField[] }) {
-  await send("/api/practices", "PATCH", { id, ...(await sealFields(change, ["name", "fields"])) });
+  onScreenPractices((list) => list.map((x) => (x.id === id ? { ...x, ...change } : x)));
+  await send("/api/practices", "PATCH", { id, ...(await sealFields(change, ["name", "fields"])) }, { queue: true });
 }
 
 /**
@@ -81,11 +96,13 @@ export function mergeFields(
 }
 
 export async function deletePractice(id: string) {
-  await send("/api/practices", "DELETE", { id });
+  onScreenPractices((list) => list.filter((x) => x.id !== id));
+  await send("/api/practices", "DELETE", { id }, { queue: true });
 }
 
 export async function reorderPractices(ids: string[]) {
-  await send("/api/practices", "PATCH", { reorder: ids.map((id, order) => ({ id, order })) });
+  onScreenPractices((list) => ids.map((id) => list.find((x) => x.id === id)).filter((x): x is Practice => !!x).map((x, order) => ({ ...x, order })));
+  await send("/api/practices", "PATCH", { reorder: ids.map((id, order) => ({ id, order })) }, { queue: true });
 }
 
 // ---------- day logs ----------
@@ -158,7 +175,7 @@ export async function saveWeekly(weekStart: string, r: Omit<WeeklyReflection, "w
 /** Keep someone's reflection questions (both lists, sealed together). */
 export async function saveQuestions(sets: QuestionSets) {
   const stored = Object.fromEntries(Object.entries(sets).map(([k, list]) => [k, toStored(k as ReflectionKind, list)]));
-  await send("/api/me", "PATCH", { questions: await seal(stored) });
+  await send("/api/me", "PATCH", { questions: await seal(stored) }, { queue: true });
 }
 
 // ---------- moments ----------
