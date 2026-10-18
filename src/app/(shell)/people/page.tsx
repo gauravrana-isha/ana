@@ -8,6 +8,7 @@ import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PersonForm } from "@/components/people/PersonForm";
+import { SyncMark } from "@/components/shell/SyncMark";
 import { timeAgo } from "@/lib/dates";
 import { CrossMark, PlusMark } from "@/components/art/PenMarks";
 import { FeatureGlyph } from "@/components/art/FeatureBadge";
@@ -65,6 +66,7 @@ export default function PeoplePage() {
                     <span className="block font-ui text-[12.5px] text-accent mt-0.5">Last together {timeAgo(p.lastMomentAt)}</span>
                   )}
                 </span>
+                <SyncMark id={p.photoId ? [p.id, p.photoId] : p.id} />
               </Link>
             </li>
           ))}

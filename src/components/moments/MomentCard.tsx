@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SyncMark } from "@/components/shell/SyncMark";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -134,6 +135,9 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
     if (!(await del(moment))) setDeleting(false);
   }
 
+  // Not yet in the journal while the moment or any of its files is still on this phone.
+  const unsent = [moment.id, ...moment.attachments.map((a) => a.id)];
+
   if (folded) {
     const media = moment.attachments.length;
     return (
@@ -149,6 +153,7 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
             {[timeOf(moment), moment.place, people.map((p) => p.name).join(", "), media > 1 ? `${media} files` : null].filter(Boolean).join(" · ")}
           </span>
         </span>
+        <SyncMark id={unsent} />
         <Chevron dir="right" size={17} className="shrink-0 text-ink-soft group-hover:text-ink" />
       </Link>
     );
@@ -163,6 +168,7 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
         <div className="flex-1 min-w-0">
           <h3 className={cn("font-display text-[18px] font-semibold leading-snug truncate", moment.title ? "text-ink" : "text-ink-soft")}>{moment.title || KIND_NAME[moment.kind] || "Moment"}</h3>
           <p className="font-ui text-[12.5px] text-ink-soft mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 tabular">
+            <SyncMark id={unsent} />
             {timeOf(moment) && <span>{timeOf(moment)}</span>}
             {moment.place && (
               <span className="inline-flex items-center gap-1">
