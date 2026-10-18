@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { clear, get } from "idb-keyval";
+import { clear } from "idb-keyval";
+import { waitingCount } from "@/lib/outbox";
+import { clearPendingMedia } from "@/lib/media-outbox";
 import { signOutAction } from "@/app/actions";
 import { dropPushSubscription } from "@/lib/push-client";
 import { dropMediaCache } from "@/lib/vault/files";
@@ -20,14 +22,14 @@ export function SignOutButton({ className, withIcon = true, labelClassName }: { 
   const ask = useConfirm();
 
   async function signOut() {
-    // Saves made offline that haven't gone yet would be lost: say so first.
-    const waiting = (await get<unknown[]>("ana-outbox").catch(() => undefined))?.length ?? 0;
+    // Saves and files not yet sent would be lost: say so first.
+    const waiting = await waitingCount().catch(() => 0);
     if (
       waiting &&
       !(await ask({
-        title: "Sign out and lose unsent changes?",
-        body: `${waiting} ${waiting === 1 ? "change made offline hasn't" : "changes made offline haven't"} been sent yet. Connect to the internet first to keep ${waiting === 1 ? "it" : "them"}.`,
-        confirmLabel: "Sign out",
+        title: "Sign out now?",
+        body: `${waiting} ${waiting === 1 ? "thing hasn't" : "things haven't"} been sent yet. Signing out now would lose ${waiting === 1 ? "it" : "them"}. Connect to the internet and wait a moment to keep ${waiting === 1 ? "it" : "them"}.`,
+        confirmLabel: "Sign out anyway",
         tone: "danger",
       }))
     )
@@ -38,6 +40,7 @@ export function SignOutButton({ className, withIcon = true, labelClassName }: { 
       await dropPushSubscription();
       if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
       await clear().catch(() => {});
+      await clearPendingMedia().catch(() => {});
       sessionStorage.clear();
     } finally {
       await signOutAction();

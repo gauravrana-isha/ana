@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { createStore, del, get, keys, set } from "idb-keyval";
+import { createStore, del, entries, get, keys, set } from "idb-keyval";
 import { encryptFile } from "./vault/files";
 import { isUnlocked } from "./vault/vault";
 import { putStored, type AttachmentDTO, type MediaKind } from "./media-client";
@@ -23,33 +23,68 @@ interface PendingMedia {
   full: Blob;
   thumb: Blob | null;
   at: number;
+  /** Turned down by storage or the server (kept, to try again or remove). */
+  refused?: string;
+}
+
+/** A file waiting here, without its bytes (for the list of what's waiting). */
+export interface WaitingFile {
+  id: string;
+  kind: MediaKind;
+  bytes: number;
+  at: number;
+  refused?: string;
 }
 
 const store = typeof indexedDB === "undefined" ? undefined : createStore("ana-media", "pending");
 
-// How many files are waiting, for the "saving 3…" count.
+// The files waiting (without their bytes), for the "saving 3…" count and the list.
+let files: WaitingFile[] = [];
 let waiting = 0;
 const listeners = new Set<() => void>();
 async function recount() {
-  waiting = (await keys(store).catch(() => [])).length;
+  const all = (await entries<string, PendingMedia>(store).catch(() => [])).map(([, m]) => m).filter(Boolean);
+  files = all
+    .map((m) => ({ id: m.id, kind: m.kind, bytes: m.full.size + (m.thumb?.size ?? 0), at: m.at, refused: m.refused }))
+    .sort((a, b) => a.at - b.at);
+  waiting = files.filter((f) => !f.refused).length;
   listeners.forEach((l) => l());
 }
 let counted = false;
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  if (!counted) {
+    counted = true;
+    void recount();
+  }
+  return () => {
+    listeners.delete(cb);
+  };
+}
 
-/** How many photos, voice notes and videos are waiting to go up (live). */
+/** How many photos, voice notes and videos are waiting to go up (live; not those refused). */
 export function usePendingMediaCount() {
-  return useSyncExternalStore(
-    (cb) => {
-      listeners.add(cb);
-      if (!counted) {
-        counted = true;
-        void recount();
-      }
-      return () => listeners.delete(cb);
-    },
-    () => waiting,
-    () => 0
-  );
+  return useSyncExternalStore(subscribe, () => waiting, () => 0);
+}
+
+const NO_FILES: WaitingFile[] = [];
+/** Every file waiting here, refused ones too (live). */
+export function useWaitingFiles() {
+  return useSyncExternalStore(subscribe, () => files, () => NO_FILES);
+}
+
+/** Bytes waiting to go up (not counting refused files). */
+export async function waitingMediaBytes() {
+  await recount();
+  return files.filter((f) => !f.refused).reduce((n, f) => n + f.bytes, 0);
+}
+
+/** Send a refused file again. */
+export async function retryMedia(id: string) {
+  const item = await get<PendingMedia>(id, store).catch(() => undefined);
+  if (!item) return;
+  await set(id, { ...item, refused: undefined }, store);
+  await recount();
 }
 
 /** Keep a file for later; returns it as if it were already up. */
@@ -78,31 +113,45 @@ export async function dropPendingMedia(id: string) {
   return true;
 }
 
-/** How many files are waiting to go up. */
-export async function pendingMediaCount() {
-  return (await keys(store).catch(() => [])).length;
+/** How many files are waiting to go up (with `refused`, those turned down as well). */
+export async function pendingMediaCount(opts: { refused?: boolean } = {}) {
+  await recount();
+  return opts.refused ? files.length : waiting;
 }
 
 /**
  * Send the waiting files, oldest first. Stops (throws) at the first network failure, so the
- * saves that name them wait too. A file the server refuses is dropped and reported.
+ * saves that name them wait too. A file the server refuses is kept aside (marked refused) and
+ * reported. `onProgress` hears how far each file has got (0–100) and its size.
  */
-export async function flushMedia(onRefused?: (kind: MediaKind, reason: string) => void): Promise<number> {
+export async function flushMedia(
+  onRefused?: (kind: MediaKind, reason: string) => void,
+  onProgress?: (id: string, pct: number, bytes: number) => void
+): Promise<number> {
   const ids = (await keys(store).catch(() => [])) as string[];
   if (!ids.length) return 0;
   let sent = 0;
-  const items = (await Promise.all(ids.map((id) => get<PendingMedia>(id, store)))).filter((x): x is PendingMedia => !!x).sort((a, b) => a.at - b.at);
+  const items = (await Promise.all(ids.map((id) => get<PendingMedia>(id, store))))
+    .filter((x): x is PendingMedia => !!x && !x.refused)
+    .sort((a, b) => a.at - b.at);
+  if (!items.length) return 0;
   const storage = await currentStorage();
+  const refuse = async (m: PendingMedia, reason: string) => {
+    await set(m.id, { ...m, refused: reason }, store).catch(() => {});
+    onRefused?.(m.kind, reason);
+    void recount();
+  };
   for (const m of items) {
+    const bytes = m.full.size + (m.thumb?.size ?? 0);
     let pathname: string, thumbPathname: string | undefined;
     try {
-      pathname = await putStored(m.full, m.kind, m.contentType, storage);
+      onProgress?.(m.id, 0, bytes);
+      pathname = await putStored(m.full, m.kind, m.contentType, storage, (pct) => onProgress?.(m.id, Math.min(pct, 99), bytes));
       thumbPathname = m.thumb ? await putStored(m.thumb, m.kind, m.contentType, storage).catch(() => undefined) : undefined;
     } catch (e) {
       if ((e as { refused?: boolean }).refused) {
-        await del(m.id, store).catch(() => {});
-        onRefused?.(m.kind, e instanceof Error ? e.message : "refused");
-        void recount();
+        await refuse(m, e instanceof Error ? e.message : "refused");
+        onProgress?.(m.id, 100, bytes);
         continue;
       }
       throw e;
@@ -116,12 +165,9 @@ export async function flushMedia(onRefused?: (kind: MediaKind, reason: string) =
       await del(m.id, store).catch(() => {});
       sent++;
       void recount();
-    }
-    else if (res.status >= 400 && res.status < 500) {
-      await del(m.id, store).catch(() => {});
-      onRefused?.(m.kind, `server said ${res.status}`);
-      void recount();
-    } else throw new Error(`Couldn't record an upload (${res.status})`);
+    } else if (res.status >= 400 && res.status < 500 && ![401, 408, 429].includes(res.status)) await refuse(m, `server said ${res.status}`);
+    else throw new Error(`Couldn't record an upload (${res.status})`);
+    onProgress?.(m.id, 100, bytes);
   }
   return sent;
 }

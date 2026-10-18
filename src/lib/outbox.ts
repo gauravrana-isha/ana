@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { get, set } from "idb-keyval";
-import { clearPendingMedia, flushMedia } from "./media-outbox";
+import { clearPendingMedia, flushMedia, pendingMediaCount, waitingMediaBytes } from "./media-outbox";
 
 /*
  * Writes that can wait for a connection. A save made offline (or when the network drops
@@ -17,11 +17,30 @@ export interface Pending {
   method: string;
   body: string | null;
   at: number;
+  /** The server turned it down (kept, to try again or remove). */
+  refused?: { status: number; at: number };
+}
+
+/** How far the current send has got, by size (bytes), and what's going now. */
+export interface SendProgress {
+  total: number;
+  done: number;
+  /** What's going up right now: a save's key, or a file's id. */
+  current: string | null;
+  /** How far the current file has got (0–100). */
+  currentPct: number;
 }
 
 const KEY = "ana-outbox";
+const HELD_KEY = "ana-outbox-held";
 const listeners = new Set<() => void>();
 let queue: Pending[] = [];
+// Saves the server refused: kept aside (they don't hold up the rest) until tried again or removed.
+let held: Pending[] = [];
+// Unchanging copies for React (the lists above change in place).
+let shown: { queue: Pending[]; held: Pending[] } = { queue: [], held: [] };
+let progress: SendProgress | null = null;
+const progressListeners = new Set<() => void>();
 let loaded: Promise<void> | null = null;
 let flushing: Promise<FlushResult> | null = null;
 let onSynced: (() => void) | null = null;
@@ -38,13 +57,20 @@ export function onFlushed(cb: (result: FlushResult) => void) {
 }
 
 function emit() {
+  shown = { queue: queue.slice(), held: held.slice() };
   listeners.forEach((l) => l());
 }
 
+function setProgress(p: SendProgress | null) {
+  progress = p;
+  progressListeners.forEach((l) => l());
+}
+
 function load() {
-  loaded ??= get<Pending[]>(KEY)
-    .then((q) => {
+  loaded ??= Promise.all([get<Pending[]>(KEY), get<Pending[]>(HELD_KEY)])
+    .then(([q, h]) => {
       queue = [...(q ?? []), ...queue];
+      held = [...(h ?? []), ...held];
       emit();
     })
     .catch(() => {});
@@ -52,21 +78,63 @@ function load() {
 }
 
 async function save() {
-  await set(KEY, queue).catch(() => {});
+  await Promise.all([set(KEY, queue), set(HELD_KEY, held)]).catch(() => {});
   emit();
+}
+
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  void load();
+  return () => {
+    listeners.delete(cb);
+  };
 }
 
 /** How many saves are waiting to be sent. */
 export function usePendingCount() {
+  return useSyncExternalStore(subscribe, () => shown.queue.length, () => 0);
+}
+
+const NONE = { queue: [] as Pending[], held: [] as Pending[] };
+/** The saves waiting to be sent, and those the server refused (live). */
+export function usePendingSaves() {
+  return useSyncExternalStore(subscribe, () => shown, () => NONE);
+}
+
+/** How far the current send has got (null when nothing is being sent). */
+export function useSendProgress() {
   return useSyncExternalStore(
     (cb) => {
-      listeners.add(cb);
-      void load();
-      return () => listeners.delete(cb);
+      progressListeners.add(cb);
+      return () => progressListeners.delete(cb);
     },
-    () => queue.length,
-    () => 0
+    () => progress,
+    () => null
   );
+}
+
+/** Everything waiting or refused, saves and files (signing out asks first). */
+export async function waitingCount() {
+  await load();
+  return queue.length + held.length + (await pendingMediaCount({ refused: true }));
+}
+
+/** Send a refused save again (after whatever stopped it is fixed). */
+export async function retrySave(id: string) {
+  await load();
+  const p = held.find((x) => x.id === id);
+  if (!p) return;
+  held = held.filter((x) => x !== p);
+  queue.push({ ...p, refused: undefined });
+  await save();
+  if (navigator.onLine) await flush();
+}
+
+/** Give up on a refused save. */
+export async function removeSave(id: string) {
+  await load();
+  held = held.filter((x) => x.id !== id);
+  await save();
 }
 
 /** What to do after a flush: refresh what's on screen; tell about a save the server refused. */
@@ -134,14 +202,23 @@ export function flush(): Promise<FlushResult> {
   flushing ??= (async () => {
     await load();
     let sent = 0;
+    // Progress is by size: a video counts for far more than a tick.
+    const total = (await waitingMediaBytes()) + queue.reduce((n, p) => n + sizeOf(p), 0);
+    let done = 0;
+    if (total > 0) setProgress({ total, done, current: null, currentPct: 0 });
     // Photos, voice notes and videos first: the saves below may name them.
     try {
-      sent += await flushMedia((kind, reason) => onMediaRefused?.(kind, reason));
+      sent += await flushMedia((kind, reason) => onMediaRefused?.(kind, reason), (id, pct, bytes) => {
+        setProgress({ total, done: done + (bytes * pct) / 100, current: id, currentPct: pct });
+        if (pct >= 100) done += bytes;
+      });
     } catch {
+      setProgress(null);
       return { sent: 0, left: queue.length }; // still offline: everything waits
     }
     while (queue.length) {
       const p = queue[0];
+      setProgress({ total, done, current: p.id, currentPct: 0 });
       let status: number;
       try {
         const res = await fetch(p.url, { method: p.method, headers: p.body ? { "Content-Type": "application/json" } : undefined, body: p.body });
@@ -152,11 +229,18 @@ export function flush(): Promise<FlushResult> {
       // Signed out, rate-limited or the server is struggling: keep it and try later.
       if (status === 401 || status === 408 || status === 429 || status >= 500) break;
       queue.shift();
-      await save();
+      done += sizeOf(p);
       // Deleting something already gone is done, not refused.
-      if (status >= 400 && !(p.method === "DELETE" && status === 404)) onRejected?.(p, status);
-      else sent++;
+      if (status >= 400 && !(p.method === "DELETE" && status === 404)) {
+        held.push({ ...p, refused: { status, at: Date.now() } });
+        await save();
+        onRejected?.(p, status);
+      } else {
+        await save();
+        sent++;
+      }
     }
+    setProgress(null);
     if (sent) onSynced?.();
     const result = { sent, left: queue.length };
     flushedListeners.forEach((l) => l(result));
@@ -167,9 +251,13 @@ export function flush(): Promise<FlushResult> {
   return flushing;
 }
 
+/** A save's size, for progress (a little for the request itself). */
+const sizeOf = (p: Pending) => (p.body?.length ?? 0) + 200;
+
 /** Forget everything waiting (signing out). */
 export async function clearOutbox() {
   queue = [];
+  held = [];
   await save();
   await clearPendingMedia();
 }
