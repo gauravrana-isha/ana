@@ -18,6 +18,7 @@ import { readingQuestions, shownQuestions, type QuestionSets } from "@/lib/quest
 import { EditMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
+import { Portal } from "@/components/ui/Portal";
 
 export default function WeeklyPage() {
   return (
@@ -190,15 +191,17 @@ function WeeklyReflectionView({
         })}
 
         {/* Edit button */}
-        <button
-          onClick={() => setEditing(true)}
-          className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
-                     w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
-                     shadow-[0_6px_16px_var(--accent-soft)] z-20"
-          aria-label="Edit reflection"
-        >
-          <EditMark size={24} />
-        </button>
+        <Portal>
+          <button
+            onClick={() => setEditing(true)}
+            className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
+                       w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
+                       shadow-[0_6px_16px_var(--accent-soft)] z-20"
+            aria-label="Edit reflection"
+          >
+            <EditMark size={24} />
+          </button>
+        </Portal>
       </div>
     );
   }
@@ -220,17 +223,19 @@ function WeeklyReflectionView({
 
       {/* Floating save */}
       {dirty && (
-        <button
-          onClick={() => { onSave(); setEditing(false); }}
-          disabled={isPending}
-          className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
-                     w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
-                     shadow-[0_6px_16px_var(--accent-soft)] z-20
-                     disabled:opacity-50 transition-opacity"
-          aria-label="Save reflection"
-        >
-          {isPending ? <ButtonLoader /> : <Glyph k="save" size={24} />}
-        </button>
+        <Portal>
+          <button
+            onClick={() => { onSave(); setEditing(false); }}
+            disabled={isPending}
+            className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
+                       w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
+                       shadow-[0_6px_16px_var(--accent-soft)] z-20
+                       disabled:opacity-50 transition-opacity"
+            aria-label="Save reflection"
+          >
+            {isPending ? <ButtonLoader /> : <Glyph k="save" size={24} />}
+          </button>
+        </Portal>
       )}
     </Busy>
   );

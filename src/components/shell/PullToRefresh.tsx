@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { flush } from "@/lib/outbox";
+import { showConnectivityNote } from "./ConnectivityIndicator";
 import { cn } from "@/lib/utils";
 
 const READY = 72; // how far to pull (after damping) before letting go refreshes
@@ -72,6 +73,13 @@ export function PullToRefresh() {
       setPull(READY);
       const minimum = new Promise((r) => setTimeout(r, 650));
       try {
+        if (!navigator.onLine) {
+          // Offline the page can't be fetched again (trying would reload it from the phone's
+          // saved copy): what's shown is already everything on this phone.
+          await minimum;
+          showConnectivityNote("Offline · this is everything on your phone");
+          return;
+        }
         await flush().catch(() => {});
         router.refresh();
         await Promise.all([qc.invalidateQueries(), minimum]);

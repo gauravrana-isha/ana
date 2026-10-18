@@ -18,6 +18,7 @@ import { fetchDaily, saveDaily } from "@/lib/journal";
 import { useMe } from "@/lib/me";
 import { readingQuestions, shownQuestions } from "@/lib/questions";
 import { EditMark } from "@/components/art/PenMarks";
+import { Portal } from "@/components/ui/Portal";
 
 export default function DailyPage() {
   return (
@@ -173,15 +174,17 @@ function DailyContent() {
           )}
 
           {/* Edit button */}
-          <button
-            onClick={() => { setFocusKey(null); setEditing(prompts[0].key); }}
-            className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
-                       w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
-                       shadow-[0_6px_16px_var(--accent-soft)] z-20"
-            aria-label="Edit reflection"
-          >
-            <EditMark size={24} />
-          </button>
+          <Portal>
+            <button
+              onClick={() => { setFocusKey(null); setEditing(prompts[0].key); }}
+              className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
+                         w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
+                         shadow-[0_6px_16px_var(--accent-soft)] z-20"
+              aria-label="Edit reflection"
+            >
+              <EditMark size={24} />
+            </button>
+          </Portal>
         </>
       ) : (
         editing === "first" ? (
