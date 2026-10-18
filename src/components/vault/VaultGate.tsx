@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { makeReadyOffline } from "@/lib/offline-ready";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { SnakeLoader } from "@/components/ui/Loader";
@@ -55,6 +56,12 @@ export function VaultGate({
         toast(code === 400 ? "A change made offline couldn't be saved. Please make it again." : "A change made offline wasn't accepted.", "error", 5000),
     });
     void flush();
+    // Save the whole journal for offline use (every screen and its data), now and when the
+    // connection comes back.
+    void makeReadyOffline(qc);
+    const back = () => void makeReadyOffline(qc);
+    window.addEventListener("online", back);
+    return () => window.removeEventListener("online", back);
   }, [state.status, qc, toast]);
 
   if (state.status === "idle" || (state.status === "locked" && !status && !statusError)) return <Waiting />;

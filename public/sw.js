@@ -1,6 +1,9 @@
 /*
  * ana service worker. Small and explicit:
- *  - pages: network first, last good copy when offline
+ *  - pages: network first, last good copy when offline (kept by path, so /today?source=pwa
+ *    opens /today). Once unlocked and online, the app asks for every screen (and recent
+ *    moments and people) to be saved ahead, with their code, so the whole app opens offline.
+ *    A page that was never saved shows a plain "not on this phone yet" page, never another one.
  *  - /_next/static: cache first (file names change every build)
  *  - images, fonts, icons: cache first
  *  - /api and auth: never cached here (private data; the app keeps its own cache, cleared on sign-out),
@@ -11,14 +14,19 @@
  */
 const VERSION = "ana-v5";
 const DEV = self.location.hostname === "localhost" || self.location.hostname === "127.0.0.1";
-const PAGES = `${VERSION}-pages`;
+const PAGES = `${VERSION}-pages-2`;
+/** Shown offline for a page this device never saved. */
+const OFFLINE_PAGE = "/offline.html";
 const STATIC = `${VERSION}-static`;
 /** Images, fonts and icons (renamed when the app icon changes, so the new one is fetched). */
 const MEDIA = `${VERSION}-media-2`;
 /** People's own photos (private; cleared with everything else on sign-out). */
 const PHOTOS = `${VERSION}-photos`;
 
-self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+  event.waitUntil(caches.open(PAGES).then((c) => c.add(OFFLINE_PAGE)).catch(() => {}));
+});
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
@@ -48,16 +56,54 @@ async function cachePhoto(request) {
   return res;
 }
 
+/** A page's place in the cache: its path alone (the query is only ever a hint like ?source=pwa). */
+function pageKey(url) {
+  const u = new URL(url, self.location.origin);
+  return new Request(u.origin + u.pathname);
+}
+
 async function networkFirstPage(request) {
   const cache = await caches.open(PAGES);
   try {
     const res = await fetch(request);
     // Only keep real app pages, never redirects to sign-in.
-    if (res.ok && !res.redirected) cache.put(request, res.clone());
+    if (res.ok && !res.redirected) cache.put(pageKey(request.url), res.clone());
     return res;
   } catch {
-    return (await cache.match(request)) || (await cache.match("/today")) || Response.error();
+    return (await cache.match(pageKey(request.url))) || (await cache.match(OFFLINE_PAGE)) || Response.error();
   }
+}
+
+/** The app's code a saved page needs (its scripts and styles), so it runs offline too. */
+async function keepAssets(html) {
+  const cache = await caches.open(STATIC);
+  const urls = [...new Set(html.match(/\/_next\/static\/[^"'\s)\\]+\.(?:js|css)/g) || [])];
+  await Promise.all(
+    urls.map(async (u) => {
+      if (await cache.match(u)) return;
+      const res = await fetch(u).catch(() => null);
+      if (res && res.ok) await cache.put(u, res);
+    })
+  );
+}
+
+/** Save pages ahead (asked by the app once it's unlocked and online), a few at a time. */
+async function warm(urls) {
+  const cache = await caches.open(PAGES);
+  const list = [...urls];
+  const worker = async () => {
+    for (let url = list.shift(); url; url = list.shift()) {
+      try {
+        const res = await fetch(url, { credentials: "same-origin", headers: { Accept: "text/html" } });
+        if (!res.ok || res.redirected || !(res.headers.get("content-type") || "").includes("text/html")) continue;
+        await keepAssets(await res.clone().text());
+        await cache.put(pageKey(url), res);
+      } catch {
+        return; // offline again: stop
+      }
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
 }
 
 self.addEventListener("fetch", (event) => {
@@ -82,6 +128,7 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data === "clear") event.waitUntil(caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))));
+  else if (event.data && event.data.type === "warm" && Array.isArray(event.data.urls)) event.waitUntil(warm(event.data.urls.filter((u) => typeof u === "string" && u.startsWith("/"))));
 });
 
 self.addEventListener("push", (event) => {

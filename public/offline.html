@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Not on this phone yet · ana</title>
+<script>try{var m=document.cookie.match(/(?:^|; )ana-theme=(dark|light)/);if(m)document.documentElement.setAttribute('data-theme',m[1])}catch(e){}</script>
+<style>
+  :root { --bg: #fbf8f2; --surface: #f3ecdd; --ink: #18160f; --ink-soft: #686152; --accent: #2f6b5e; }
+  [data-theme="dark"] { --bg: #13120e; --surface: #1d1b16; --ink: #f1eadb; --ink-soft: #a69d8b; --accent: #7dbfae; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
+  body { display: grid; place-items: center; padding: 24px; font: 16px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif; text-align: center; }
+  main { max-width: 340px; }
+  img { width: 56px; height: 56px; }
+  .dark { display: none; }
+  [data-theme="dark"] .light { display: none; }
+  [data-theme="dark"] .dark { display: inline; }
+  h1 { margin: 18px 0 8px; font: 600 26px/1.2 Georgia, "Times New Roman", serif; }
+  p { margin: 0; color: var(--ink-soft); }
+  .row { margin-top: 24px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  a, button { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; border: 0; font: 600 15px/1 inherit; text-decoration: none; cursor: pointer; }
+  a { background: var(--accent); color: var(--bg); }
+  button { background: var(--surface); color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+  <img class="light" src="/brand/mark-light.webp" alt="" width="56" height="56">
+  <img class="dark" src="/brand/mark-dark.webp" alt="" width="56" height="56">
+  <h1>Not on this phone yet</h1>
+  <p>This page hasn't been saved for offline use. It opens once you're connected. Everything else in your journal works offline, and changes are saved and sent later.</p>
+  <div class="row">
+    <a href="/today">Go to Today</a>
+    <button type="button" onclick="history.back()">Go back</button>
+  </div>
+</main>
+</body>
+</html>
