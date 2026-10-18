@@ -12,6 +12,8 @@ import { BARE_PAGES, type NavItem } from "./nav";
 import { cn } from "@/lib/utils";
 import { Sheet } from "@/components/ui/Sheet";
 import { Glyph } from "@/components/art/Glyphs";
+import { openWaiting, summarise, useWaiting } from "@/lib/waiting";
+import { QuietDot } from "./QuietDot";
 
 const MAX_TABS = 5;
 // On phones the everyday sections come first; the rest sit under "More".
@@ -21,6 +23,7 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
   const pathname = usePathname();
   const [more, setMore] = useState(false);
   const prefetch = usePrefetchScreen();
+  const { items: waiting } = useWaiting();
   useKeyboardAware();
 
   // Everything fits in five slots, or the first four stay and the rest go under "More".
@@ -54,24 +57,68 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
       <nav aria-label="Main" className={cn("ana-tabbar fixed bottom-0 inset-x-0 z-20 lg:hidden bg-nav/95 backdrop-blur-md border-t border-line pb-safe transition-transform duration-200", bare && "hidden")}>
         <div className="flex items-stretch justify-around h-16 px-1 max-w-[560px] mx-auto">
           {tabs.map((item) => (
-            <Tab key={item.key} href={item.href} label={item.label} active={pathname.startsWith(item.href)} icon={(on) => <NavIcon k={item.key} size={22} weight={on ? "fill" : "regular"} />} />
+            <Tab
+              key={item.key}
+              href={item.href}
+              label={item.label}
+              active={pathname.startsWith(item.href)}
+              icon={(on) => (
+                <>
+                  <NavIcon k={item.key} size={22} weight={on ? "fill" : "regular"} />
+                  {item.key === "profile" && <QuietDot className="-top-0.5 -right-1" />}
+                </>
+              )}
+            />
           ))}
           {!fits && (
             <button type="button" onClick={() => setMore(true)} aria-expanded={more} className="press relative flex flex-1 flex-col items-center justify-center gap-1 min-w-0">
-              <TabInner active={moreActive || more} label="More" icon={(on) => <Glyph k="more" size={24} />} layoutId={moreActive ? "tab-active" : undefined} />
+              <TabInner
+                active={moreActive || more}
+                label="More"
+                icon={() => (
+                  <>
+                    <Glyph k="more" size={24} />
+                    {overflow.some((i) => i.key === "profile") && <QuietDot className="-top-0.5 -right-1" />}
+                  </>
+                )}
+                layoutId={moreActive ? "tab-active" : undefined}
+              />
             </button>
           )}
         </div>
       </nav>
 
       <Sheet open={more} onClose={() => setMore(false)} title="More">
+        {waiting.length > 0 && (
+          <div className="-mx-2 mb-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMore(false);
+                openWaiting();
+              }}
+              className="press w-full flex items-center gap-3 px-3 py-2.5 rounded-[14px] bg-surface border border-line text-left"
+            >
+              <span className="relative grid place-items-center w-[21px] text-ink-soft">
+                <Glyph k="sync" size={19} />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-ui text-[14px] font-semibold text-ink">Kept on this phone</span>
+                <span className="block font-ui text-[12.5px] text-ink-soft truncate">{summarise(waiting)}</span>
+              </span>
+            </button>
+          </div>
+        )}
         <ul className="flex flex-col gap-1 -mx-2">
           {overflow.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
               <li key={item.key}>
                 <Link href={item.href} {...prefetch(item.href)} onClick={() => setMore(false)} aria-current={active ? "page" : undefined} className={cn("press flex items-center gap-3 h-12 px-3 rounded-[14px] font-ui text-[15px] font-semibold", active ? "bg-accent-soft text-accent" : "text-ink hover:bg-surface")}>
-                  <NavIcon k={item.key} size={21} weight={active ? "fill" : "regular"} />
+                  <span className="relative">
+                    <NavIcon k={item.key} size={21} weight={active ? "fill" : "regular"} />
+                    {item.key === "profile" && <QuietDot className="-top-0.5 -right-1 ring-bg" />}
+                  </span>
                   {item.label}
                 </Link>
               </li>

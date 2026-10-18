@@ -12,6 +12,7 @@ import { usePrefetchScreen } from "@/lib/prefetch";
 import { openSearch } from "./Search";
 import type { NavItem } from "./nav";
 import { cn } from "@/lib/utils";
+import { QuietDot } from "./QuietDot";
 import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
 import { useMediaSrc } from "@/lib/vault/files";
@@ -213,7 +214,10 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
             >
               {/* Remounts when it becomes the current page, so it pops like the other nav badges. */}
               <span key={profileActive ? "on" : "off"} className={cn("grid place-items-center w-12 h-12 shrink-0", profileActive && "fb-play")}>
-                <Avatar name={user.name} image={user.image} size={30} />
+                <span className="relative">
+                  <Avatar name={user.name} image={user.image} size={30} />
+                  <QuietDot className="top-0 right-0" />
+                </span>
               </span>
               <Label collapsed={collapsed} className="flex flex-col min-w-0">
                 <span className={cn("font-ui text-[14px] font-semibold truncate", profileActive ? "text-accent" : "text-ink")}>{user.name}</span>
