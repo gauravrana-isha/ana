@@ -73,9 +73,9 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
         preferredName: preferredName.trim() || null,
         ...(photoId !== undefined ? { photoId } : {}),
       };
-      // Shown at once; offline it waits in the outbox (a new photo waits too, and goes up first).
-      onScreen.me({ ...change, intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null });
+      // Offline it waits in the outbox (a new photo waits too, and goes up first); shown once saved.
       const res = await send("/api/me", "PATCH", { ...change, ...personal }, { queue: true });
+      onScreen.me({ ...change, intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null });
       if (!res.queued) {
         void qc.invalidateQueries({ queryKey: ["me"] });
         router.refresh(); // the sidebar picture comes from the server

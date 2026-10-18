@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
-import { usePendingCount } from "@/lib/outbox";
+import { onFlushed, usePendingCount } from "@/lib/outbox";
 import { usePendingMediaCount } from "@/lib/media-outbox";
 import { Glyph } from "@/components/art/Glyphs";
 import { TickMark } from "@/components/tracker/FieldInput";
@@ -33,6 +33,12 @@ export function ConnectivityIndicator() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasOnline = useRef<boolean | null>(null);
   const syncing = useRef(false);
+  // Saves were counted down while syncing (so "All saved" is earned, not just "Back online").
+  const sent = useRef(false);
+  const pendingRef = useRef(pending);
+  useEffect(() => {
+    pendingRef.current = pending;
+  });
 
   const show = (tone: Notice["tone"], text: string, hideAfter?: number) => {
     if (timer.current) clearTimeout(timer.current);
@@ -48,10 +54,19 @@ export function ConnectivityIndicator() {
       syncing.current = false;
       show("offline", "You're offline · everything still works here", 3800);
     } else if (online && before === false) {
+      // Keep watching for a moment even if nothing seems to be waiting: just after a page load
+      // the waiting saves may still be being read from the device.
+      syncing.current = true;
       if (pending > 0) {
-        syncing.current = true;
+        sent.current = true;
         show("saving", `Back online · saving ${pending}`);
-      } else show("done", "Back online", 2200);
+      }
+      else {
+        show("done", "Back online", 2200);
+        setTimeout(() => {
+          if (syncing.current && pendingRef.current === 0) syncing.current = false;
+        }, 3000);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online]);
@@ -59,12 +74,28 @@ export function ConnectivityIndicator() {
   // While sending: the count goes down as each save lands, then "All saved".
   useEffect(() => {
     if (!online || !syncing.current) return;
-    if (pending > 0) show("saving", `Saving ${pending}`);
-    else {
+    if (pending > 0) {
+      sent.current = true;
+      show("saving", `Saving ${pending}`);
+    } else if (sent.current) {
       syncing.current = false;
+      sent.current = false;
       show("done", "All saved", 2200);
     }
   }, [pending, online]);
+
+  // Everything waiting has gone out: "All saved" (also when it went too fast to count down).
+  useEffect(
+    () =>
+      onFlushed(({ sent: count, left }) => {
+        if (count > 0 && left === 0 && navigator.onLine) {
+          syncing.current = false;
+          sent.current = false;
+          show("done", "All saved", 2200);
+        }
+      }),
+    []
+  );
 
   useEffect(() => {
     const note = (text: string) => show("info", text, 3600);

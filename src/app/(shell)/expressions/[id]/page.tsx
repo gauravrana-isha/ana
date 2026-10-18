@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
@@ -13,7 +13,8 @@ import { MomentComposer } from "@/components/moments/MomentComposer";
 import { StoredAudio, StoredImg, StoredVideo } from "@/components/moments/StoredMedia";
 import { RichText, plainText } from "@/components/moments/RichText";
 import { lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
-import { fetchMoment, type MomentsCopy } from "@/lib/journal";
+import { fetchMoment } from "@/lib/journal";
+import { useAllMoments } from "@/lib/moments-client";
 import { useRouteId } from "@/lib/route-id";
 import { MomentPageSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { cn } from "@/lib/utils";
@@ -27,19 +28,17 @@ import { Glyph } from "@/components/art/Glyphs";
 export default function MomentPage({ params }: { params: Promise<{ id: string }> }) {
   const id = useRouteId(params);
   const router = useRouter();
-  const qc = useQueryClient();
   const del = useDeleteMoment();
   const [editing, setEditing] = useState(false);
   const [viewer, setViewer] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const { data: moment, isPending } = useQuery({
-    queryKey: ["moments", "one", id],
-    queryFn: () => fetchMoment(id),
-    // Shown from the list kept on this device until the full copy arrives (offline: a moment
-    // never opened before, or one written offline, still opens).
-    placeholderData: () => qc.getQueryData<MomentsCopy>(["moments", "all"])?.items.find((m) => m.id === id),
-  });
+  const one = useQuery({ queryKey: ["moments", "one", id], queryFn: () => fetchMoment(id) });
+  // Until (or unless: offline) its full copy arrives, it's shown from the list kept on this
+  // device, so a moment never opened before, or one written offline, still opens.
+  const all = useAllMoments();
+  const moment = one.data ?? all.data?.find((m) => m.id === id) ?? null;
+  const isPending = !moment && (one.isPending || all.isPending);
 
   if (isPending) return <MomentPageSkeleton />;
   if (!moment) {

@@ -39,18 +39,19 @@ export async function createPractice(p: {
 }) {
   const plain = { id: newId(), name: p.name, iconName: p.iconName, catalogId: p.catalogId ?? null, fields: p.fields, tier: (p.catalogId ? "FIXED" : "CUSTOM") as Practice["tier"], hasDoneToggle: p.hasDoneToggle };
   const body = await sealFields(plain, ["name", "iconName", "catalogId", "fields"]);
-  // On screen straight away (offline it waits in the outbox; its id makes a resend safe).
-  const now = new Date().toISOString();
-  const local: Practice = { ...plain, userId: "", order: Number.MAX_SAFE_INTEGER, createdAt: now, updatedAt: now };
-  onScreen.practices((list) => (list.some((x) => x.id === local.id) ? list : [...list, { ...local, order: list.length }]));
+  // Sent, or kept in the outbox (its id makes a resend safe), and only then shown: what's on
+  // screen is never something that wasn't saved.
   const res = await send<Practice>("/api/practices", "POST", body, { queue: true });
-  return res.queued ? local : openDeep(res.data);
+  const now = new Date().toISOString();
+  const saved: Practice = res.queued ? { ...plain, userId: "", order: Number.MAX_SAFE_INTEGER, createdAt: now, updatedAt: now } : await openDeep(res.data);
+  onScreen.practices((list) => (list.some((x) => x.id === saved.id) ? list : [...list, { ...saved, order: list.length }]));
+  return saved;
 }
 
 /** Change a practice's name or fields (the whole field list, already merged here). */
 export async function editPractice(id: string, change: { name?: string; fields?: PracticeField[] }) {
-  onScreen.practices((list) => list.map((x) => (x.id === id ? { ...x, ...change } : x)));
   await send("/api/practices", "PATCH", { id, ...(await sealFields(change, ["name", "fields"])) }, { queue: true });
+  onScreen.practices((list) => list.map((x) => (x.id === id ? { ...x, ...change } : x)));
 }
 
 /**
@@ -85,13 +86,13 @@ export function mergeFields(
 }
 
 export async function deletePractice(id: string) {
-  onScreen.practices((list) => list.filter((x) => x.id !== id));
   await send("/api/practices", "DELETE", { id }, { queue: true });
+  onScreen.practices((list) => list.filter((x) => x.id !== id));
 }
 
 export async function reorderPractices(ids: string[]) {
-  onScreen.practices((list) => ids.map((id) => list.find((x) => x.id === id)).filter((x): x is Practice => !!x).map((x, order) => ({ ...x, order })));
   await send("/api/practices", "PATCH", { reorder: ids.map((id, order) => ({ id, order })) }, { queue: true });
+  onScreen.practices((list) => ids.map((id) => list.find((x) => x.id === id)).filter((x): x is Practice => !!x).map((x, order) => ({ ...x, order })));
 }
 
 // ---------- day logs ----------
@@ -349,9 +350,7 @@ export async function savePortrait(p: { body: Ring; mind: Ring; emotion: Ring; w
   const used = new Set([...p.body.words, ...p.mind.words, ...p.emotion.words]);
   const weights = Object.fromEntries(Object.entries(p.weights).filter(([w]) => used.has(w)));
   const id = newId();
-  // On screen straight away, newest first (offline it waits in the outbox).
-  onScreen.portrait({ id, body: p.body, mind: p.mind, emotion: p.emotion, weights, createdAt: new Date().toISOString() });
-  return send(
+  const res = await send(
     "/api/portraits",
     "POST",
     {
@@ -363,6 +362,9 @@ export async function savePortrait(p: { body: Ring; mind: Ring; emotion: Ring; w
     },
     { queue: true }
   );
+  // Saved (or kept in the outbox), then shown, newest first.
+  onScreen.portrait({ id, body: p.body, mind: p.mind, emotion: p.emotion, weights, createdAt: new Date().toISOString() });
+  return res;
 }
 
 // ---------- today ----------

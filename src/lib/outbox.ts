@@ -27,6 +27,15 @@ let flushing: Promise<FlushResult> | null = null;
 let onSynced: (() => void) | null = null;
 let onRejected: ((p: Pending, status: number) => void) | null = null;
 let onMediaRefused: ((kind: string, reason: string) => void) | null = null;
+const flushedListeners = new Set<(result: FlushResult) => void>();
+
+/** Told after each send of what was waiting (how many went, how many are left). */
+export function onFlushed(cb: (result: FlushResult) => void) {
+  flushedListeners.add(cb);
+  return () => {
+    flushedListeners.delete(cb);
+  };
+}
 
 function emit() {
   listeners.forEach((l) => l());
@@ -149,7 +158,9 @@ export function flush(): Promise<FlushResult> {
       else sent++;
     }
     if (sent) onSynced?.();
-    return { sent, left: queue.length };
+    const result = { sent, left: queue.length };
+    flushedListeners.forEach((l) => l(result));
+    return result;
   })().finally(() => {
     flushing = null;
   });

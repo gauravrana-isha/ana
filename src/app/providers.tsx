@@ -1,7 +1,7 @@
 "use client";
 
-import { IsRestoringProvider, onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { showChangesIn } from "@/lib/on-screen";
+import { dehydrate, IsRestoringProvider, onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { keepNowWith, showChangesIn } from "@/lib/on-screen";
 import { SW_URL } from "@/lib/push-client";
 import {
   persistQueryClientRestore,
@@ -28,6 +28,23 @@ const NOT_PERSISTED = new Set(["search", "search-index", "admin-users", "vault-s
 /** A copy was kept on the device but this page couldn't read it (still locked): leave it be. */
 let unreadCopy = false;
 
+/**
+ * Write the device's copy (sealed), one write at a time and in order, never an older snapshot
+ * over a newer one: two writes (the usual one and an immediate one) can be under way at once.
+ */
+let writes: Promise<void> = Promise.resolve();
+let newest = 0;
+function writeCopy(serialized: string, at: number) {
+  writes = writes
+    .then(async () => {
+      if (at < newest) return;
+      newest = at;
+      await set(QUERY_CACHE_KEY, await seal(serialized));
+    })
+    .catch(() => {});
+  return writes;
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => {
     const client = new QueryClient({
@@ -36,7 +53,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
             staleTime: 30_000, // show cached data instantly, refresh after 30s
             // Kept as long as the copy on the device lasts (7 days), so every screen opens offline.
             gcTime: 7 * DAY,
-            retry: 1,
+            // Offline, try once and give up at once: the screen then shows what's kept on the
+            // device, or its empty state, instead of waiting (paused) on a spinner.
+            networkMode: "offlineFirst",
+            retry: (failures) => navigator.onLine && failures < 1,
             refetchOnWindowFocus: true,
           },
           // Saves always run: offline, they go into the outbox (kept on the device) instead of
@@ -73,10 +93,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
           }
           return openDeep(stored).catch(() => null);
         },
-        setItem: async (k, v) => {
+        setItem: async (_k, v) => {
           // Never write over a kept copy this page couldn't read back (it stayed locked): it
           // would be replaced by a nearly empty one.
-          if (isUnlocked() && !unreadCopy) await set(k, await seal(v));
+          if (isUnlocked() && !unreadCopy) await writeCopy(v, (JSON.parse(v) as { timestamp?: number }).timestamp ?? Date.now());
         },
         removeItem: (k) => del(k),
       },
@@ -109,9 +129,24 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Bump when a cached response changes shape, so old copies are dropped once.
     buster: "v4",
     dehydrateOptions: {
-      shouldDehydrateQuery: (q) => q.state.status === "success" && !NOT_PERSISTED.has(String(q.queryKey[0])),
+      // Anything with data is kept, even if its last refresh failed (offline, a refresh fails at
+      // once, and the data on screen, saves made offline included, must survive a reload).
+      shouldDehydrateQuery: (q) => q.state.data !== undefined && !NOT_PERSISTED.has(String(q.queryKey[0])),
     },
   }));
+
+  // A change shown on screen is written to the device's copy at once (not after the usual
+  // pause), so moving to another screen offline (a fresh page load) still finds it.
+  // (The persister's own save waits out its pause, so this writes the same record directly.)
+  useEffect(
+    () =>
+      keepNowWith(async () => {
+        if (!isUnlocked() || unreadCopy) return;
+        const record = { buster: persistOptions.buster, timestamp: Date.now(), clientState: dehydrate(queryClient, persistOptions.dehydrateOptions) };
+        await writeCopy(JSON.stringify(record), record.timestamp);
+      }),
+    [persistOptions, queryClient]
+  );
 
   return (
     <QueryClientProvider client={queryClient}>

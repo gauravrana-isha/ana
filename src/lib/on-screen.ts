@@ -15,14 +15,27 @@ import type { PersonSummary } from "@/components/people/People";
  */
 
 let qc: QueryClient | null = null;
+let keepNow: (() => Promise<void>) | null = null;
+let keepTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** The app's query cache (the providers register it once). */
 export function showChangesIn(client: QueryClient) {
   qc = client;
 }
 
+/** How to write the device's copy right away (the providers register it). */
+export function keepNowWith(save: () => Promise<void>) {
+  keepNow = save;
+  return () => {
+    if (keepNow === save) keepNow = null;
+  };
+}
+
 function set<T>(key: readonly unknown[], change: (old: T | undefined) => T | undefined) {
   qc?.setQueryData<T>(key, change);
+  // Written to the device's copy at once (a few changes in a row are written together).
+  if (keepTimer) clearTimeout(keepTimer);
+  keepTimer = setTimeout(() => void keepNow?.().catch(() => {}), 50);
 }
 
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
@@ -66,7 +79,9 @@ export const onScreen = {
 
   /** The device's copy of every moment, changed (after saving or deleting one). */
   moments(change: (items: Moment[]) => Moment[]) {
-    set<MomentsCopy>(["moments", "all"], (copy) => (copy ? { ...copy, items: change(copy.items) } : copy));
+    // Never loaded on this device yet (say, offline from the start): start the list here; the
+    // next sync (syncedAt null) fetches everything else.
+    set<MomentsCopy>(["moments", "all"], (copy) => ({ items: change(copy?.items ?? []), syncedAt: copy?.syncedAt ?? null }));
   },
 
   /** A portrait kept (newest first). */

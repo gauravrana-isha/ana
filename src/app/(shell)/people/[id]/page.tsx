@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { PersonAvatar } from "@/components/people/People";
+import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PhotoViewer } from "@/components/moments/PhotoViewer";
 import { PersonForm, type PersonDetail } from "@/components/people/PersonForm";
 import { LazyMomentComposer } from "@/components/moments/LazyMomentComposer";
@@ -33,13 +33,12 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { data: person, isPending: isLoading } = useQuery({
-    queryKey: ["person", id],
-    queryFn: () => fetchPerson<PersonDetail>(id),
-    // From the people list kept on this device until the full copy arrives (offline: someone
-    // never opened before, or added offline, still opens).
-    placeholderData: () => qc.getQueryData<PersonDetail[]>(["people"])?.find((p) => p.id === id),
-  });
+  const one = useQuery({ queryKey: ["person", id], queryFn: () => fetchPerson<PersonDetail>(id) });
+  // Until (or unless: offline) their full copy arrives, they're shown from the people list kept
+  // on this device, so someone never opened before, or added offline, still opens.
+  const people = usePeople();
+  const person = one.data ?? (people.data?.find((p) => p.id === id) as PersonDetail | undefined) ?? null;
+  const isLoading = !person && (one.isPending || people.isPending);
   const moments = useMoments({ person: id });
   const list = moments.data?.pages.flatMap((p) => p.items) ?? [];
   const [editing, setEditing] = useState(false);

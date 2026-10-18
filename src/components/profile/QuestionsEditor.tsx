@@ -59,9 +59,10 @@ export function QuestionsEditor({ me }: { me: Me }) {
     const sets = { ...me.questions, [kind]: toStored(kind, next) };
     setSaving(true);
     setEditing(null);
-    onScreen.me({ questions: sets });
     try {
       await saveQuestions(sets);
+      // Saved (or kept in the outbox), then shown.
+      onScreen.me({ questions: sets });
       // Today counts the questions answered.
       qc.invalidateQueries({ queryKey: ["today"] });
       if (done) toast(done, "success", 1600);
