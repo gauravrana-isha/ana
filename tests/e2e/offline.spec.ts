@@ -41,7 +41,7 @@ test.describe("offline", () => {
 
   test("things added offline show at once and reach the server when back online", async ({ page, context }) => {
     await context.setOffline(true);
-    await expect(page.getByText("You're offline · everything still works here")).toBeVisible();
+    await expect(page.getByText("Kept on your phone · no connection needed")).toBeVisible();
 
     // A moment, written offline, opens offline.
     await page.goto("/expressions");
@@ -82,7 +82,7 @@ test.describe("offline", () => {
     // Back online: the saves go out, counted down.
     await page.goto("/today");
     await context.setOffline(false);
-    await expect(page.getByText("All saved")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Everything’s in your journal")).toBeVisible({ timeout: 30_000 });
     await expect.poll(() => outbox(page)).toEqual([]);
     const moments = await (await page.request.get("/api/expressions")).json();
     expect(JSON.stringify(moments)).toContain('"kind":"writing"');
@@ -100,7 +100,7 @@ test.describe("offline", () => {
     const during = hasPen ? await pen.first().boundingBox() : null;
     if (before && during) expect(Math.abs(before.y - during.y)).toBeLessThan(2);
     await pullDown(page);
-    await expect(page.getByText("Offline · this is everything on your phone")).toBeVisible();
+    await expect(page.getByText("No connection · this is everything on your phone")).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { marker: number }).marker)).toBe(1);
   });
 

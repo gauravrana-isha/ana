@@ -12,6 +12,7 @@ import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persi
 import { del, get, set } from "idb-keyval";
 import { useEffect, useRef, useState } from "react";
 import { ConnectivityIndicator } from "@/components/shell/ConnectivityIndicator";
+import { WaitingSheet } from "@/components/shell/WaitingSheet";
 import { ThemeColor } from "@/components/shell/ThemeColor";
 import { ToastProvider } from "@/components/ui/Toast";
 import { reportError } from "@/lib/report";
@@ -155,6 +156,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <ConfirmProvider>
             <ThemeColor />
             <ConnectivityIndicator />
+            <WaitingSheet />
             {children}
           </ConfirmProvider>
         </ToastProvider>

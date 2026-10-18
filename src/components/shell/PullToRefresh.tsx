@@ -77,7 +77,7 @@ export function PullToRefresh() {
           // Offline the page can't be fetched again (trying would reload it from the phone's
           // saved copy): what's shown is already everything on this phone.
           await minimum;
-          showConnectivityNote("Offline · this is everything on your phone");
+          showConnectivityNote("No connection · this is everything on your phone");
           return;
         }
         await flush().catch(() => {});
