@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { remindersChanged } from "@/lib/reminder-plan";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveNotifications } from "@/lib/notify";
@@ -28,6 +29,8 @@ export async function GET() {
 
 /** Write (or rewrite) the letter. The previous one is kept, marked as superseded. */
 export async function POST(req: NextRequest) {
+  // Reminders may have moved: the reminder job looks again on its next run.
+  after(remindersChanged);
   const user = await resolveUser("commitment");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = z
@@ -64,6 +67,8 @@ export async function POST(req: NextRequest) {
 
 /** Change how often it comes back, or mark it as read again. */
 export async function PATCH(req: NextRequest) {
+  // Reminders may have moved: the reminder job looks again on its next run.
+  after(remindersChanged);
   const user = await resolveUser("commitment");
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = z.object({ revisit: Revisit.optional(), revisited: z.literal(true).optional() }).safeParse(await req.json().catch(() => null));

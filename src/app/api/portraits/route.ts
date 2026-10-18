@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { remindersChanged } from "@/lib/reminder-plan";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
@@ -34,6 +35,8 @@ export async function GET() {
 
 /** Keep a new portrait. Earlier ones stay. */
 export async function POST(req: NextRequest) {
+  // Reminders may have moved: the reminder job looks again on its next run.
+  after(remindersChanged);
   const user = await resolveUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = Create.safeParse(await req.json().catch(() => null));
@@ -56,6 +59,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  // Reminders may have moved: the reminder job looks again on its next run.
+  after(remindersChanged);
   const user = await resolveUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = z.object({ id: z.string().max(40) }).safeParse(await req.json().catch(() => null));

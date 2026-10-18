@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { zonedParts } from "@/lib/push";
 import { notify, sweepNotifications } from "@/lib/notify";
+import { nextLocalHours, nothingDue, savePlan } from "@/lib/reminder-plan";
 
 /*
  * Announces what is due (in the bell, and as a push where it's turned on): moments coming
@@ -10,6 +11,9 @@ import { notify, sweepNotifications } from "@/lib/notify";
  * Called on a schedule (a GitHub Actions workflow every 15 minutes, plus Vercel's daily cron
  * as a backstop) with `Authorization: Bearer $CRON_SECRET`. Safe to call as often as you
  * like: each notification is claimed in the database before it is sent, so it goes out once.
+ * Most runs don't touch the database at all: each full run notes when the next thing could
+ * fall due, and runs before then (with nothing changed since) return at once, so the database
+ * can sleep while the app is quiet. `?full=1` always does a full run.
  */
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -27,7 +31,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const now = new Date();
+  if (!req.nextUrl.searchParams.has("full") && (await nothingDue(now))) return NextResponse.json({ ok: true, skipped: true });
   const sent = { moments: 0, commitments: 0, birthdays: 0, portraits: 0, swept: 0 };
+  // Anything that went wrong (or was left for later) means the next run must look again.
+  let retry = false;
+  // When each thing still to come falls due, for the plan.
+  const upcoming: number[] = [];
 
   // ---- Moments coming back
   const due = await db.expression.findMany({
@@ -51,6 +60,7 @@ export async function GET(req: NextRequest) {
     } catch (e) {
       // Give the claim back so the next run tries again.
       await db.expression.update({ where: { id: m.id }, data: { lookBackSentAt: null } }).catch(() => {});
+      retry = true;
       console.error("moment notify failed", e);
     }
   });
@@ -82,6 +92,7 @@ export async function GET(req: NextRequest) {
       if (made) sent.commitments++;
     } catch (e) {
       await db.commitment.update({ where: { id: c.id }, data: { remindedAt: c.remindedAt } }).catch(() => {});
+      retry = true;
       console.error("commitment notify failed", e);
     }
   });
@@ -122,7 +133,8 @@ export async function GET(req: NextRequest) {
     const last = u.portraits[0];
     const due = new Date(last.createdAt);
     due.setMonth(due.getMonth() + u.portraitEveryMonths);
-    if (due > now || zonedParts(now, u.timeZone).hour < MORNING) return;
+    if (due > now) return void upcoming.push(due.getTime());
+    if (zonedParts(now, u.timeZone).hour < MORNING) return;
     const made = await notify({
       userId: u.id,
       kind: "portrait",
@@ -139,6 +151,25 @@ export async function GET(req: NextRequest) {
   await db.deletion.deleteMany({ where: { at: { lt: new Date(now.getTime() - 90 * 24 * 3600_000) } } });
   await db.errorLog.deleteMany({ where: { at: { lt: new Date(now.getTime() - 30 * 24 * 3600_000) } } });
   await db.rateLimit.deleteMany({ where: { window: { lt: new Date(now.getTime() - 3600_000) } } });
+
+  // ---- When could anything next fall due? The next moment coming back, the next portrait,
+  // the next morning (8 and 9 o'clock) wherever people are, and a day from now for the sweeps.
+  if (retry || due.length === 200) {
+    await savePlan(null);
+  } else {
+    const [nextMoment, zones] = await Promise.all([
+      db.expression.findFirst({
+        where: { lookBackSentAt: null, lookBackAt: { gt: now }, user: { status: "APPROVED" } },
+        orderBy: { lookBackAt: "asc" },
+        select: { lookBackAt: true },
+      }),
+      db.user.findMany({ where: { status: "APPROVED" }, distinct: ["timeZone"], select: { timeZone: true } }),
+    ]);
+    if (nextMoment?.lookBackAt) upcoming.push(nextMoment.lookBackAt.getTime());
+    for (const z of zones) upcoming.push(...nextLocalHours(now, z.timeZone, [BIRTHDAY_HOUR, MORNING]));
+    upcoming.push(now.getTime() + 24 * 3600_000);
+    await savePlan({ checkedAt: now.getTime(), nextDue: Math.min(...upcoming) });
+  }
   return NextResponse.json({ ok: true, sent });
 }
 

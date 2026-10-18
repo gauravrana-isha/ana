@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { remindersChanged } from "@/lib/reminder-plan";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
@@ -22,6 +23,8 @@ export async function GET() {
 
 /** Remember this device. An endpoint belongs to one person: signing in as someone else moves it. */
 export async function POST(req: NextRequest) {
+  // Reminders may have moved: the reminder job looks again on its next run.
+  after(remindersChanged);
   const user = await resolveUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!pushConfigured()) return NextResponse.json({ error: "Notifications aren't set up on this server yet" }, { status: 503 });

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { remindersChanged } from "@/lib/reminder-plan";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveNotifications } from "@/lib/notify";
@@ -54,6 +55,8 @@ const PatchSchema = z.object({
 
 /** Update your own profile and switch features on or off within what the admin allows. */
 export async function PATCH(req: NextRequest) {
+  // Reminders may have moved: the reminder job looks again on its next run.
+  after(remindersChanged);
   const user = await getCurrentUser();
   if (!user || user.status === "SUSPENDED") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

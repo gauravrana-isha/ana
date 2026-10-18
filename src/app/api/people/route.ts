@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
+import { remindersChanged } from "@/lib/reminder-plan";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveUser } from "@/lib/session";
@@ -63,6 +64,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // Reminders may have moved: the reminder job looks again on its next run.
+  after(remindersChanged);
   const user = await peopleUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = PersonSchema.safeParse(await req.json().catch(() => null));
