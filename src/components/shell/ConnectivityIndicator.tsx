@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { usePendingCount } from "@/lib/outbox";
 import { usePendingMediaCount } from "@/lib/media-outbox";
 import { Glyph } from "@/components/art/Glyphs";
 import { TickMark } from "@/components/tracker/FieldInput";
+import { useOnline } from "@/lib/online";
 
 /*
  * ana works offline, so being offline isn't an alarm: one quiet note when the connection goes
@@ -24,7 +25,7 @@ export function showConnectivityNote(text: string) {
 }
 
 export function ConnectivityIndicator() {
-  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const online = useOnline();
   const pending = usePendingCount() + usePendingMediaCount();
   const reduce = useReducedMotion();
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -105,13 +106,4 @@ export function ConnectivityIndicator() {
       </AnimatePresence>
     </div>
   );
-}
-
-function subscribeOnline(cb: () => void) {
-  window.addEventListener("online", cb);
-  window.addEventListener("offline", cb);
-  return () => {
-    window.removeEventListener("online", cb);
-    window.removeEventListener("offline", cb);
-  };
 }

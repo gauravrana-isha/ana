@@ -2,7 +2,7 @@
 
 import { usePersistentState } from "@/lib/persist";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Ornament } from "@/components/art/Ornament";
@@ -20,6 +20,7 @@ import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
 import { Sheet } from "@/components/ui/Sheet";
 import { PlusMark, SearchMark } from "@/components/art/PenMarks";
+import { useOnline } from "@/lib/online";
 
 type Status = "PENDING" | "APPROVED" | "SUSPENDED";
 
@@ -63,7 +64,7 @@ const TABS: { key: Status | "ALL"; label: string }[] = [
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 export default function AdminPage() {
-  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const online = useOnline();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [tab, setTab] = usePersistentState<Status | "ALL">("admin.tab", "PENDING", ["PENDING", "APPROVED", "SUSPENDED", "ALL"] as const);
@@ -551,13 +552,4 @@ function Invites() {
       </Sheet>
     </>
   );
-}
-
-function subscribeOnline(cb: () => void) {
-  window.addEventListener("online", cb);
-  window.addEventListener("offline", cb);
-  return () => {
-    window.removeEventListener("online", cb);
-    window.removeEventListener("offline", cb);
-  };
 }
