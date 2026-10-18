@@ -106,6 +106,12 @@ export const viewport: Viewport = {
  */
 const SAFE_TOP_SCRIPT = `try{(function(){var n=navigator,d=document.documentElement;function fix(){var H=Math.max(screen.width,screen.height);if(!(/iPhone|iPod/.test(n.userAgent)&&(n.standalone||matchMedia('(display-mode: standalone)').matches)))return;if(!matchMedia('(orientation: portrait)').matches||innerHeight<H-2){d.style.removeProperty('--safe-top-fix');return}var p=document.createElement('div');p.style.cssText='position:fixed;top:0;visibility:hidden;padding-top:env(safe-area-inset-top)';d.appendChild(p);var e=parseFloat(getComputedStyle(p).paddingTop)||0;p.remove();if(e<1)d.style.setProperty('--safe-top-fix',(H>=852?60:H>=812?50:20)+'px');else d.style.removeProperty('--safe-top-fix')}fix();addEventListener('load',fix);addEventListener('resize',fix);addEventListener('pageshow',fix)})()}catch(x){}`;
 
+/*
+ * The theme from this device's own setting, before first paint. A page opened offline is a
+ * saved copy, made with whatever theme was on when it was saved; this keeps the current one.
+ */
+const THEME_SCRIPT = `try{var m=document.cookie.match(/(?:^|; )ana-theme=(dark|light)/);if(m)document.documentElement.setAttribute('data-theme',m[1])}catch(e){}`;
+
 const SPLASH_SCRIPT = `try{if(!sessionStorage.getItem('ana-splash')){sessionStorage.setItem('ana-splash','1');document.documentElement.classList.add('splash')}}catch(e){}`;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -123,6 +129,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {/* Written into the page's head on the server, so it runs before the first paint. */}
         <Script id="ana-safe-top" strategy="beforeInteractive">
           {SAFE_TOP_SCRIPT}
+        </Script>
+        <Script id="ana-theme" strategy="beforeInteractive">
+          {THEME_SCRIPT}
         </Script>
         <Script id="ana-splash" strategy="beforeInteractive">
           {SPLASH_SCRIPT}
