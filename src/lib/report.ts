@@ -1,9 +1,14 @@
 "use client";
 
+/** What browsers say when a request couldn't reach the server at all. */
+const NETWORK = /Failed to fetch|NetworkError|Load failed|network connection was lost|no answer from storage|ERR_INTERNET_DISCONNECTED/i;
+
 /** Tell the admins something failed (technical details only, never journal content). */
 export function reportError(source: string, error: unknown, extra?: string) {
   try {
     const e = error instanceof Error ? error : new Error(String(error));
+    // Being offline (or the connection dropping) isn't a fault: ana is made to work that way.
+    if (!navigator.onLine || NETWORK.test(e.message)) return;
     const body = JSON.stringify({
       source,
       message: (extra ? `${e.message} · ${extra}` : e.message).slice(0, 2000),

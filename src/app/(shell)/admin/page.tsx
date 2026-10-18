@@ -2,7 +2,7 @@
 
 import { usePersistentState } from "@/lib/persist";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Ornament } from "@/components/art/Ornament";
@@ -63,6 +63,7 @@ const TABS: { key: Status | "ALL"; label: string }[] = [
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 export default function AdminPage() {
+  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const qc = useQueryClient();
   const { toast } = useToast();
   const [tab, setTab] = usePersistentState<Status | "ALL">("admin.tab", "PENDING", ["PENDING", "APPROVED", "SUSPENDED", "ALL"] as const);
@@ -112,6 +113,17 @@ export default function AdminPage() {
 
   return (
     <div>
+      {/* Access is the one page that needs a connection: approving, inviting and pausing
+          happen on the server. What's shown offline may be out of date. */}
+      {!online && (
+        <div role="status" className="mb-4 flex items-start gap-3 rounded-[16px] border border-danger/30 bg-danger/10 px-4 py-3">
+          <Glyph k="offline" size={20} className="text-danger shrink-0 mt-0.5" />
+          <span className="font-ui text-[14px] leading-snug">
+            <span className="block font-semibold text-danger">You&rsquo;re offline</span>
+            <span className="block text-ink-soft">Access needs a connection. Approvals, invites and changes work once you&rsquo;re back online.</span>
+          </span>
+        </div>
+      )}
       <div className="max-w-full overflow-x-auto no-scrollbar">
         <Segmented
           label="Filter people"
@@ -539,4 +551,13 @@ function Invites() {
       </Sheet>
     </>
   );
+}
+
+function subscribeOnline(cb: () => void) {
+  window.addEventListener("online", cb);
+  window.addEventListener("offline", cb);
+  return () => {
+    window.removeEventListener("online", cb);
+    window.removeEventListener("offline", cb);
+  };
 }
