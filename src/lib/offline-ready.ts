@@ -26,12 +26,22 @@ function version() {
 
 let running = false;
 
-export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean } = {}) {
-  if (running || !navigator.onLine || !isUnlocked() || !("serviceWorker" in navigator)) return;
+/** When everything was last saved for offline use (ms), if it has been. */
+export function lastReadyAt(): number | null {
+  try {
+    return (JSON.parse(localStorage.getItem(KEY) ?? "null") as { at: number } | null)?.at ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Save everything for offline use. True once the service worker has saved the screens. */
+export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean } = {}): Promise<boolean> {
+  if (running || !navigator.onLine || !isUnlocked() || !("serviceWorker" in navigator)) return false;
   const v = version();
   try {
     const last = JSON.parse(localStorage.getItem(KEY) ?? "null") as { at: number; v: string } | null;
-    if (!opts.force && last && last.v === v && Date.now() - last.at < AGAIN_AFTER) return;
+    if (!opts.force && last && last.v === v && Date.now() - last.at < AGAIN_AFTER) return true;
   } catch {
     /* no record: do it */
   }
@@ -59,8 +69,9 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
     const reg = await navigator.serviceWorker.ready;
     const saved = await askWorker(reg.active, { type: "warm", urls: [...momentIds, ...personIds] });
     if (saved > 0) localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), v }));
+    return saved > 0;
   } catch {
-    /* tried; it'll be tried again next time */
+    return false; // tried; it'll be tried again next time
   } finally {
     running = false;
   }

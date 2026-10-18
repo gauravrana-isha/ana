@@ -40,6 +40,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Chevron } from "@/components/ui/Arrows";
 import { BackButton } from "@/components/ui/DetailBar";
 import { QuestionsEditor } from "./QuestionsEditor";
+import { OnThisPhone } from "./OnThisPhone";
 import { onScreen } from "@/lib/on-screen";
 
 /*
@@ -238,6 +239,10 @@ function DevicePanel() {
       <section>
         <h3 className="mb-3 font-ui text-[14px] font-semibold text-ink">Notifications</h3>
         <NotificationSettings bare />
+      </section>
+      <section>
+        <h3 className="mb-3 font-ui text-[14px] font-semibold text-ink">On this phone</h3>
+        <OnThisPhone />
       </section>
     </div>
   );
