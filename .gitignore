@@ -52,4 +52,4 @@ ana-app/
 /.uploads/
 /.next-build/
 .playwright-mcp/
-.next-test*/
+.next-*/
