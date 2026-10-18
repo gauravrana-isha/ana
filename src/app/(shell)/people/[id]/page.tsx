@@ -2,7 +2,8 @@
 
 import { ListSkeleton, PersonSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import Link from "next/link";
-import { use, useState } from "react";
+import { useState } from "react";
+import { useRouteId } from "@/lib/route-id";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -27,13 +28,16 @@ import { MomentGlyph } from "@/components/art/MomentIcon";
 
 export default function PersonPage({ params }: { params: Promise<{ id: string }> }) {
   const ask = useConfirm();
-  const { id } = use(params);
+  const id = useRouteId(params);
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: person, isPending: isLoading } = useQuery({
     queryKey: ["person", id],
     queryFn: () => fetchPerson<PersonDetail>(id),
+    // From the people list kept on this device until the full copy arrives (offline: someone
+    // never opened before, or added offline, still opens).
+    placeholderData: () => qc.getQueryData<PersonDetail[]>(["people"])?.find((p) => p.id === id),
   });
   const moments = useMoments({ person: id });
   const list = moments.data?.pages.flatMap((p) => p.items) ?? [];

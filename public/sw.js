@@ -17,6 +17,19 @@ const DEV = self.location.hostname === "localhost" || self.location.hostname ===
 const PAGES = `${VERSION}-pages-2`;
 /** Shown offline for a page this device never saved. */
 const OFFLINE_PAGE = "/offline.html";
+/** Every screen, saved as soon as this worker starts (the app adds people and recent moments). */
+const SCREENS = [
+  "/today", "/tracker", "/daily", "/weekly", "/expressions", "/people", "/commitment", "/insights",
+  "/profile", "/profile/who", "/profile/sections", "/profile/practices", "/profile/questions",
+  "/profile/device", "/profile/privacy", "/profile/data",
+  // Admins only (anyone else is turned away, and nothing is kept).
+  "/admin",
+];
+/**
+ * A moment's and a person's page, kept once as a template: the page reads its id from the
+ * address, so offline it opens any moment or person (even one made offline) from this copy.
+ */
+const TEMPLATES = { "/expressions/": "/expressions/~", "/people/": "/people/~" };
 const STATIC = `${VERSION}-static`;
 /** Images, fonts and icons (renamed when the app icon changes, so the new one is fetched). */
 const MEDIA = `${VERSION}-media-2`;
@@ -34,6 +47,8 @@ self.addEventListener("activate", (event) => {
       const keep = new Set([PAGES, STATIC, MEDIA, PHOTOS]);
       for (const key of await caches.keys()) if (!keep.has(key)) await caches.delete(key);
       await self.clients.claim();
+      // A new version: save every screen again with its new code (signed out, nothing is kept).
+      await warm([...SCREENS, ...Object.values(TEMPLATES)]).catch(() => {});
     })()
   );
 });
@@ -70,7 +85,14 @@ async function networkFirstPage(request) {
     if (res.ok && !res.redirected) cache.put(pageKey(request.url), res.clone());
     return res;
   } catch {
-    return (await cache.match(pageKey(request.url))) || (await cache.match(OFFLINE_PAGE)) || Response.error();
+    const path = new URL(request.url).pathname;
+    const template = Object.entries(TEMPLATES).find(([prefix]) => path.startsWith(prefix) && path.length > prefix.length)?.[1];
+    return (
+      (await cache.match(pageKey(request.url))) ||
+      (template && (await cache.match(pageKey(template)))) ||
+      (await cache.match(OFFLINE_PAGE)) ||
+      Response.error()
+    );
   }
 }
 
@@ -87,10 +109,11 @@ async function keepAssets(html) {
   );
 }
 
-/** Save pages ahead (asked by the app once it's unlocked and online), a few at a time. */
+/** Save pages ahead (on start, and when the app asks), a few at a time. Returns how many. */
 async function warm(urls) {
   const cache = await caches.open(PAGES);
-  const list = [...urls];
+  const list = [...new Set(urls)];
+  let saved = 0;
   const worker = async () => {
     for (let url = list.shift(); url; url = list.shift()) {
       try {
@@ -98,12 +121,14 @@ async function warm(urls) {
         if (!res.ok || res.redirected || !(res.headers.get("content-type") || "").includes("text/html")) continue;
         await keepAssets(await res.clone().text());
         await cache.put(pageKey(url), res);
+        saved++;
       } catch {
         return; // offline again: stop
       }
     }
   };
   await Promise.all([worker(), worker(), worker()]);
+  return saved;
 }
 
 self.addEventListener("fetch", (event) => {
@@ -128,7 +153,11 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data === "clear") event.waitUntil(caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))));
-  else if (event.data && event.data.type === "warm" && Array.isArray(event.data.urls)) event.waitUntil(warm(event.data.urls.filter((u) => typeof u === "string" && u.startsWith("/"))));
+  else if (event.data && event.data.type === "warm" && Array.isArray(event.data.urls)) {
+    // Saved, then told back (the app only counts it done once this worker says so).
+    const urls = [...SCREENS, ...Object.values(TEMPLATES), ...event.data.urls.filter((u) => typeof u === "string" && u.startsWith("/"))];
+    event.waitUntil(warm(urls).then((saved) => event.ports[0]?.postMessage({ saved })));
+  }
 });
 
 self.addEventListener("push", (event) => {

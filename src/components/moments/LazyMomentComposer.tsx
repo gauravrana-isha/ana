@@ -10,6 +10,9 @@ import type { MomentComposer as Composer } from "./MomentComposer";
  * fetched quietly once the page is idle and only mounted the first time it opens.
  */
 const load = () => import("./MomentComposer");
+
+/** Fetch the form's code now (so it's on the device for offline use). */
+export const preloadMomentComposer = () => load().then(() => undefined);
 const MomentComposer = dynamic(() => load().then((m) => m.MomentComposer), { ssr: false });
 
 export function LazyMomentComposer(props: ComponentProps<typeof Composer>) {

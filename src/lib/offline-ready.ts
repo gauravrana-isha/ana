@@ -3,6 +3,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { prefetchScreen } from "./prefetch";
 import { isUnlocked } from "./vault/vault";
+import { preloadMomentComposer } from "@/components/moments/LazyMomentComposer";
 import type { MomentsCopy } from "./journal";
 
 /*
@@ -16,6 +17,8 @@ const SCREENS = [
   "/today", "/tracker", "/daily", "/weekly", "/expressions", "/people", "/commitment", "/insights",
   "/profile", "/profile/who", "/profile/sections", "/profile/practices", "/profile/questions",
   "/profile/device", "/profile/privacy", "/profile/data",
+  // Admins only (anyone else is turned away, and nothing is kept).
+  "/admin",
 ];
 const RECENT_MOMENTS = 40;
 const MAX_PEOPLE = 150;
@@ -40,8 +43,10 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
   }
   running = true;
   try {
-    // Every screen's data, into the cache that's kept on the device.
+    // Every screen's data, into the cache that's kept on the device, and the code loaded only
+    // when it's needed (the moment form), so it opens offline too.
     for (const s of SCREENS) prefetchScreen(qc, s);
+    void preloadMomentComposer().catch(() => {});
     const [moments, people] = await Promise.all([
       waitFor<MomentsCopy>(qc, ["moments", "all"]),
       waitFor<{ id: string }[]>(qc, ["people"]),
@@ -52,15 +57,30 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
       .map((m) => `/expressions/${m.id}`);
     const personIds = (Array.isArray(people) ? people : []).slice(0, MAX_PEOPLE).map((p) => `/people/${p.id}`);
 
-    // Every screen saved ahead by the service worker, with its code.
+    // Every screen saved ahead by the service worker, with its code. Counted done only once
+    // the worker says so (an older worker, mid-update, can't, and then it's asked again).
     const reg = await navigator.serviceWorker.ready;
-    reg.active?.postMessage({ type: "warm", urls: [...SCREENS, ...momentIds, ...personIds] });
-    localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), v }));
+    const saved = await askWorker(reg.active, { type: "warm", urls: [...SCREENS, ...momentIds, ...personIds] });
+    if (saved > 0) localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), v }));
   } catch {
     /* tried; it'll be tried again next time */
   } finally {
     running = false;
   }
+}
+
+/** Send the worker a request and wait for its answer (0 if it doesn't answer in time). */
+function askWorker(worker: ServiceWorker | null, message: unknown, ms = 90_000): Promise<number> {
+  if (!worker) return Promise.resolve(0);
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    const timer = setTimeout(() => resolve(0), ms);
+    channel.port1.onmessage = (e) => {
+      clearTimeout(timer);
+      resolve(Number(e.data?.saved) || 0);
+    };
+    worker.postMessage(message, [channel.port2]);
+  });
 }
 
 /** A query's data once it has arrived (or what's there after a few seconds). */

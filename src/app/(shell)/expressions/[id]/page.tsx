@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { use, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { MomentBadge } from "@/components/art/MomentIcon";
 import { StampChip } from "@/components/art/StampIcon";
@@ -13,7 +13,8 @@ import { MomentComposer } from "@/components/moments/MomentComposer";
 import { StoredAudio, StoredImg, StoredVideo } from "@/components/moments/StoredMedia";
 import { RichText, plainText } from "@/components/moments/RichText";
 import { lookBackLabel, useDeleteMoment } from "@/components/moments/MomentCard";
-import { fetchMoment } from "@/lib/journal";
+import { fetchMoment, type MomentsCopy } from "@/lib/journal";
+import { useRouteId } from "@/lib/route-id";
 import { MomentPageSkeleton } from "@/components/skeletons/ScreenSkeletons";
 import { cn } from "@/lib/utils";
 import { DetailBar } from "@/components/ui/DetailBar";
@@ -24,8 +25,9 @@ import { Glyph } from "@/components/art/Glyphs";
  * people and stamps, and when it comes back. Opened from any list; Back returns to it.
  */
 export default function MomentPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const id = useRouteId(params);
   const router = useRouter();
+  const qc = useQueryClient();
   const del = useDeleteMoment();
   const [editing, setEditing] = useState(false);
   const [viewer, setViewer] = useState<number | null>(null);
@@ -34,6 +36,9 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
   const { data: moment, isPending } = useQuery({
     queryKey: ["moments", "one", id],
     queryFn: () => fetchMoment(id),
+    // Shown from the list kept on this device until the full copy arrives (offline: a moment
+    // never opened before, or one written offline, still opens).
+    placeholderData: () => qc.getQueryData<MomentsCopy>(["moments", "all"])?.items.find((m) => m.id === id),
   });
 
   if (isPending) return <MomentPageSkeleton />;
