@@ -19,6 +19,7 @@ import { EditMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
 import { Portal } from "@/components/ui/Portal";
+import { onScreen } from "@/lib/on-screen";
 
 export default function WeeklyPage() {
   return (
@@ -53,7 +54,7 @@ function WeeklyContent() {
   const mutation = useMutation({
     mutationFn: (payload: { answers: Record<string, string>; stamps: Record<string, string[]> }) => saveWeekly(selectedWeekStart, payload),
     // The reply is the saved reflection: show it directly; ask again only if saving failed.
-    onSuccess: (saved) => qc.setQueryData(["weekly", selectedWeekStart], saved),
+    onSuccess: (saved) => onScreen.weekly(selectedWeekStart, saved),
     onError: () => qc.invalidateQueries({ queryKey: ["weekly", selectedWeekStart] }),
   });
 

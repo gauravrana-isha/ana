@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { fetchCommitment, saveCommitment, type Letter } from "@/lib/journal";
 import { EditMark, InfoMark } from "@/components/art/PenMarks";
 import { Chevron } from "@/components/ui/Arrows";
+import { onScreen } from "@/lib/on-screen";
 
 const REVISIT = [
   { id: "monthly", label: "Every month" },
@@ -88,12 +89,7 @@ export default function CommitmentPage() {
     setSaving(false);
     if (queued) {
       // Offline: the new letter shows now and is kept when the connection is back.
-      const now = new Date().toISOString();
-      qc.setQueryData(["commitment"], (old: { current: Letter | null; history: Letter[] } | undefined) => ({
-        current: { id: "pending", body: draft.trim(), revisit, revisitedAt: now, createdAt: now, supersededAt: null },
-        due: false,
-        history: [...(old?.current ? [{ ...old.current, supersededAt: now }] : []), ...(old?.history ?? [])],
-      }));
+      onScreen.letter(draft.trim(), revisit);
     }
     toast(current ? "Your new letter is kept" : "Your letter is kept", "success", 2000);
     setWriting(false);
@@ -106,7 +102,7 @@ export default function CommitmentPage() {
     setPatching(true);
     const res = await fetch("/api/commitment", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (!res.ok) toast("Couldn't update. Please try again.", "error");
-    await Promise.all([qc.invalidateQueries({ queryKey: ["commitment"] }), qc.invalidateQueries({ queryKey: ["today"] })]);
+    void Promise.all([qc.invalidateQueries({ queryKey: ["commitment"] }), qc.invalidateQueries({ queryKey: ["today"] })]);
     setPatching(false);
   }
 

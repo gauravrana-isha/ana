@@ -40,6 +40,7 @@ import { fetchWeek, reorderPractices, saveDay } from "@/lib/journal";
 import { EditMark, GripMark, ReorderMark } from "@/components/art/PenMarks";
 import { TickMark } from "@/components/tracker/FieldInput";
 import { Segmented } from "@/components/ui/Segmented";
+import { onScreen } from "@/lib/on-screen";
 
 export default function TrackerPage() {
   const [date, setDate] = useState(today());
@@ -148,7 +149,7 @@ export default function TrackerPage() {
             onClick={async () => {
               if (reordering) {
                 setSavingOrder(true);
-                await qc.invalidateQueries({ queryKey: ["practices"] });
+                void qc.invalidateQueries({ queryKey: ["practices"] });
                 setLocalOrder(null);
                 setReordering(false);
                 setSavingOrder(false);
@@ -201,13 +202,10 @@ export default function TrackerPage() {
                 const res = await saveDay(weeklyModal.date, { [practiceId]: entry as DayLogEntry });
                 if (res.queued) {
                   // Offline: show it in the grid now; it's sent when the connection is back.
-                  qc.setQueryData(["week", currentWeekStart], (old: Record<string, DayLogEntries> | undefined) => ({
-                    ...(old ?? {}),
-                    [weeklyModal.date]: { ...(old?.[weeklyModal.date] ?? {}), [practiceId]: entry as DayLogEntry },
-                  }));
+                  onScreen.weekEntry(currentWeekStart, weeklyModal.date, practiceId, entry as DayLogEntry);
                   return;
                 }
-                await Promise.all([
+                void Promise.all([
                   qc.invalidateQueries({ queryKey: ["week", currentWeekStart] }),
                   qc.invalidateQueries({ queryKey: ["day"] }),
                 ]);

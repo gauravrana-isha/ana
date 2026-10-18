@@ -1,5 +1,8 @@
 "use client";
 
+
+/** The service worker, built by Serwist from src/app/sw.ts. */
+export const SW_URL = "/serwist/sw.js";
 import { useCallback, useEffect, useState } from "react";
 
 /*
@@ -34,7 +37,7 @@ function keyBytes(base64: string) {
 
 async function registration() {
   // Production registers the worker on load; development only when notifications are wanted.
-  return (await navigator.serviceWorker.getRegistration()) ?? (await navigator.serviceWorker.register("/sw.js"));
+  return (await navigator.serviceWorker.getRegistration()) ?? (await navigator.serviceWorker.register(SW_URL, { scope: "/" }));
 }
 
 async function currentState(): Promise<PushState> {

@@ -25,6 +25,7 @@ import { useConfirm } from "@/components/ui/Confirm";
 import { DetailBar } from "@/components/ui/DetailBar";
 import { Glyph } from "@/components/art/Glyphs";
 import { MomentGlyph } from "@/components/art/MomentIcon";
+import { onScreen } from "@/lib/on-screen";
 
 export default function PersonPage({ params }: { params: Promise<{ id: string }> }) {
   const ask = useConfirm();
@@ -55,7 +56,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
       setRemoving(false);
       return toast("Couldn't remove. Please try again.", "error");
     }
-    qc.setQueryData<{ id: string }[]>(["people"], (old) => old?.filter((p) => p.id !== id));
+    onScreen.personGone(id);
     qc.invalidateQueries({ queryKey: ["people"] });
     qc.invalidateQueries({ queryKey: ["moments"] });
     router.replace("/people");

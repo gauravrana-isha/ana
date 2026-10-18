@@ -14,6 +14,7 @@ import { DateField } from "@/components/ui/pickers";
 import { today } from "@/lib/dates";
 import { savePerson } from "@/lib/journal";
 import { MomentGlyph } from "@/components/art/MomentIcon";
+import { onScreen } from "@/lib/on-screen";
 
 export interface PersonDetail {
   id: string;
@@ -77,10 +78,9 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
       });
       if (saved.queued) {
         // Offline: show them now; they're saved when the connection is back.
-        const summary = { id: saved.id, name: name.trim(), relation: relation.trim() || null, photoId: person?.photoId ?? null, momentCount: 0, lastMomentAt: null };
-        qc.setQueryData<{ id: string; name: string }[]>(["people"], (old = []) => [...old.filter((p) => p.id !== saved.id), summary].sort((a, b) => a.name.localeCompare(b.name)));
+        onScreen.person({ id: saved.id, name: name.trim(), relation: relation.trim() || null, photoId: photoId ?? person?.photoId ?? null, momentCount: 0, lastMomentAt: null });
       } else {
-        await Promise.all([qc.invalidateQueries({ queryKey: ["people"] }), qc.invalidateQueries({ queryKey: ["person"] })]);
+        void Promise.all([qc.invalidateQueries({ queryKey: ["people"] }), qc.invalidateQueries({ queryKey: ["person"] })]);
       }
       toast(person ? "Saved" : `${name.trim()} added`, "success", 1800);
       onSaved?.(saved.id);

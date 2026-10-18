@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { pendingMedia } from "../media-outbox";
+import { PHOTOS_CACHE } from "../offline-screens";
 import { journalKeyForFiles } from "./vault";
 
 /*
@@ -60,7 +61,7 @@ export async function decryptFile(data: ArrayBuffer, type: string): Promise<Blob
 // ---------- showing them ----------
 
 /** The photo cache the service worker keeps (same name), so photos still open offline. */
-const PHOTO_CACHE = "ana-v5-photos";
+const PHOTO_CACHE = PHOTOS_CACHE;
 
 /**
  * A stored file: from the device's photo cache when it's there, else straight from storage by

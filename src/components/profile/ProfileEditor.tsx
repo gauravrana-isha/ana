@@ -17,6 +17,7 @@ import { today } from "@/lib/dates";
 import { sealFields } from "@/lib/vault/vault";
 import { Glyph } from "@/components/art/Glyphs";
 import { MomentGlyph } from "@/components/art/MomentIcon";
+import { onScreen } from "@/lib/on-screen";
 
 const field =
   "mt-2 w-full h-12 px-4 rounded-[14px] bg-surface-2 text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/70";
@@ -73,12 +74,10 @@ export function ProfileEditor({ me, open, onClose }: { me: Me; open: boolean; on
         ...(photoId !== undefined ? { photoId } : {}),
       };
       // Shown at once; offline it waits in the outbox (a new photo waits too, and goes up first).
-      qc.setQueryData<Me>(["me"], (old) =>
-        old ? { ...old, ...change, intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null } : old
-      );
+      onScreen.me({ ...change, intention: intention.trim() || null, birthday: birthday || null, place: place.trim() || null });
       const res = await send("/api/me", "PATCH", { ...change, ...personal }, { queue: true });
       if (!res.queued) {
-        await qc.invalidateQueries({ queryKey: ["me"] });
+        void qc.invalidateQueries({ queryKey: ["me"] });
         router.refresh(); // the sidebar picture comes from the server
       }
       toast("Profile saved", "success", 1600);

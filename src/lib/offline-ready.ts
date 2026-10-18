@@ -2,6 +2,7 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 import { prefetchScreen } from "./prefetch";
+import { OFFLINE_SCREENS } from "./offline-screens";
 import { isUnlocked } from "./vault/vault";
 import { preloadMomentComposer } from "@/components/moments/LazyMomentComposer";
 import type { MomentsCopy } from "./journal";
@@ -13,13 +14,6 @@ import type { MomentsCopy } from "./journal";
  * most recent moments. Done again after each new version of the app, or every few hours.
  */
 
-const SCREENS = [
-  "/today", "/tracker", "/daily", "/weekly", "/expressions", "/people", "/commitment", "/insights",
-  "/profile", "/profile/who", "/profile/sections", "/profile/practices", "/profile/questions",
-  "/profile/device", "/profile/privacy", "/profile/data",
-  // Admins only (anyone else is turned away, and nothing is kept).
-  "/admin",
-];
 const RECENT_MOMENTS = 40;
 const MAX_PEOPLE = 150;
 const AGAIN_AFTER = 6 * 60 * 60_000;
@@ -42,10 +36,13 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
     /* no record: do it */
   }
   running = true;
+  // Ask the browser to keep ana's storage for good: otherwise a phone short on space may clear
+  // it (the journal kept on the device, saves waiting to be sent, the saved screens).
+  void navigator.storage?.persist?.().catch(() => false);
   try {
     // Every screen's data, into the cache that's kept on the device, and the code loaded only
     // when it's needed (the moment form), so it opens offline too.
-    for (const s of SCREENS) prefetchScreen(qc, s);
+    for (const s of OFFLINE_SCREENS) prefetchScreen(qc, s);
     void preloadMomentComposer().catch(() => {});
     const [moments, people] = await Promise.all([
       waitFor<MomentsCopy>(qc, ["moments", "all"]),
@@ -60,7 +57,7 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
     // Every screen saved ahead by the service worker, with its code. Counted done only once
     // the worker says so (an older worker, mid-update, can't, and then it's asked again).
     const reg = await navigator.serviceWorker.ready;
-    const saved = await askWorker(reg.active, { type: "warm", urls: [...SCREENS, ...momentIds, ...personIds] });
+    const saved = await askWorker(reg.active, { type: "warm", urls: [...momentIds, ...personIds] });
     if (saved > 0) localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), v }));
   } catch {
     /* tried; it'll be tried again next time */

@@ -19,6 +19,7 @@ import { useMe } from "@/lib/me";
 import { readingQuestions, shownQuestions } from "@/lib/questions";
 import { EditMark } from "@/components/art/PenMarks";
 import { Portal } from "@/components/ui/Portal";
+import { onScreen } from "@/lib/on-screen";
 
 export default function DailyPage() {
   return (
@@ -79,7 +80,7 @@ function DailyContent() {
     onSuccess: ({ saved, version }, { close }) => {
       // The reply is the saved reflection: keep it as the cached copy without re-reading it
       // into the form (that would undo anything typed while the save was in flight).
-      qc.setQueryData(["daily", date], saved);
+      onScreen.daily(date, saved);
       setSyncedFrom(qc.getQueryData(["daily", date]));
       if (version === edits.current) setDirty(false);
       if (close) setEditing(null);

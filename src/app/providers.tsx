@@ -1,7 +1,8 @@
 "use client";
 
 import { IsRestoringProvider, onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { showChangesIn } from "@/lib/journal";
+import { showChangesIn } from "@/lib/on-screen";
+import { SW_URL } from "@/lib/push-client";
 import {
   persistQueryClientRestore,
   persistQueryClientSubscribe,
@@ -49,14 +50,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // otherwise, so a page opened offline would try the server and show empty screens instead
     // of what's kept on the device.
     if (typeof navigator !== "undefined") onlineManager.setOnline(navigator.onLine);
-    // Screens wait for a refresh after saving (to close a sheet, say). Offline the refresh is
-    // paused until the connection is back, so don't hold the screen for it: the change is
-    // already showing, and the refresh still happens once ana is online.
-    const invalidate = client.invalidateQueries.bind(client);
-    client.invalidateQueries = ((...args: Parameters<typeof invalidate>) => {
-      const refreshed = invalidate(...args);
-      return onlineManager.isOnline() ? refreshed : Promise.resolve();
-    }) as typeof client.invalidateQueries;
     return client;
   });
 
@@ -106,7 +99,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Register service worker
   useEffect(() => {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js").catch(console.error);
+      navigator.serviceWorker.register(SW_URL, { scope: "/" }).catch(console.error);
     }
   }, []);
 

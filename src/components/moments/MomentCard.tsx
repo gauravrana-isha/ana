@@ -19,7 +19,7 @@ import { deleteMoment } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Chevron } from "@/components/ui/Arrows";
 import { Glyph } from "@/components/art/Glyphs";
-import { updateMomentsCopy } from "@/lib/moments-client";
+import { onScreen } from "@/lib/on-screen";
 
 export const STAMP_LABEL: Record<string, string> = {
   growth: "Growth", struggle: "Struggle", insight: "Insight", stillness: "Stillness", devotion: "Devotion",
@@ -57,7 +57,7 @@ export function useDeleteMoment() {
       toast("Couldn't delete. Please try again.", "error");
       return false;
     }
-    updateMomentsCopy(qc, (list) => list.filter((m) => m.id !== moment.id));
+    onScreen.moments((list) => list.filter((m) => m.id !== moment.id));
     toast("Moment deleted", "success", 1800);
     qc.invalidateQueries({ queryKey: ["moments"] });
     qc.invalidateQueries({ queryKey: ["people"] });
@@ -122,13 +122,12 @@ export function MomentMenu({ onEdit, onDelete, className }: { onEdit: () => void
  * people links still work on their own. `folded` shows it as one line instead.
  */
 export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { moment: Moment; onEdit: (m: Moment) => void; hidePersonId?: string; folded?: boolean }) {
-  const qc = useQueryClient();
   const del = useDeleteMoment();
   const [deleting, setDeleting] = useState(false);
   const people = moment.people.filter((p) => p.id !== hidePersonId);
   const text = plainText(moment.body);
   // The page opens with this copy straight away while it checks for a fresher one.
-  const seed = () => qc.setQueryData(["moments", "one", moment.id], (old: Moment | undefined) => old ?? moment);
+  const seed = () => onScreen.momentPreview(moment);
 
   async function remove() {
     setDeleting(true);

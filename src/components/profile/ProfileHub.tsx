@@ -40,6 +40,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Chevron } from "@/components/ui/Arrows";
 import { BackButton } from "@/components/ui/DetailBar";
 import { QuestionsEditor } from "./QuestionsEditor";
+import { onScreen } from "@/lib/on-screen";
 
 /*
  * Profile, as a short hub: your card and "Who am I?" up top, then one Settings list, then
@@ -193,11 +194,11 @@ function SectionsPanel({ me }: { me: Me }) {
     if (pending) return;
     if (!enabled && me.features.length === 1) return toast("Keep at least one section on.", "error");
     setPending(key);
-    qc.setQueryData<Me>(["me"], { ...me, features: enabled ? [...me.features, key] : me.features.filter((x) => x !== key) });
+    onScreen.me({ features: enabled ? [...me.features, key] : me.features.filter((x) => x !== key) });
     const res = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ features: { [key]: enabled } }) });
     if (!res.ok) {
       toast("Couldn't update. Please try again.", "error");
-      await qc.invalidateQueries({ queryKey: ["me"] });
+      void qc.invalidateQueries({ queryKey: ["me"] });
       setPending(null);
       return;
     }
@@ -305,7 +306,7 @@ function DataPanel() {
     try {
       const message = await importJournal(JSON.parse(await file.text()));
       update(id, message, "success");
-      await qc.invalidateQueries();
+      void qc.invalidateQueries();
     } catch (err) {
       update(id, err instanceof SyntaxError ? "That file isn't valid JSON." : err instanceof Error ? err.message : "Import failed.", "error");
     } finally {
@@ -347,7 +348,7 @@ function ManagePractices({ practices }: { practices: Practice[] }) {
     } catch {
       toast("Couldn't remove. Please try again.", "error");
     }
-    await qc.invalidateQueries({ queryKey: keys.practices() });
+    void qc.invalidateQueries({ queryKey: keys.practices() });
     setBusyId(null);
   }
 

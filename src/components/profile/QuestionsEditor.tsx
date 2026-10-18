@@ -17,6 +17,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { DeleteMark, GripMark, PlusMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 import { cn } from "@/lib/utils";
+import { onScreen } from "@/lib/on-screen";
 
 /*
  * Settings › Reflection questions: reword, describe, hide, add, reorder or reset the questions
@@ -58,7 +59,7 @@ export function QuestionsEditor({ me }: { me: Me }) {
     const sets = { ...me.questions, [kind]: toStored(kind, next) };
     setSaving(true);
     setEditing(null);
-    qc.setQueryData<Me>(["me"], { ...me, questions: sets });
+    onScreen.me({ questions: sets });
     try {
       await saveQuestions(sets);
       // Today counts the questions answered.
@@ -66,7 +67,7 @@ export function QuestionsEditor({ me }: { me: Me }) {
       if (done) toast(done, "success", 1600);
     } catch {
       toast("Couldn't save. Please try again.", "error");
-      await qc.invalidateQueries({ queryKey: ["me"] });
+      void qc.invalidateQueries({ queryKey: ["me"] });
     }
     setSaving(false);
   }

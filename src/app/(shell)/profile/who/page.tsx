@@ -72,7 +72,7 @@ export default function WhoAmIPage() {
       return toast("Couldn't keep it. Please try again.", "error");
     }
     setSaving(false);
-    await Promise.all([qc.invalidateQueries({ queryKey: ["portraits"] }), qc.invalidateQueries({ queryKey: ["notifications"] })]);
+    void Promise.all([qc.invalidateQueries({ queryKey: ["portraits"] }), qc.invalidateQueries({ queryKey: ["notifications"] })]);
     toast("Kept", "success", 1600);
     setComposing(false);
     setDraft(EMPTY);
@@ -90,7 +90,7 @@ export default function WhoAmIPage() {
   async function setRevisit(months: number) {
     setSavingRevisit(true);
     const res = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ portraitEveryMonths: months }) });
-    await qc.invalidateQueries({ queryKey: ["me"] });
+    void qc.invalidateQueries({ queryKey: ["me"] });
     setSavingRevisit(false);
     if (!res.ok) toast("Couldn't change that.", "error");
   }

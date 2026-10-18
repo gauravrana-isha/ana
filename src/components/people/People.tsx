@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { cn } from "@/lib/utils";
 import { CrossMark, PlusMark } from "@/components/art/PenMarks";
 import { fetchPeople, savePerson } from "@/lib/journal";
 import { StoredImg } from "@/components/moments/StoredMedia";
+import { onScreen } from "@/lib/on-screen";
 
 export interface PersonSummary {
   id: string;
@@ -95,7 +96,6 @@ function PickButton({ onPick, className, children }: { onPick: () => void; class
 }
 
 export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (ids: string[]) => void }) {
-  const qc = useQueryClient();
   const { data: people = [] } = usePeople();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -135,7 +135,7 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
     try {
       const { id } = await savePerson(null, { name });
       const person: PersonSummary = { id, name, relation: null, photoId: null, momentCount: 0, lastMomentAt: null };
-      qc.setQueryData<PersonSummary[]>(["people"], (old = []) => [...old, person].sort((a, b) => a.name.localeCompare(b.name)));
+      onScreen.person(person);
       onChange([...value, person.id]);
       setQuery("");
     } finally {

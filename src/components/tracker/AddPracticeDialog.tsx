@@ -148,7 +148,7 @@ function LibraryTab() {
       const existing = owned.get(entry.id);
       if (existing) await deletePractice(existing);
       else await createPractice({ name: entry.name, iconName: entry.icon, catalogId: entry.id, hasDoneToggle: entry.hasDoneToggle, fields: entry.fields });
-      await qc.invalidateQueries({ queryKey: keys.practices() });
+      void qc.invalidateQueries({ queryKey: keys.practices() });
       toast(existing ? `${entry.name} removed` : `${entry.name} added`, "success", 1800);
     } catch {
       toast("Couldn't update. Please try again.", "error");
@@ -188,7 +188,7 @@ function CustomTab({ onDone }: { onDone: () => void }) {
     setSaving(true);
     try {
       await createPractice({ name: name.trim(), iconName, hasDoneToggle: track.hasDoneToggle, fields });
-      await qc.invalidateQueries({ queryKey: keys.practices() });
+      void qc.invalidateQueries({ queryKey: keys.practices() });
       toast(`${name.trim()} added`, "success", 1800);
       onDone();
     } catch {
@@ -326,7 +326,7 @@ function YoursTab({ onAdd }: { onAdd: () => void }) {
     } catch {
       toast("Couldn't remove. Please try again.", "error");
     }
-    await qc.invalidateQueries({ queryKey: keys.practices() });
+    void qc.invalidateQueries({ queryKey: keys.practices() });
     setBusyId(null);
   }
 

@@ -56,7 +56,7 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
       setSaving(null);
       return toast("Couldn't save. Please try again.", "error");
     }
-    await qc.invalidateQueries({ queryKey: keys.practices() });
+    void qc.invalidateQueries({ queryKey: keys.practices() });
     toast(`${name.trim()} updated`, "success", 1600);
     setSaving(null);
     onClose();
@@ -71,7 +71,7 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
       setSaving(null);
       return toast("Couldn't remove. Please try again.", "error");
     }
-    await qc.invalidateQueries({ queryKey: keys.practices() });
+    void qc.invalidateQueries({ queryKey: keys.practices() });
     toast(`${practice.name} removed`, "success", 1600);
     setSaving(null);
     onClose();

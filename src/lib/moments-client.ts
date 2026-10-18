@@ -25,11 +25,6 @@ export function useAllMoments() {
   });
 }
 
-/** Change the device's copy of the moments directly (after saving or deleting one). */
-export function updateMomentsCopy(qc: ReturnType<typeof useQueryClient>, change: (items: Moment[]) => Moment[]) {
-  qc.setQueryData<MomentsCopy>(MOMENTS_KEY, (copy) => (copy ? { ...copy, items: change(copy.items) } : copy));
-}
-
 export function filterMoments(all: Moment[], f: MomentFilters) {
   const q = f.q?.trim().toLowerCase();
   const list = all.filter(

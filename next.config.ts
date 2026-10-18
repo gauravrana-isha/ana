@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSerwist } from "@serwist/turbopack";
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -27,4 +28,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Serwist builds the service worker (see src/app/serwist/[path]/route.ts).
+export default withSerwist(nextConfig);
