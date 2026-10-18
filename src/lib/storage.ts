@@ -16,6 +16,8 @@ import { db } from "./db";
 export type StorageMode = "r2" | "local";
 
 export function storageMode(): StorageMode {
+  // The end-to-end tests run a production build without R2 (tests/e2e).
+  if (process.env.ANA_E2E_LOCAL_STORAGE === "1") return "local";
   if (process.env.R2_BUCKET) return "r2";
   if (process.env.NODE_ENV === "production") throw new Error("R2_BUCKET is required in production");
   return "local";

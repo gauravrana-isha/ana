@@ -53,3 +53,8 @@ ana-app/
 /.next-build/
 .playwright-mcp/
 .next-*/
+
+# End-to-end tests
+tests/e2e/.auth/
+test-results/
+playwright-report/
