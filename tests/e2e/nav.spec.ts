@@ -1,5 +1,5 @@
 import { test as plain, expect as plainExpect } from "@playwright/test";
-import { test, expect, setBundles } from "./fixtures";
+import { test, expect, setBundles, clearReflections } from "./fixtures";
 import { BUNDLES, BUNDLE_KEYS, type BundleDef } from "../../src/lib/bundles";
 import { planTabs } from "../../src/lib/nav-plan";
 
@@ -41,6 +41,7 @@ plain.describe("the tab bar rule", () => {
 
 test.describe("moving around on a phone", () => {
   test.afterEach(async ({ page }) => setBundles(page, ["sadhana", "reflection", "expressions"]));
+  test.setTimeout(120_000);
 
   const tabs = (page: import("@playwright/test").Page) => page.locator("nav[aria-label=Main]:visible > div > a");
 
@@ -98,6 +99,8 @@ test.describe("moving around on a phone", () => {
   });
 
   test("a swipe on Daily's question card is the card's own; elsewhere it switches screens", async ({ page }) => {
+    await clearReflections();
+    await page.waitForTimeout(31_000); // the device's copy of the day is no longer fresh
     await page.goto("/daily");
     const card = page.locator("[aria-roledescription=card]").first();
     await card.waitFor();

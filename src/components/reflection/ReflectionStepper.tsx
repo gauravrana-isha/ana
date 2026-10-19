@@ -40,7 +40,7 @@ const SWIPE = 90;
  * the next ones peeking behind it. Drag the card sideways (or tap Next / Skip / Back, or a
  * segment of the bar) to move through them; the mood is the last card, where Next becomes
  * Save. Swipes on the card move between questions; swipes elsewhere on the page move between
- * the bundle's screens. Writing keeps the keyboard up from one card to the next.
+ * the bundle's screens.
  */
 export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, saving, onAnswer, onStamp, onMood, onStep, onDone }: Props) {
   const reduce = useReducedMotion();
@@ -49,9 +49,6 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
   const [step, setStep] = useState(Math.min(Math.max(0, startAt), total - 1));
   const [dir, setDir] = useState(1);
   const drag = useDragControls();
-  // Writing when the card changed: the next card's box takes the cursor, so the keyboard stays
-  // up (and the tab bar doesn't slide back in for a moment between cards).
-  const [keepTyping, setKeepTyping] = useState(false);
 
   const isMood = step === prompts.length;
   const prompt = prompts[step];
@@ -62,7 +59,10 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
 
   function go(to: number) {
     if (to < 0 || to >= total || to === step) return;
-    setKeepTyping(document.activeElement?.tagName === "TEXTAREA");
+    // The writing box lets go as its card leaves: the keyboard closes once and the tab bar settles.
+    // (Moving the cursor into the next card instead made phones drop and re-show the keyboard,
+    // and the tab bar flashed in and out with it.)
+    if (document.activeElement instanceof HTMLElement && document.activeElement.tagName === "TEXTAREA") document.activeElement.blur();
     setDir(to > step ? 1 : -1);
     setStep(to);
     onStep();
@@ -73,9 +73,10 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
     if (far) go(step + (info.offset.x < 0 ? 1 : -1));
   };
 
-  // Drag only from the card itself, not from the writing box, a stamp or a button.
+  // Drag from anywhere on the card, the writing box too (a tap there still places the cursor;
+  // only a sideways move drags), but not from a stamp, a button or the mood slider.
   const startDrag = (e: React.PointerEvent) => {
-    if (e.pointerType === "mouse" || (e.target as Element).closest("textarea, button, input, [role=slider]")) return;
+    if (e.pointerType === "mouse" || (e.target as Element).closest("button, input, [role=slider], [role=radiogroup]")) return;
     drag.start(e);
   };
 
@@ -84,7 +85,7 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
     <div className="flex flex-col" data-no-swipe>
       {/* Where you are: one segment per card (the current one full, answered ones lighter). */}
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex-1 flex items-center gap-1.5" role="tablist" aria-label="Questions" onMouseDown={(e) => e.preventDefault()}>
+        <div className="flex-1 flex items-center gap-1.5" role="tablist" aria-label="Questions">
           {Array.from({ length: total }).map((_, i) => (
             <button
               key={i}
@@ -130,6 +131,7 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
             dragListener={false}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.55}
+            dragDirectionLock
             onDragEnd={endDrag}
             onPointerDown={startDrag}
             style={{ touchAction: "pan-y" }}
@@ -149,7 +151,6 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
                   value={answers[prompt.key] ?? ""}
                   onChange={(v) => onAnswer(prompt.key, v)}
                   label={prompt.q}
-                  focus={keepTyping}
                 />
                 <div className="mt-3 pt-3 border-t border-line/70">
                   <StampRow selected={stamps[prompt.key] ?? []} onToggle={(s) => onStamp(prompt.key, s)} />
@@ -160,9 +161,7 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
         </AnimatePresence>
       </div>
 
-      {/* Pressing Back / Next doesn't take the cursor out of the writing box (that would drop
-          the keyboard between cards). */}
-      <div className="mt-9 flex items-center gap-2" onMouseDown={(e) => e.preventDefault()}>
+      <div className="mt-9 flex items-center gap-2">
         <Button variant="secondary" onClick={() => go(step - 1)} disabled={step === 0 || saving} aria-label="Previous question">
           <Chevron dir="left" size={16} />
         </Button>
@@ -185,9 +184,8 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
 
 /**
  * Room to write, on faint ruled lines like a journal page; it grows with what's written.
- * `focus`: take the cursor on arrival (writing carried on from the card before).
  */
-function Lined({ value, onChange, label, focus }: { value: string; onChange: (v: string) => void; label: string; focus: boolean }) {
+function Lined({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const fit = (el: HTMLTextAreaElement) => {
     el.style.height = "auto";
@@ -197,12 +195,6 @@ function Lined({ value, onChange, label, focus }: { value: string; onChange: (v:
     const el = ref.current;
     if (!el) return;
     fit(el);
-    if (focus) {
-      el.focus({ preventScroll: true });
-      el.setSelectionRange(el.value.length, el.value.length);
-    }
-    // Only on arrival.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <textarea
