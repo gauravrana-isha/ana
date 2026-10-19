@@ -9,7 +9,7 @@ import { Bone, Skeleton, SkeletonCard, TextBone } from "@/components/ui/Skeleton
 
 /* ---------- shared pieces ---------- */
 
-function SectionHead({ w = 150, action = false }: { w?: number; action?: boolean }) {
+export function SectionHead({ w = 150, action = false }: { w?: number; action?: boolean }) {
   return (
     <div className="flex items-center justify-between mb-3">
       <TextBone w={w} h={18} className="rounded-[6px]" />
@@ -75,56 +75,39 @@ function DateNavSkeleton() {
   );
 }
 
+/** A question card (Weekly, and changing a saved day): eyebrow, question, ruled lines, stamps. */
 function PromptCardSkeleton({ i = 0 }: { i?: number }) {
   return (
-    <SkeletonCard className="p-4 sm:p-5 mb-3">
-      <div className="flex items-start gap-3">
-        <Bone round className="w-7 h-7 shrink-0" />
-        <div className="flex-1 flex flex-col gap-2 pt-1">
-          <TextBone w={["72%", "58%", "80%", "64%"][i % 4]} h={15} />
-          <TextBone w={["44%", "52%", "38%", "48%"][i % 4]} h={11} />
-        </div>
+    <SkeletonCard className="rounded-[22px] p-5 sm:p-6 mb-3.5">
+      <TextBone w={88} h={10} />
+      <div className="mt-3 flex flex-col gap-2">
+        <TextBone w={["78%", "62%", "84%", "68%"][i % 4]} h={17} />
+        <TextBone w={["40%", "52%", "34%", "46%"][i % 4]} h={17} />
       </div>
-      <Bone className="mt-4 w-full h-[76px] rounded-[12px]" />
+      <RuledLines rows={2} />
+      <StampsSkeleton />
     </SkeletonCard>
   );
 }
 
-/* ---------- screens ---------- */
-
-export function TodaySkeleton() {
+/** Faint ruled lines, like the writing area's. */
+function RuledLines({ rows }: { rows: number }) {
   return (
-    <Skeleton className="flex flex-col gap-8">
-      <TextBone w={190} h={16} className="-mt-3" />
-      <SkeletonCard className="rounded-[22px] px-5 py-6 sm:px-8 sm:py-8 flex flex-col gap-3">
-        <TextBone w="88%" h={20} />
-        <TextBone w="64%" h={20} />
-      </SkeletonCard>
-      <section>
-        <SectionHead w={140} />
-        <div className="grid grid-cols-4 gap-2">
-          {[0, 1, 2, 3].map((i) => (
-            <SkeletonCard key={i} className="h-[96px] flex flex-col items-center justify-center gap-2.5">
-              <Bone className="w-11 h-11 rounded-[13px]" />
-              <TextBone w={42} h={11} />
-            </SkeletonCard>
-          ))}
-        </div>
-      </section>
-      <section>
-        <SectionHead w={160} action />
-        {[0, 1, 2, 3, 4].map((i) => <PracticeRowSkeleton key={i} i={i} />)}
-      </section>
-      <SkeletonCard className="rounded-[20px] p-4 sm:p-5 flex items-center gap-4">
-        <Bone className="w-12 h-12 rounded-[13px] shrink-0" />
-        <div className="flex-1 flex flex-col gap-2">
-          <TextBone w={150} h={17} />
-          <TextBone w="70%" h={12} />
-        </div>
-      </SkeletonCard>
-    </Skeleton>
+    <div className="mt-4 flex flex-col">
+      {Array.from({ length: rows }).map((_, i) => <span key={i} className="h-[28px] border-b border-line" />)}
+    </div>
   );
 }
+
+function StampsSkeleton() {
+  return (
+    <div className="mt-3 pt-3 border-t border-line grid grid-cols-3 gap-1.5 sm:flex sm:gap-2">
+      {[0, 1, 2, 3, 4].map((i) => <Bone key={i} className="h-8 sm:w-[92px] rounded-full" />)}
+    </div>
+  );
+}
+
+/* ---------- screens ---------- */
 
 export function TrackerSkeleton() {
   return (
@@ -132,33 +115,37 @@ export function TrackerSkeleton() {
       <Bone className="w-[170px] h-11 rounded-full mb-5" />
       <DateNavSkeleton />
       {[0, 1, 2, 3, 4, 5, 6].map((i) => <PracticeRowSkeleton key={i} i={i} />)}
+      <Bone className="mt-4 w-[150px] h-10 rounded-full" />
     </Skeleton>
   );
 }
 
-/** Daily, answering one question at a time: the step line, one big question card, the buttons. */
+/** Daily, answering one question at a time: the segment bar, the card deck, the buttons. */
 export function ReflectionStepSkeleton() {
   return (
     <Skeleton>
-      <div className="flex items-center justify-between mb-5">
-        <TextBone w={52} h={13} />
-        <div className="flex items-center gap-1.5">
-          <Bone className="w-5 h-1.5 rounded-full" />
-          {Array.from({ length: 7 }).map((_, i) => <Bone key={i} round className="w-1.5 h-1.5" />)}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex-1 flex items-center gap-1.5">
+          {Array.from({ length: 8 }).map((_, i) => <Bone key={i} className="flex-1 h-1.5 rounded-full" />)}
         </div>
+        <TextBone w={30} h={12} />
       </div>
-      <SkeletonCard className="rounded-[22px] p-5 sm:p-7">
-        <div className="flex flex-col gap-2.5">
-          <TextBone w="88%" h={22} />
-          <TextBone w="62%" h={22} />
-        </div>
-        <TextBone w="80%" h={12} className="mt-3" />
-        <Bone className="mt-5 w-full h-[150px] rounded-[14px]" />
-        <div className="mt-3 grid grid-cols-3 gap-1.5 sm:flex sm:gap-2">
-          {[0, 1, 2, 3, 4].map((i) => <Bone key={i} className="h-8 sm:w-[92px] rounded-full" />)}
-        </div>
-      </SkeletonCard>
-      <div className="mt-5 flex items-center justify-between">
+      <div className="relative grid">
+        {[2, 1].map((n) => (
+          <SkeletonCard key={n} className="col-start-1 row-start-1 rounded-[24px]" style={{ transform: `translateY(${n * 13}px) scale(${1 - n * 0.045})`, opacity: n === 1 ? 0.9 : 0.6 }} />
+        ))}
+        <SkeletonCard className="col-start-1 row-start-1 relative rounded-[24px] p-5 pb-4 sm:p-7 sm:pb-5 min-h-[360px] flex flex-col">
+          <TextBone w={92} h={10} />
+          <div className="mt-3 flex flex-col gap-2.5">
+            <TextBone w="88%" h={22} />
+            <TextBone w="62%" h={22} />
+          </div>
+          <TextBone w="70%" h={12} className="mt-3" />
+          <div className="flex-1"><RuledLines rows={5} /></div>
+          <StampsSkeleton />
+        </SkeletonCard>
+      </div>
+      <div className="mt-9 flex items-center justify-between">
         <Bone className="w-[52px] h-11 rounded-[14px]" />
         <Bone className="w-[96px] h-11 rounded-[14px]" />
       </div>
@@ -239,14 +226,22 @@ export function MomentsSkeleton({ toolbar = true }: { toolbar?: boolean }) {
   );
 }
 
+/** Presence: search and Add, then entries grouped by what they are (people first). */
 export function PeopleSkeleton() {
   return (
     <Skeleton>
-      <Bone className="w-full h-11 rounded-[14px] mb-3" />
-      <Bone className="w-full h-11 rounded-[14px] mb-6" />
-      <div className="flex flex-col gap-2.5">
-        {[0, 1, 2, 3, 4].map((i) => <PersonRowSkeleton key={i} i={i} />)}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <Bone className="w-full h-11 rounded-[14px]" />
+        <Bone className="w-full sm:w-[96px] h-11 rounded-[14px] shrink-0" />
       </div>
+      {[3, 2].map((n, g) => (
+        <section key={g} className="mb-7">
+          <TextBone w={g ? 64 : 72} h={12} className="mb-3 ml-1" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {Array.from({ length: n }).map((_, i) => <PersonRowSkeleton key={i} i={i + g} />)}
+          </div>
+        </section>
+      ))}
     </Skeleton>
   );
 }
@@ -274,35 +269,32 @@ export function PersonSkeleton() {
   );
 }
 
+/** Insights: a way back (phones), then a section per bundle under its name. */
 export function InsightsSkeleton() {
   return (
     <Skeleton className="flex flex-col gap-10">
+      <Bone className="lg:hidden w-10 h-10 rounded-full -mb-6" />
       {[0, 1].map((s) => (
-        <section key={s}>
-          <SectionHead w={s ? 130 : 170} />
-          <SkeletonCard className="rounded-[20px] p-5 flex flex-col gap-2.5">
-            {[0, 1, 2, 3].map((r) => (
-              <div key={r} className="flex items-center gap-3">
-                <TextBone w={86} h={11} />
-                <div className="flex-1 grid gap-1" style={{ gridTemplateColumns: "repeat(20, minmax(0, 1fr))" }}>
-                  {Array.from({ length: 20 }).map((_, i) => <Bone key={i} className="aspect-square rounded-[3px]" />)}
+        <section key={s} className="flex flex-col gap-6">
+          <div className="flex items-center gap-3">
+            <Bone className="w-9 h-9 rounded-[11px]" />
+            <TextBone w={s ? 110 : 96} h={22} />
+          </div>
+          <div>
+            <SectionHead w={s ? 130 : 170} />
+            <SkeletonCard className="rounded-[20px] p-5 flex flex-col gap-2.5">
+              {[0, 1, 2, 3].map((r) => (
+                <div key={r} className="flex items-center gap-3">
+                  <TextBone w={86} h={11} />
+                  <div className="flex-1 grid gap-1" style={{ gridTemplateColumns: "repeat(20, minmax(0, 1fr))" }}>
+                    {Array.from({ length: 20 }).map((_, i) => <Bone key={i} className="aspect-square rounded-[3px]" />)}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </SkeletonCard>
+              ))}
+            </SkeletonCard>
+          </div>
         </section>
       ))}
-      <section>
-        <SectionHead w={120} />
-        <SkeletonCard className="rounded-[20px] p-5 flex flex-col gap-3">
-          {[78, 56, 40, 28].map((w, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <Bone round className="w-[30px] h-[30px] shrink-0" />
-              <Bone className="h-3 rounded-full" style={{ width: `${w}%` }} />
-            </div>
-          ))}
-        </SkeletonCard>
-      </section>
     </Skeleton>
   );
 }
@@ -359,22 +351,31 @@ export function ProfileSkeleton() {
           <Bone className="w-full sm:w-[55%] aspect-[4/3] rounded-[18px]" />
         </SkeletonCard>
       </section>
-      <section>
-        <SectionHead w={100} />
-        <SkeletonCard className="divide-y divide-line">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3.5 px-4 py-3.5">
-              <Bone className="w-[34px] h-[34px] rounded-[10px] shrink-0" />
-              <div className="flex-1 flex flex-col gap-1.5">
-                <TextBone w={90} h={13} />
-                <TextBone w="62%" h={11} />
-              </div>
-              <Bone className="w-11 h-[26px] rounded-full" />
-            </div>
-          ))}
+      <div className="flex flex-col gap-5">
+        <SkeletonCard className="rounded-[18px] p-1.5 flex flex-col gap-0.5">
+          {[0, 1].map((i) => <SettingRowSkeleton key={i} i={i} hint />)}
         </SkeletonCard>
-      </section>
+        <div>
+          <TextBone w={60} h={12} className="mb-2 ml-1" />
+          <SkeletonCard className="rounded-[18px] p-1.5 flex flex-col gap-0.5">
+            {[0, 1, 2, 3, 4].map((i) => <SettingRowSkeleton key={i} i={i} />)}
+          </SkeletonCard>
+        </div>
+      </div>
     </Skeleton>
+  );
+}
+
+function SettingRowSkeleton({ i, hint = false }: { i: number; hint?: boolean }) {
+  return (
+    <div className="flex items-center gap-3 px-2.5 py-2.5">
+      <Bone className="w-9 h-9 rounded-[11px] shrink-0" />
+      <div className="flex-1 flex flex-col gap-1.5">
+        <TextBone w={[96, 140, 80, 110, 90][i % 5]} h={14} />
+        {hint && <TextBone w={[170, 150][i % 2]} h={10} />}
+      </div>
+      <Bone className="w-3 h-3 rounded-[3px]" />
+    </div>
   );
 }
 
@@ -399,6 +400,7 @@ export function WhoSkeleton() {
 export function AdminSkeleton() {
   return (
     <Skeleton className="flex flex-col gap-2.5">
+      <Bone className="lg:hidden w-10 h-10 rounded-full mb-2" />
       <Bone className="w-[260px] h-10 rounded-full mb-3" />
       {[0, 1, 2, 3].map((i) => (
         <SkeletonCard key={i} className="flex items-center gap-3.5 p-4">

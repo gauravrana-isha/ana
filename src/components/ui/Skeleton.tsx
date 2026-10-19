@@ -16,8 +16,8 @@ export function TextBone({ w = "100%", h = 12, className }: { w?: number | strin
 }
 
 /** A card the shape of the real one (cream surface), with bones inside. */
-export function SkeletonCard({ className, children }: { className?: string; children?: React.ReactNode }) {
-  return <div className={cn("rounded-[18px] bg-surface", className)}>{children}</div>;
+export function SkeletonCard({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
+  return <div className={cn("rounded-[18px] bg-surface", className)} style={style}>{children}</div>;
 }
 
 /** Wrapper: marks the region busy for assistive tech and fades the skeleton in after a beat,

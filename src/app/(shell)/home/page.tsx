@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useHydrated } from "@/lib/hydrated";
-import { TodaySkeleton } from "@/components/skeletons/ScreenSkeletons";
+import { HomeSkeleton } from "@/components/skeletons/HomeSkeleton";
 import { Ornament } from "@/components/art/Ornament";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { Arrow } from "@/components/ui/Arrows";
@@ -53,7 +53,7 @@ export default function HomePage() {
     editMoment: (m: Moment) => setComposer({ open: true, moment: m, kind: m.kind }),
   };
 
-  if (!hydrated || !me) return <TodaySkeleton />;
+  if (!hydrated || !me) return <HomeSkeleton />;
 
   return (
     <div className="flex flex-col gap-8">
