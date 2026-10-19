@@ -11,17 +11,11 @@ import type { NavItem } from "@/components/shell/nav";
 import { requireAppUser } from "@/lib/session";
 import { storageMode } from "@/lib/storage";
 import { VaultGate } from "@/components/vault/VaultGate";
-import { featureByKey } from "@/lib/features";
 import { BundlesProvider } from "@/components/shell/Bundles";
 
 export default async function ShellLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAppUser();
 
-  const features: NavItem[] = user.effective.map((key) => {
-    const f = featureByKey(key);
-    return { key, label: f.label, href: f.href };
-  });
-  const profile: NavItem = { key: "profile", label: "Profile", href: "/profile" };
   const collapsed = (await cookies()).get("ana-sidebar")?.value === "collapsed";
   const admin: NavItem | null =
     user.role === "ADMIN" ? { key: "admin", label: "Access", href: "/admin" } : null;
@@ -34,7 +28,6 @@ export default async function ShellLayout({ children }: { children: React.ReactN
     <BundlesProvider bundles={user.bundles}>
     <div className="flex min-h-dvh">
       <Sidebar
-        items={features}
         footerItems={admin ? [admin] : []}
         user={{ name: user.name ?? user.email ?? "You", image: user.photoId ? `/api/media/${user.photoId}` : user.image }}
         initialCollapsed={collapsed}
@@ -45,8 +38,8 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           {children}
         </div>
       </main>
-      {/* Phones show up to four sections plus Settings; with more, the rest move under "More". */}
-      <MobileTabBar items={features} extras={admin ? [profile, admin] : [profile]} />
+      {/* Phones: five tabs at most (lib/nav-plan); Profile is the picture on Home. */}
+      <MobileTabBar />
       <SearchDialog />
       <CacheGuard userId={user.id} />
       <NavProgress />

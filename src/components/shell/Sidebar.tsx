@@ -13,6 +13,9 @@ import { openSearch } from "./Search";
 import type { NavItem } from "./nav";
 import { cn } from "@/lib/utils";
 import { QuietDot } from "./QuietDot";
+import { useBundles } from "./Bundles";
+import { BUNDLES, SECTIONS } from "@/lib/bundles";
+import { onSection } from "@/lib/nav-plan";
 import { useQuote } from "@/lib/queries";
 import { today } from "@/lib/dates";
 import { useMediaSrc } from "@/lib/vault/files";
@@ -20,7 +23,6 @@ import { Glyph } from "@/components/art/Glyphs";
 import { Portal } from "@/components/ui/Portal";
 
 interface SidebarProps {
-  items: NavItem[];
   footerItems: NavItem[];
   user: { name: string; image: string | null };
   /** Read from the ana-sidebar cookie on the server, so the first paint is already right. */
@@ -95,7 +97,8 @@ function Tip({ show, children }: { show: boolean; children: React.ReactNode }) {
   );
 }
 
-export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarProps) {
+export function Sidebar({ footerItems, user, initialCollapsed }: SidebarProps) {
+  const bundles = useBundles();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const { data: quoteData } = useQuote(today());
@@ -175,9 +178,19 @@ export function Sidebar({ items, footerItems, user, initialCollapsed }: SidebarP
           <Tip show={collapsed}>Search · ⌘K</Tip>
         </button>
 
+        {/* Home, then each bundle under its name, with all its screens (there's room here). */}
         <nav aria-label="Main" className="flex flex-col gap-1">
-          {items.map((item) => (
-            <SideLink key={item.key} item={item} active={pathname.startsWith(item.href)} collapsed={collapsed} />
+          <SideLink item={{ key: "today", label: SECTIONS.today.label, href: SECTIONS.today.href }} active={onSection(pathname, "today")} collapsed={collapsed} />
+          {BUNDLES.filter((b) => bundles.includes(b.key)).map((b) => (
+            <div key={b.key} role="group" aria-label={b.label} className="flex flex-col gap-1 mt-3">
+              <span aria-hidden="true" className={cn("relative h-4 flex items-center px-3 font-ui text-[11.5px] font-semibold uppercase tracking-[0.08em] text-ink-soft/70")}>
+                <Label collapsed={collapsed}>{b.label}</Label>
+                {collapsed && <span className="absolute left-3 right-3 top-1/2 h-px bg-line" />}
+              </span>
+              {b.sections.map((k) => (
+                <SideLink key={k} item={{ key: k, label: SECTIONS[k].label, href: SECTIONS[k].href }} active={onSection(pathname, k)} collapsed={collapsed} />
+              ))}
+            </div>
           ))}
         </nav>
 

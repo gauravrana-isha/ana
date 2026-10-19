@@ -24,11 +24,13 @@ test("a moment kept offline is marked, listed and dotted, then sent and the mark
 
   const card = page.locator("article", { hasText: "Kept while offline." }).first();
   await expect(card.getByRole("img", { name: "Kept on this phone, not sent yet" })).toBeVisible();
+  // The quiet dot, on the picture beside the bell on Home.
+  await page.goto("/home");
   await expect(page.getByRole("img", { name: /waiting to send/ }).first()).toBeAttached();
 
-  // The list of what's waiting, from the More sheet.
-  await page.getByRole("button", { name: "More" }).click();
-  await page.getByRole("button", { name: /Kept on this phone/ }).click();
+  // The list of what's waiting, from Profile → Device.
+  await page.goto("/profile/device");
+  await page.getByRole("button", { name: /Waiting to send/ }).click();
   const sheet = page.getByRole("dialog", { name: "Waiting to send" });
   await expect(sheet.getByText("1 moment")).toBeVisible();
   await expect(sheet.getByText("A new moment")).toBeVisible();
@@ -37,9 +39,10 @@ test("a moment kept offline is marked, listed and dotted, then sent and the mark
   // Back online: sent, the list empties, and the marks and the dot go.
   await context.setOffline(false);
   await expect(sheet.getByText("Everything’s in your journal.")).toBeVisible({ timeout: 30_000 });
-  await page.keyboard.press("Escape");
-  await expect(card.getByRole("img", { name: "Kept on this phone, not sent yet" })).toHaveCount(0);
+  await page.goto("/home");
   await expect(page.getByRole("img", { name: /waiting to send/ })).toHaveCount(0);
+  await page.goto("/expressions");
+  await expect(page.locator("article", { hasText: "Kept while offline." }).first().getByRole("img", { name: "Kept on this phone, not sent yet" })).toHaveCount(0);
   await expect.poll(() => outbox(page)).toEqual([]);
 });
 

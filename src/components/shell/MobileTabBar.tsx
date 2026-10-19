@@ -1,54 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePersistentState } from "@/lib/persist";
+import { useEffect, useRef, useState } from "react";
 import { usePrefetchScreen } from "@/lib/prefetch";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 import { NavIcon } from "./NavIcon";
-import { BARE_PAGES, type NavItem } from "./nav";
+import { BARE_PAGES } from "./nav";
 import { cn } from "@/lib/utils";
-import { Sheet } from "@/components/ui/Sheet";
-import { Glyph } from "@/components/art/Glyphs";
-import { openWaiting, summarise, useWaiting } from "@/lib/waiting";
-import { QuietDot } from "./QuietDot";
+import { onSection, type Tab } from "@/lib/nav-plan";
+import { BarBundleMenu, TabBarChooser, openBundleMenu, useBundleHref, useNavPlan, useRememberBundleScreen } from "./BundleNav";
 
-const MAX_TABS = 5;
-// On phones the everyday sections come first; the rest sit under "More".
-const PRIORITY = ["today", "tracker", "expressions", "people", "daily", "weekly", "insights", "commitment"];
-
-export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavItem[] }) {
+/**
+ * The phone's tab bar: five tabs at most, never a "More" (see lib/nav-plan). A tab per screen
+ * when they fit; otherwise a tab per bundle, with dots for the screens inside it. Tapping the
+ * open bundle's tab again lists its screens; with more than four bundles, holding a bundle's
+ * tab chooses which four sit here.
+ */
+export function MobileTabBar() {
   const pathname = usePathname();
-  const [more, setMore] = useState(false);
-  const prefetch = usePrefetchScreen();
-  const { items: waiting } = useWaiting();
+  const { plan } = useNavPlan();
+  const [choosing, setChoosing] = useState(false);
   useKeyboardAware();
-
-  // Everything fits in five slots, or the first four stay and the rest go under "More".
-  const ranked = [...items].sort((a, b) => PRIORITY.indexOf(a.key) - PRIORITY.indexOf(b.key));
-  const all = [...ranked, ...extras];
-  const fits = all.length <= MAX_TABS;
-  const primary = fits ? all : all.slice(0, MAX_TABS - 1);
-  const rest = fits ? [] : all.slice(MAX_TABS - 1);
-
-  // A section opened from "More" takes the middle slot and stays there (the last section
-  // steps under "More") until another is chosen, or that one is opened again.
-  const [savedPin, setSavedPin] = usePersistentState<string>("tabbar.pinned", "");
-  const here = rest.find((i) => pathname.startsWith(i.href));
-  const displaced = primary[primary.length - 1];
-  const backToIt = !!displaced && pathname.startsWith(displaced.href);
-  const pinKey = here ? here.key : backToIt ? "" : savedPin;
-  useEffect(() => {
-    if (pinKey !== savedPin) setSavedPin(pinKey);
-  }, [pinKey, savedPin, setSavedPin]);
-  const pinned = rest.find((i) => i.key === pinKey);
-  const middle = Math.floor((primary.length + 1) / 2); // with "More", the centre of the bar
-  const kept = primary.slice(0, -1);
-  const tabs = pinned ? [...kept.slice(0, middle), pinned, ...kept.slice(middle)] : primary;
-  const overflow = pinned ? [displaced, ...rest.filter((i) => i.key !== pinned.key)] : rest;
-  const moreActive = overflow.some((i) => pathname.startsWith(i.href));
+  useRememberBundleScreen();
   // Reading pages (a moment) take the whole screen; they bring their own way back.
   const bare = BARE_PAGES.some((p) => pathname.startsWith(p));
 
@@ -56,76 +31,17 @@ export function MobileTabBar({ items, extras }: { items: NavItem[]; extras: NavI
     <>
       <nav aria-label="Main" className={cn("ana-tabbar fixed bottom-0 inset-x-0 z-20 lg:hidden bg-nav/95 backdrop-blur-md border-t border-line pb-safe transition-transform duration-200", bare && "hidden")}>
         <div className="flex items-stretch justify-around h-16 px-1 max-w-[560px] mx-auto">
-          {tabs.map((item) => (
-            <Tab
-              key={item.key}
-              href={item.href}
-              label={item.label}
-              active={pathname.startsWith(item.href)}
-              icon={(on) => (
-                <>
-                  <NavIcon k={item.key} size={22} weight={on ? "fill" : "regular"} />
-                  {item.key === "profile" && <QuietDot className="-top-0.5 -right-1" />}
-                </>
-              )}
-            />
-          ))}
-          {!fits && (
-            <button type="button" onClick={() => setMore(true)} aria-expanded={more} className="press relative flex flex-1 flex-col items-center justify-center gap-1 min-w-0">
-              <TabInner
-                active={moreActive || more}
-                label="More"
-                icon={() => (
-                  <>
-                    <Glyph k="more" size={24} />
-                    {overflow.some((i) => i.key === "profile") && <QuietDot className="-top-0.5 -right-1" />}
-                  </>
-                )}
-                layoutId={moreActive ? "tab-active" : undefined}
-              />
-            </button>
+          {plan.tabs.map((t) =>
+            t.kind === "bundle" ? (
+              <BundleTab key={t.key} tab={t} onHold={plan.offBar.length > 0 ? () => setChoosing(true) : undefined} />
+            ) : (
+              <Tab key={t.key} href={t.href} label={t.label} active={t.kind === "home" ? pathname.startsWith(t.href) : onSection(pathname, t.key)} icon={(on) => <NavIcon k={t.key} size={22} weight={on ? "fill" : "regular"} />} />
+            )
           )}
         </div>
       </nav>
-
-      <Sheet open={more} onClose={() => setMore(false)} title="More">
-        {waiting.length > 0 && (
-          <div className="-mx-2 mb-2">
-            <button
-              type="button"
-              onClick={() => {
-                setMore(false);
-                openWaiting();
-              }}
-              className="press w-full flex items-center gap-3 px-3 py-2.5 rounded-[14px] bg-surface border border-line text-left"
-            >
-              <span className="relative grid place-items-center w-[21px] text-ink-soft">
-                <Glyph k="sync" size={19} />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-ui text-[14px] font-semibold text-ink">Kept on this phone</span>
-                <span className="block font-ui text-[12.5px] text-ink-soft truncate">{summarise(waiting)}</span>
-              </span>
-            </button>
-          </div>
-        )}
-        <ul className="flex flex-col gap-1 -mx-2">
-          {overflow.map((item) => {
-            const active = pathname.startsWith(item.href);
-            return (
-              <li key={item.key}>
-                <Link href={item.href} {...prefetch(item.href)} onClick={() => setMore(false)} aria-current={active ? "page" : undefined} className={cn("press flex items-center gap-3 h-12 px-3 rounded-[14px] font-ui text-[15px] font-semibold", active ? "bg-accent-soft text-accent" : "text-ink hover:bg-surface")}>
-                  <span className="relative">
-                    <NavIcon k={item.key} size={21} weight={active ? "fill" : "regular"} />
-                    {item.key === "profile" && <QuietDot className="-top-0.5 -right-1 ring-bg" />}
-                  </span>
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </Sheet>
+      <BarBundleMenu />
+      <TabBarChooser open={choosing} onClose={() => setChoosing(false)} />
     </>
   );
 }
@@ -135,6 +51,58 @@ function Tab({ href, label, active, icon }: { href: string; label: string; activ
   return (
     <Link href={href} {...prefetch(href)} aria-current={active ? "page" : undefined} className="press relative flex flex-1 flex-col items-center justify-center gap-1 min-w-0">
       <TabInner active={active} label={label} icon={icon} layoutId={active ? "tab-active" : undefined} />
+    </Link>
+  );
+}
+
+/** A bundle's tab: opens the screen last open in it; tapped again while open, lists its screens. */
+function BundleTab({ tab, onHold }: { tab: Extract<Tab, { kind: "bundle" }>; onHold?: () => void }) {
+  const pathname = usePathname();
+  const prefetch = usePrefetchScreen();
+  const href = useBundleHref(tab.key, tab.sections);
+  const here = tab.sections.findIndex((k) => onSection(pathname, k));
+  const active = here >= 0;
+  const held = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holding = useRef(false);
+
+  const startHold = () => {
+    if (!onHold) return;
+    holding.current = false;
+    held.current = setTimeout(() => {
+      holding.current = true;
+      onHold();
+    }, 500);
+  };
+  const endHold = () => held.current && clearTimeout(held.current);
+
+  return (
+    <Link
+      href={href}
+      {...prefetch(href)}
+      aria-current={active ? "page" : undefined}
+      aria-haspopup={tab.sections.length > 1 ? "menu" : undefined}
+      onClick={(e) => {
+        // Held to choose the bar: not a tap. Open already: list its screens instead.
+        if (holding.current || (active && tab.sections.length > 1)) {
+          e.preventDefault();
+          if (!holding.current) openBundleMenu(tab.key);
+        }
+      }}
+      onPointerDown={startHold}
+      onPointerUp={endHold}
+      onPointerLeave={endHold}
+      onContextMenu={(e) => onHold && e.preventDefault()}
+      className="press relative flex flex-1 flex-col items-center justify-center gap-1 min-w-0"
+    >
+      <TabInner active={active} label={tab.label} icon={(on) => <NavIcon k={tab.mark} size={22} weight={on ? "fill" : "regular"} />} layoutId={active ? "tab-active" : undefined} />
+      {tab.sections.length > 1 && (
+        // One dot per screen inside, the open one filled.
+        <span aria-hidden="true" className="absolute bottom-[3px] flex gap-[3px]">
+          {tab.sections.map((k, i) => (
+            <span key={k} className={cn("w-[3px] h-[3px] rounded-full", i === here ? "bg-accent" : "bg-ink-soft/35")} />
+          ))}
+        </span>
+      )}
     </Link>
   );
 }
