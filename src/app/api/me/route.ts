@@ -30,6 +30,7 @@ export async function GET() {
     questions: user.questions,
     portraitEveryMonths: user.portraitEveryMonths,
     features: user.effective,
+    bundles: user.bundles,
     storage: storageMode(),
     // Features the admin allows, so settings can offer only those.
     allowedFeatures: FEATURE_KEYS.filter(

@@ -3,11 +3,13 @@
  * is bundled from src/app/sw.ts), so the two lists can't drift apart.
  */
 
-/** Every screen, saved ahead so the whole app opens offline. */
+import { BUNDLES, SECTIONS, SECTION_KEYS } from "./bundles";
+
+/** Every screen, saved ahead so the whole app opens offline: each section, each bundle's own pages, Profile. */
 export const OFFLINE_SCREENS = [
-  "/today", "/tracker", "/daily", "/weekly", "/expressions", "/people", "/commitment", "/insights",
-  "/profile", "/profile/who", "/profile/sections", "/profile/practices", "/profile/questions",
-  "/profile/device", "/profile/privacy", "/profile/data",
+  ...SECTION_KEYS.map((k) => SECTIONS[k].href),
+  ...BUNDLES.flatMap((b) => [...b.offline]),
+  "/profile", "/profile/who", "/profile/sections", "/profile/device", "/profile/privacy", "/profile/data",
   // Admins only (anyone else is turned away, and nothing is kept).
   "/admin",
 ];

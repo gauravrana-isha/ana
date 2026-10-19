@@ -13,7 +13,8 @@ import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { STARTER_IDS } from "@/lib/practiceCatalog";
-import { FEATURES, type FeatureKey } from "@/lib/features";
+import { FEATURES, bundlesFrom, type FeatureKey } from "@/lib/features";
+import { bundleByKey } from "@/lib/bundles";
 import { PracticeLibrary } from "@/components/tracker/PracticeLibrary";
 import { KeySetup } from "@/components/vault/KeySetup";
 import { Unlock } from "@/components/vault/Unlock";
@@ -66,9 +67,8 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
   }, [keyStage, lock.status]);
 
   const steps = useMemo<Step[]>(() => {
-    const s: Step[] = ["welcome", "you", "sections"];
-    if (features.includes("tracker")) s.push("practices");
-    return s;
+    // Then each chosen bundle's own steps (Sadhana: your practices).
+    return ["welcome", "you", "sections", ...bundlesFrom(features).flatMap((k) => [...bundleByKey(k).onboarding])];
   }, [features]);
 
   const index = steps.indexOf(step);

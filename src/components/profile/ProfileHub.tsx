@@ -27,7 +27,8 @@ import { scaleLabel, specFor, time12 } from "@/lib/practiceSpec";
 import { PracticeEditor } from "@/components/tracker/PracticeEditor";
 import { today } from "@/lib/dates";
 import { applyTheme, type ThemeName } from "@/lib/theme";
-import { FEATURES, type FeatureKey } from "@/lib/features";
+import { FEATURES, bundlesFrom, type FeatureKey } from "@/lib/features";
+import { settingsOf, type BundleSetting } from "@/lib/bundles";
 import { cn } from "@/lib/utils";
 import type { Practice } from "@/lib/types";
 import { deletePractice, fetchProfileStats } from "@/lib/journal";
@@ -59,6 +60,9 @@ const TITLES: Record<SectionKey, string> = {
   privacy: "Privacy & keys",
   data: "Your data",
 };
+
+/** The mark beside each bundle's own setting. */
+const SETTING_GLYPH: Record<BundleSetting, FeatureKey> = { practices: "tracker", questions: "daily" };
 
 export function isSectionKey(v: string): v is SectionKey {
   return v in TITLES;
@@ -127,13 +131,11 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 // ---------------------------------------------------------------- the rows
 
 function Rows({ me, active }: { me: Me; active?: SectionKey }) {
-  const tracker = me.features.includes("tracker");
-  const reflects = me.features.includes("daily") || me.features.includes("weekly");
-
+  // Each bundle brings its own settings (Sadhana its practices, Reflection its questions).
+  const brought = settingsOf(me.bundles ?? bundlesFrom(me.features));
   const rows: { k: SectionKey; icon: React.ReactNode }[] = [
     { k: "sections", icon: <Glyph k="cards" size={19} /> },
-    ...(tracker ? [{ k: "practices" as const, icon: <FeatureGlyph k="tracker" size={19} /> }] : []),
-    ...(reflects ? [{ k: "questions" as const, icon: <FeatureGlyph k="daily" size={19} /> }] : []),
+    ...brought.map((k) => ({ k, icon: <FeatureGlyph k={SETTING_GLYPH[k]} size={19} /> })),
     { k: "device", icon: <Glyph k="phone" size={19} /> },
     { k: "privacy", icon: <Glyph k="lock" size={19} /> },
     { k: "data", icon: <Glyph k="download" size={19} /> },

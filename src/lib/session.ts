@@ -2,7 +2,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { db } from "./db";
-import { effectiveFeatures, featureByKey, type FeatureKey } from "./features";
+import { bundlesFrom, effectiveFeatures, featureByKey, type FeatureKey } from "./features";
 
 const SESSION_COOKIES = ["__Secure-authjs.session-token", "authjs.session-token"];
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -40,7 +40,8 @@ export const getCurrentUser = cache(async () => {
   if (!user.lastSeenAt || Date.now() - user.lastSeenAt.getTime() > SEEN_EVERY_MS) {
     db.user.update({ where: { id: user.id }, data: { lastSeenAt: new Date() } }).catch(() => {});
   }
-  return { ...user, effective: effectiveFeatures(user.features) };
+  const effective = effectiveFeatures(user.features);
+  return { ...user, effective, bundles: bundlesFrom(effective) };
 });
 
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { FeatureKey } from "./features";
+import type { BundleKey } from "./bundles";
 import { openDeep } from "./vault/vault";
 import type { QuestionSets } from "./questions";
 
@@ -13,6 +14,8 @@ export interface Me {
   role: "MEMBER" | "ADMIN";
   status: string;
   features: FeatureKey[];
+  /** The bundles they have (Sadhana, Reflection, Expressions…). */
+  bundles: BundleKey[];
   allowedFeatures: FeatureKey[];
   storage: "r2" | "local";
   intention: string | null;
