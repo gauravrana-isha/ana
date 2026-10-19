@@ -97,6 +97,29 @@ test.describe("moving around on a phone", () => {
     await expect(page).toHaveURL(/\/weekly$/);
   });
 
+  test("a swipe on Daily's question card is the card's own; elsewhere it switches screens", async ({ page }) => {
+    await page.goto("/daily");
+    const card = page.locator("[aria-roledescription=card]").first();
+    await card.waitFor();
+    const swipeOn = (selector: string) =>
+      page.evaluate((sel) => {
+        const el = document.querySelector(sel)!;
+        const fire = (type: string, x: number) => {
+          const e = new Event(type, { bubbles: true });
+          Object.defineProperty(e, type === "touchend" ? "changedTouches" : "touches", { value: [{ clientX: x, clientY: 400 }] });
+          el.dispatchEvent(e);
+        };
+        fire("touchstart", 320);
+        fire("touchend", 120);
+      }, selector);
+    await swipeOn("[aria-roledescription=card]");
+    await page.waitForTimeout(600);
+    await expect(page).toHaveURL(/\/daily$/);
+    // On the title row instead: the next screen.
+    await swipeOn("main [aria-haspopup=menu]");
+    await expect(page).toHaveURL(/\/weekly$/);
+  });
+
   test("Reflection alone: each of its screens is a tab, no title switch", async ({ page }) => {
     await setBundles(page, ["reflection"]);
     await page.goto("/home");
