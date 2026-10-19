@@ -24,6 +24,7 @@ import { BUNDLE_SLOTS } from "@/lib/nav-plan";
 import { TabBarChooser } from "@/components/shell/BundleNav";
 import { useBundles } from "@/components/shell/Bundles";
 import { cn } from "@/lib/utils";
+import { whenRestored } from "@/lib/restored";
 import { fetchProfileStats } from "@/lib/journal";
 import { exportJournal, importJournal } from "@/lib/importer";
 import { PrivacySettings } from "@/components/vault/PrivacySettings";
@@ -276,9 +277,14 @@ function DataPanel() {
     setBusy("import");
     const id = toast("Bringing in your journal…", "loading");
     try {
+      // After the device's own copy is back, so it can't land on top of what's brought in.
+      await whenRestored();
       const message = await importJournal(JSON.parse(await file.text()));
       update(id, message, "success");
+      // Screens open now refresh; every other screen's copy is dropped, so it loads afresh when
+      // opened (a copy restored from the device can't refresh itself until a screen uses it).
       void qc.invalidateQueries();
+      qc.removeQueries({ type: "inactive" });
     } catch (err) {
       update(id, err instanceof SyntaxError ? "That file isn't valid JSON." : err instanceof Error ? err.message : "Import failed.", "error");
     } finally {

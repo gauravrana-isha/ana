@@ -1,5 +1,6 @@
 "use client";
 
+import { markRestored } from "@/lib/restored";
 import { dehydrate, IsRestoringProvider, onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { keepNowWith, showChangesIn } from "@/lib/on-screen";
 import { SW_URL } from "@/lib/push-client";
@@ -193,7 +194,10 @@ function RestoreAfterHydration({
     const begin = () => {
       persistQueryClientRestore(full)
         .catch(() => {})
-        .finally(() => setIsRestoring(false));
+        .finally(() => {
+          markRestored();
+          setIsRestoring(false);
+        });
     };
     if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(begin, { timeout: 300 });
     else setTimeout(begin, 50);

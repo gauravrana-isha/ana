@@ -40,3 +40,14 @@ test("adding the river and a meal: their kind, no person fields, grouped, and in
   await page.getByRole("combobox", { name: /Add who or what/ }).or(page.getByLabel("Add who or what was with you")).first().fill("Kav");
   await expect(page.getByRole("button", { name: /The Kaveri.*Water/ })).toBeVisible();
 });
+
+test("importing a journal keeps what each entry is", async ({ page }) => {
+  await page.goto("/profile/data");
+  const file = { name: "journal.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ dayLogs: [], people: [{ id: "imported1", name: "Imported rasam", kind: "food" }] })) };
+  await page.locator('input[type=file][accept*="json"]').setInputFiles(file);
+  await expect(page.getByText("Brought in 1 person.")).toBeVisible({ timeout: 20_000 });
+  // A moment for the device's copy to be saved again (it's written just after changes).
+  await page.waitForTimeout(1500);
+  await page.goto("/presence");
+  await expect(page.getByRole("region", { name: "Food" }).getByText("Imported rasam")).toBeVisible();
+});

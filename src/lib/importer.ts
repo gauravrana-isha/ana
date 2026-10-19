@@ -100,6 +100,7 @@ export async function importJournal(data: J, onProgress?: (what: string) => void
         howMet: str(p.howMet) ?? null,
         birthday: day(p.birthday),
         notes: str(p.notes) ?? null,
+        kind: str(p.kind) ?? null,
       });
       match = { id, name, photoId: null };
       people.push(match);
