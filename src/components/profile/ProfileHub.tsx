@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useSyncExternalStore } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useHydrated } from "@/lib/hydrated";
 import { ProfileSkeleton } from "@/components/skeletons/ScreenSkeletons";
-import { Switch } from "@/components/ui/Switch";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 import { WhoAmICard } from "@/components/profile/WhoAmI";
 import { mediaUrl } from "@/lib/media-client";
@@ -27,8 +25,9 @@ import { scaleLabel, specFor, time12 } from "@/lib/practiceSpec";
 import { PracticeEditor } from "@/components/tracker/PracticeEditor";
 import { today } from "@/lib/dates";
 import { applyTheme, type ThemeName } from "@/lib/theme";
-import { FEATURES, bundlesFrom, type FeatureKey } from "@/lib/features";
-import { settingsOf, type BundleSetting } from "@/lib/bundles";
+import type { FeatureKey } from "@/lib/features";
+import { settingsOf, type BundleKey } from "@/lib/bundles";
+import { useBundles } from "@/components/shell/Bundles";
 import { cn } from "@/lib/utils";
 import type { Practice } from "@/lib/types";
 import { deletePractice, fetchProfileStats } from "@/lib/journal";
@@ -42,7 +41,6 @@ import { Chevron } from "@/components/ui/Arrows";
 import { BackButton } from "@/components/ui/DetailBar";
 import { QuestionsEditor } from "./QuestionsEditor";
 import { OnThisPhone } from "./OnThisPhone";
-import { onScreen } from "@/lib/on-screen";
 
 /*
  * Profile, as a short hub: your card and "Who am I?" up top, then one Settings list, then
@@ -50,10 +48,9 @@ import { onScreen } from "@/lib/on-screen";
  * back); on wider screens the list sits on the left and the open part on the right.
  */
 
-export type SectionKey = "sections" | "practices" | "questions" | "device" | "privacy" | "data";
+export type SectionKey = "practices" | "questions" | "device" | "privacy" | "data";
 
 const TITLES: Record<SectionKey, string> = {
-  sections: "Sections",
   practices: "Practices",
   questions: "Reflection questions",
   device: "Device",
@@ -61,8 +58,18 @@ const TITLES: Record<SectionKey, string> = {
   data: "Your data",
 };
 
-/** The mark beside each bundle's own setting. */
-const SETTING_GLYPH: Record<BundleSetting, FeatureKey> = { practices: "tracker", questions: "daily" };
+/** The settings someone sees: each of their bundles brings its own (Sadhana its practices, Reflection its questions), then this device, privacy and data. */
+function rowsFor(bundles: readonly BundleKey[]): SectionKey[] {
+  return [...settingsOf(bundles), "device", "privacy", "data"];
+}
+
+const ROW_ICON: Record<SectionKey, React.ReactNode> = {
+  practices: <FeatureGlyph k="tracker" size={19} />,
+  questions: <FeatureGlyph k="daily" size={19} />,
+  device: <Glyph k="phone" size={19} />,
+  privacy: <Glyph k="lock" size={19} />,
+  data: <Glyph k="download" size={19} />,
+};
 
 export function isSectionKey(v: string): v is SectionKey {
   return v in TITLES;
@@ -84,6 +91,7 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
   const { data: me } = useMe();
   const hydrated = useHydrated();
   const wide = useWide();
+  const bundles = useBundles();
 
   if (!hydrated || !me) return <ProfileSkeleton />;
 
@@ -100,7 +108,7 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
     );
   }
 
-  const open: SectionKey = section ?? "sections";
+  const open: SectionKey = section ?? rowsFor(bundles)[0];
   return (
     <div className="space-y-8">
       <ProfileHeader me={me} />
@@ -108,7 +116,7 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
       {wide ? (
         <div className="grid grid-cols-[300px_minmax(0,1fr)] gap-8 items-start">
           <div className="sticky top-24 flex flex-col gap-5">
-            <Rows me={me} active={open} />
+            <Rows active={open} />
             <SignOutButton className="self-start" />
           </div>
           <section aria-labelledby="profile-panel">
@@ -118,7 +126,7 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          <Rows me={me} />
+          <Rows />
           <div className="rounded-[18px] bg-surface">
             <SignOutButton className="w-full justify-center h-12 rounded-[18px] text-[14.5px]" />
           </div>
@@ -130,16 +138,8 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 
 // ---------------------------------------------------------------- the rows
 
-function Rows({ me, active }: { me: Me; active?: SectionKey }) {
-  // Each bundle brings its own settings (Sadhana its practices, Reflection its questions).
-  const brought = settingsOf(me.bundles ?? bundlesFrom(me.features));
-  const rows: { k: SectionKey; icon: React.ReactNode }[] = [
-    { k: "sections", icon: <Glyph k="cards" size={19} /> },
-    ...brought.map((k) => ({ k, icon: <FeatureGlyph k={SETTING_GLYPH[k]} size={19} /> })),
-    { k: "device", icon: <Glyph k="phone" size={19} /> },
-    { k: "privacy", icon: <Glyph k="lock" size={19} /> },
-    { k: "data", icon: <Glyph k="download" size={19} /> },
-  ];
+function Rows({ active }: { active?: SectionKey }) {
+  const rows = rowsFor(useBundles()).map((k) => ({ k, icon: ROW_ICON[k] }));
 
   return (
     <nav aria-label="Settings">
@@ -171,8 +171,6 @@ function Rows({ me, active }: { me: Me; active?: SectionKey }) {
 
 function Panel({ k, me }: { k: SectionKey; me: Me }) {
   switch (k) {
-    case "sections":
-      return <SectionsPanel me={me} />;
     case "practices":
       return <PracticesPanel />;
     case "questions":
@@ -186,51 +184,6 @@ function Panel({ k, me }: { k: SectionKey; me: Me }) {
   }
 }
 
-function SectionsPanel({ me }: { me: Me }) {
-  const qc = useQueryClient();
-  const router = useRouter();
-  const { toast } = useToast();
-  const [pending, setPending] = useState<FeatureKey | null>(null);
-  const [, startTransition] = useTransition();
-
-  async function toggle(key: FeatureKey, enabled: boolean) {
-    if (pending) return;
-    if (!enabled && me.features.length === 1) return toast("Keep at least one section on.", "error");
-    setPending(key);
-    onScreen.me({ features: enabled ? [...me.features, key] : me.features.filter((x) => x !== key) });
-    const res = await fetch("/api/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ features: { [key]: enabled } }) });
-    if (!res.ok) {
-      toast("Couldn't update. Please try again.", "error");
-      void qc.invalidateQueries({ queryKey: ["me"] });
-      setPending(null);
-      return;
-    }
-    // The navigation is rendered on the server from these choices.
-    startTransition(() => router.refresh());
-    setPending(null);
-  }
-
-  return (
-    <div className="rounded-[18px] bg-surface divide-y divide-line">
-      {FEATURES.map((f) => {
-        const allowed = me.allowedFeatures.includes(f.key);
-        const on = me.features.includes(f.key);
-        return (
-          <label key={f.key} className={cn("flex items-center gap-3.5 px-4 py-3.5", allowed ? "cursor-pointer" : "opacity-50")}>
-            <FeatureBadge k={f.key} size={34} />
-            <span className="flex-1 min-w-0">
-              <span className="block font-ui text-[14.5px] font-semibold text-ink">{f.label}</span>
-              <span className="block font-ui text-[13px] leading-[1.45] text-ink-soft mt-0.5">{allowed ? f.description : "Not available on your account."}</span>
-            </span>
-            <Switch checked={on} disabled={!allowed || !!pending} busy={pending === f.key} onChange={(v) => toggle(f.key, v)} label={f.label} />
-          </label>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Both are this device's own: its theme, and whether it shows notifications. */
 function DevicePanel() {
   return (
     <div className="flex flex-col gap-7">

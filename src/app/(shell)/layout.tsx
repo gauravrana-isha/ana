@@ -12,6 +12,7 @@ import { requireAppUser } from "@/lib/session";
 import { storageMode } from "@/lib/storage";
 import { VaultGate } from "@/components/vault/VaultGate";
 import { featureByKey } from "@/lib/features";
+import { BundlesProvider } from "@/components/shell/Bundles";
 
 export default async function ShellLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAppUser();
@@ -30,6 +31,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       user={{ id: user.id, name: user.name ?? "", email: user.email ?? "", storage: storageMode() }}
       vault={{ set: !!user.vaultAt, check: user.vaultCheck, sealed: !!user.vaultSealedAt }}
     >
+    <BundlesProvider bundles={user.bundles}>
     <div className="flex min-h-dvh">
       <Sidebar
         items={features}
@@ -51,6 +53,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       <TapFeedback />
       <PullToRefresh />
     </div>
+    </BundlesProvider>
     </VaultGate>
   );
 }

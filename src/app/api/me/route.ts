@@ -4,7 +4,6 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { resolveNotifications } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/session";
-import { FEATURE_KEYS, isFeatureKey } from "@/lib/features";
 import { removeAttachmentFiles, storageMode } from "@/lib/storage";
 import { MUST_SEAL, sealed } from "@/lib/sealed";
 
@@ -32,10 +31,6 @@ export async function GET() {
     features: user.effective,
     bundles: user.bundles,
     storage: storageMode(),
-    // Features the admin allows, so settings can offer only those.
-    allowedFeatures: FEATURE_KEYS.filter(
-      (k) => user.features.find((f) => f.feature === k)?.allowed !== false
-    ),
   });
 }
 
@@ -51,10 +46,9 @@ const PatchSchema = z.object({
   /** An uploaded photo attachment to use as your picture, or null to go back to the Google one. */
   photoId: z.string().max(40).nullable().optional(),
   portraitEveryMonths: z.union([z.literal(0), z.literal(3), z.literal(6), z.literal(12)]).optional(),
-  features: z.record(z.string(), z.boolean()).optional(),
 });
 
-/** Update your own profile and switch features on or off within what the admin allows. */
+/** Update your own profile. (Which bundles someone has is the admin's to set, on Access.) */
 export async function PATCH(req: NextRequest) {
   // Reminders may have moved: the reminder job looks again on its next run.
   after(remindersChanged);
@@ -65,7 +59,7 @@ export async function PATCH(req: NextRequest) {
 
   const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json(MUST_SEAL, { status: 400 });
-  const { name, intention, features, preferredName, birthday, place, questions, photoId, portraitEveryMonths } = parsed.data;
+  const { name, intention, preferredName, birthday, place, questions, photoId, portraitEveryMonths } = parsed.data;
 
   // A new photo must be yours and a photo; the old one is removed for good.
   let oldPhoto: { id: string; storage: string; pathname: string; thumbPathname: string | null } | null = null;
@@ -89,16 +83,6 @@ export async function PATCH(req: NextRequest) {
     ...(portraitEveryMonths !== undefined ? { portraitEveryMonths } : {}),
   };
   if (Object.keys(data).length) ops.push(db.user.update({ where: { id: user.id }, data }));
-  for (const [key, enabled] of Object.entries(features ?? {})) {
-    if (!isFeatureKey(key)) continue;
-    ops.push(
-      db.userFeature.upsert({
-        where: { userId_feature: { userId: user.id, feature: key } },
-        create: { userId: user.id, feature: key, enabled, updatedById: user.id },
-        update: { enabled, updatedById: user.id },
-      })
-    );
-  }
   await db.$transaction(ops);
   if (oldPhoto) {
     await db.attachment.delete({ where: { id: oldPhoto.id } }).catch(() => {});

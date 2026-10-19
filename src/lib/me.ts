@@ -16,7 +16,6 @@ export interface Me {
   features: FeatureKey[];
   /** The bundles they have (Sadhana, Reflection, Expressions…). */
   bundles: BundleKey[];
-  allowedFeatures: FeatureKey[];
   storage: "r2" | "local";
   intention: string | null;
   preferredName: string | null;

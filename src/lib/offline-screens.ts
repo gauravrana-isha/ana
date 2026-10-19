@@ -9,7 +9,7 @@ import { BUNDLES, SECTIONS, SECTION_KEYS } from "./bundles";
 export const OFFLINE_SCREENS = [
   ...SECTION_KEYS.map((k) => SECTIONS[k].href),
   ...BUNDLES.flatMap((b) => [...b.offline]),
-  "/profile", "/profile/who", "/profile/sections", "/profile/device", "/profile/privacy", "/profile/data",
+  "/profile", "/profile/who", "/profile/device", "/profile/privacy", "/profile/data",
   // Admins only (anyone else is turned away, and nothing is kept).
   "/admin",
 ];

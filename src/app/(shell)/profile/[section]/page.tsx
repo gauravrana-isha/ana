@@ -9,6 +9,8 @@ export default function ProfileSectionPage({ params }: { params: Promise<{ secti
   const { section } = use(params);
   // Theme and notifications used to be two pages.
   if (section === "appearance" || section === "notifications") redirect("/profile/device");
+  // Sections are given by the admin now; there's nothing to choose here.
+  if (section === "sections") redirect("/profile");
   if (!isSectionKey(section)) notFound();
   return <ProfileHub section={section} />;
 }

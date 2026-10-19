@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { effectiveFeatures } from "@/lib/features";
 import { zonedParts } from "@/lib/push";
 import { notify, sweepNotifications } from "@/lib/notify";
 import { nextLocalHours, nothingDue, savePlan } from "@/lib/reminder-plan";
@@ -102,11 +103,10 @@ export async function GET(req: NextRequest) {
   const todays = [...new Set([-12, 0, 14].map((h) => new Date(now.getTime() + h * 3_600_000).toISOString().slice(5, 10)))];
   const people = await db.person.findMany({
     where: { OR: [{ birthdayMD: { in: todays } }, { birthday: { not: null }, birthdayMD: null }], user: { status: "APPROVED" } },
-    select: { id: true, userId: true, birthday: true, birthdayMD: true, user: { select: { timeZone: true, features: { where: { feature: "people" } } } } },
+    select: { id: true, userId: true, birthday: true, birthdayMD: true, user: { select: { timeZone: true, features: { select: { feature: true, allowed: true, enabled: true } } } } },
   });
   await inParallel(people, async (p) => {
-    const f = p.user.features[0];
-    if (f && (!f.allowed || !f.enabled)) return;
+    if (!effectiveFeatures(p.user.features).includes("people")) return;
     const local = zonedParts(now, p.user.timeZone);
     if (local.hour < BIRTHDAY_HOUR) return;
     const [bm, bd] = p.birthdayMD ? p.birthdayMD.split("-").map(Number) : [p.birthday!.getUTCMonth() + 1, p.birthday!.getUTCDate()];

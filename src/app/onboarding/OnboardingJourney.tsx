@@ -11,10 +11,8 @@ import { BrandMark } from "@/components/art/BrandMark";
 import { SnakeLoader } from "@/components/ui/Loader";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
-import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { STARTER_IDS } from "@/lib/practiceCatalog";
-import { FEATURES, bundlesFrom, type FeatureKey } from "@/lib/features";
-import { bundleByKey } from "@/lib/bundles";
+import { bundleByKey, type BundleKey } from "@/lib/bundles";
 import { PracticeLibrary } from "@/components/tracker/PracticeLibrary";
 import { KeySetup } from "@/components/vault/KeySetup";
 import { Unlock } from "@/components/vault/Unlock";
@@ -22,24 +20,23 @@ import { catalogById } from "@/lib/practiceCatalog";
 import { newId } from "@/lib/outbox";
 import { fetchStatus, seal, sealFields, start, useVault, type VaultStatus } from "@/lib/vault/vault";
 import { cn } from "@/lib/utils";
-import { TickMark } from "@/components/tracker/FieldInput";
 
-type Step = "welcome" | "you" | "sections" | "practices";
+type Step = "welcome" | "you" | "practices";
 
 interface Props {
   user: { id: string; name: string; email: string; image: string | null };
-  allowed: FeatureKey[];
+  /** The bundles the admin has given (each may bring its own steps). */
+  bundles: BundleKey[];
   vault: { set: boolean; check: string | null };
 }
 
-export function OnboardingJourney({ user, allowed, vault }: Props) {
+export function OnboardingJourney({ user, bundles, vault }: Props) {
   const reduce = useReducedMotion();
   const [step, setStep] = useState<Step>("welcome");
   const [direction, setDirection] = useState(1);
 
   const [name, setName] = useState(user.name);
   const [intention, setIntention] = useState("");
-  const [features, setFeatures] = useState<FeatureKey[]>(allowed);
   const [practices, setPractices] = useState<string[]>(STARTER_IDS);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -67,9 +64,9 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
   }, [keyStage, lock.status]);
 
   const steps = useMemo<Step[]>(() => {
-    // Then each chosen bundle's own steps (Sadhana: your practices).
-    return ["welcome", "you", "sections", ...bundlesFrom(features).flatMap((k) => [...bundleByKey(k).onboarding])];
-  }, [features]);
+    // Then each bundle's own steps (Sadhana: your practices).
+    return ["welcome", "you", ...bundles.flatMap((k) => [...bundleByKey(k).onboarding])];
+  }, [bundles]);
 
   const index = steps.indexOf(step);
   const isLast = index === steps.length - 1;
@@ -85,7 +82,7 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
     setError("");
     try {
       // Everything personal is sealed here, with the key just made.
-      const chosen = features.includes("tracker") ? practices.map(catalogById).filter((e) => !!e) : [];
+      const chosen = steps.includes("practices") ? practices.map(catalogById).filter((e) => !!e) : [];
       const sealedPractices = await Promise.all(
         chosen.map((p) =>
           sealFields({ id: newId(), name: p.name, iconName: p.icon, catalogId: p.id, hasDoneToggle: p.hasDoneToggle, fields: p.fields }, ["name", "iconName", "catalogId", "fields"])
@@ -97,7 +94,6 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
         body: JSON.stringify({
           name: name.trim(),
           intention: intention.trim() ? await seal(intention.trim()) : undefined,
-          features,
           practices: sealedPractices,
         }),
       });
@@ -129,7 +125,6 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
 
   const canContinue =
     (step === "you" && name.trim().length > 0) ||
-    (step === "sections" && features.length > 0) ||
     (step === "practices" && practices.length > 0) ||
     step === "welcome";
 
@@ -217,43 +212,6 @@ export function OnboardingJourney({ user, allowed, vault }: Props) {
               </div>
             )}
 
-            {step === "sections" && (
-              <div>
-                <StepTitle title="What would you like to use?" lead="Choose the parts of ana you want. You can turn them on or off in Settings." />
-                <div className="mt-7 flex flex-col gap-2">
-                  {FEATURES.map((f) => {
-                    const available = allowed.includes(f.key);
-                    const on = features.includes(f.key);
-                    return (
-                      <button
-                        key={f.key}
-                        type="button"
-                        disabled={!available}
-                        aria-pressed={on}
-                        onClick={() =>
-                          setFeatures((cur) => (on ? cur.filter((k) => k !== f.key) : [...cur, f.key]))
-                        }
-                        className={cn(
-                          "press flex items-center gap-4 p-4 rounded-[16px] text-left border transition-colors",
-                          on ? "bg-accent-soft border-accent/40" : "bg-surface border-transparent hover:bg-surface-2",
-                          !available && "opacity-50"
-                        )}
-                      >
-                        <FeatureBadge k={f.key} size={44} />
-                        <span className="flex-1 min-w-0">
-                          <span className="block font-ui text-[15px] font-semibold text-ink">{f.label}</span>
-                          <span className="block font-ui text-[13.5px] leading-[1.45] text-ink-soft mt-0.5">
-                            {available ? f.description : "Not available on your account yet."}
-                          </span>
-                        </span>
-                        <Tick on={on} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {step === "practices" && (
               <div>
                 <StepTitle
@@ -322,19 +280,5 @@ function StepTitle({ title, lead }: { title: string; lead: string }) {
       <h1 className="mt-4 font-display text-[30px] font-semibold tracking-[-0.02em] leading-[1.15] text-ink">{title}</h1>
       <p className="mt-3 font-ui text-[15.5px] leading-[1.6] text-ink-soft">{lead}</p>
     </>
-  );
-}
-
-function Tick({ on }: { on: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "grid place-items-center w-6 h-6 rounded-full shrink-0 transition-all duration-200",
-        on ? "bg-accent text-bg scale-100" : "border-[1.5px] border-line bg-bg scale-95"
-      )}
-    >
-      {on && <TickMark size={14} />}
-    </span>
   );
 }

@@ -5,7 +5,6 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { notifyAdminsOfPending } from "@/lib/notify";
 import { getCurrentUser } from "@/lib/session";
-import { FEATURE_KEYS, isFeatureKey } from "@/lib/features";
 import { sealed } from "@/lib/sealed";
 import { INVITE_COOKIE, claimInvite } from "@/lib/invites";
 
@@ -23,7 +22,6 @@ const OnboardSchema = z.object({
   name: z.string().trim().min(1).max(80),
   /** Sealed on the device (the journal gets its key before this step). */
   intention: sealed(8_000).optional(),
-  features: z.array(z.string()).min(1).max(FEATURE_KEYS.length),
   practices: z.array(SealedPractice).max(80).default([]),
 });
 
@@ -38,21 +36,11 @@ export async function POST(req: NextRequest) {
   const parsed = OnboardSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const chosen = new Set(parsed.data.features.filter(isFeatureKey));
-  if (chosen.size === 0) return NextResponse.json({ error: "Choose at least one feature" }, { status: 400 });
-
   if (!user.vaultAt) return NextResponse.json({ error: "Set up your key first." }, { status: 400 });
   const hasPractices = (await db.practice.count({ where: { userId: user.id } })) > 0;
-  const seedPractices = chosen.has("tracker") && !hasPractices && parsed.data.practices.length > 0;
+  const seedPractices = user.bundles.includes("sadhana") && !hasPractices && parsed.data.practices.length > 0;
 
   await db.$transaction([
-    ...FEATURE_KEYS.map((key) =>
-      db.userFeature.upsert({
-        where: { userId_feature: { userId: user.id, feature: key } },
-        create: { userId: user.id, feature: key, enabled: chosen.has(key), updatedById: user.id },
-        update: { enabled: chosen.has(key), updatedById: user.id },
-      })
-    ),
     ...(seedPractices
       ? [
           db.practice.createMany({

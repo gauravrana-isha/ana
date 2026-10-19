@@ -6,7 +6,7 @@ import { Avatar } from "@/components/shell/Sidebar";
 import { PendingWatcher } from "@/components/auth/PendingWatcher";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { getCurrentUser, homeFor } from "@/lib/session";
-import { featureByKey } from "@/lib/features";
+import { bundleByKey } from "@/lib/bundles";
 
 export const metadata: Metadata = { title: "Almost there" };
 
@@ -40,9 +40,9 @@ export default async function PendingPage() {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-1.5">
-              {user.effective.map((k) => (
+              {user.bundles.map((k) => (
                 <span key={k} className="px-2.5 py-1 rounded-full bg-bg font-ui text-[12px] font-medium text-ink-soft">
-                  {featureByKey(k).label}
+                  {bundleByKey(k).label}
                 </span>
               ))}
             </div>

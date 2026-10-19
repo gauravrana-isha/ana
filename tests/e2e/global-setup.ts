@@ -38,8 +38,10 @@ export default async function globalSetup() {
         vaultAt: now,
         vaultSealedAt: now,
         vaultCheck: await crypto.sealValue(key, `ana:${USER_ID}`),
-        features: { create: ["today", "tracker", "daily", "weekly", "expressions", "people", "commitment", "insights"].map((feature) => ({ feature })) },
+        features: { create: ["sadhana", "reflection", "expressions"].map((feature) => ({ feature })) },
         vaultKeys: { create: { kind: "phrase", wrapped: await crypto.wrap(wrappingKey, journal), salt: crypto.toB64(salt) } },
+        // Signed up with Google (Access lists only people who have).
+        accounts: { create: { type: "oidc", provider: "google", providerAccountId: "e2e-google-id" } },
         sessions: { create: { sessionToken: SESSION_TOKEN, expires: new Date(Date.now() + 7 * 864e5) } },
       },
     });

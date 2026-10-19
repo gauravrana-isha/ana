@@ -42,6 +42,8 @@ export interface BundleDef {
   label: string;
   /** One line, for the Access page. */
   description: string;
+  /** The screen whose mark stands for the whole bundle. */
+  mark: SectionKey;
   /** Its screens, in menu order. */
   sections: readonly SectionKey[];
   /** Its parts of Profile → Settings. */
@@ -56,6 +58,7 @@ export const BUNDLES = [
   {
     key: "sadhana",
     label: "Sadhana",
+    mark: "tracker",
     description: "Your daily practices, logged: time, count, minutes, done.",
     sections: ["tracker"],
     settings: ["practices"],
@@ -65,6 +68,7 @@ export const BUNDLES = [
   {
     key: "reflection",
     label: "Reflection",
+    mark: "daily",
     description: "Daily and weekly reflection, and a letter to yourself to return to.",
     sections: ["daily", "weekly", "commitment"],
     settings: ["questions"],
@@ -74,6 +78,7 @@ export const BUNDLES = [
   {
     key: "expressions",
     label: "Expressions",
+    mark: "expressions",
     description: "Moments worth keeping, and the people and things in them.",
     sections: ["expressions", "people"],
     settings: [],

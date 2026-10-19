@@ -24,3 +24,18 @@ test.describe("bundle registry", () => {
     expect(bundlesFrom(["today", "daily", "people", "insights"])).toEqual(["reflection", "expressions"]);
   });
 });
+
+test.describe("bundles from older settings", () => {
+  const row = (feature: string, allowed = true, enabled = true) => ({ feature, allowed, enabled });
+  test("someone from before bundles keeps a bundle if any of its screens was on", async () => {
+    const { effectiveBundles, effectiveFeatures } = await import("../../src/lib/features");
+    // No rows at all: everything.
+    expect(effectiveBundles([])).toEqual(["sadhana", "reflection", "expressions"]);
+    // Tracker turned off, Weekly not allowed (Daily still on): Reflection stays, whole.
+    const rows = [row("tracker", true, false), row("weekly", false)];
+    expect(effectiveBundles(rows)).toEqual(["reflection", "expressions"]);
+    expect(effectiveFeatures(rows)).toEqual(["today", "daily", "weekly", "expressions", "people", "commitment", "insights"]);
+    // A bundle row, once the admin has set one, decides.
+    expect(effectiveBundles([...rows, row("reflection", false), row("sadhana", true)])).toEqual(["sadhana", "expressions"]);
+  });
+});

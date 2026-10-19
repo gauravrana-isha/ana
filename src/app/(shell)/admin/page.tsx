@@ -11,7 +11,8 @@ import { NavIcon } from "@/components/shell/NavIcon";
 import { Button } from "@/components/ui/Button";
 import { BusyBar } from "@/components/ui/Busy";
 import { useToast } from "@/components/ui/Toast";
-import { FEATURES, type FeatureKey } from "@/lib/features";
+import { effectiveBundles } from "@/lib/features";
+import { BUNDLES, SECTIONS } from "@/lib/bundles";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Chevron } from "@/components/ui/Arrows";
@@ -175,8 +176,6 @@ export default function AdminPage() {
         {shown.map((u) => {
           const open = openId === u.id;
           const isMe = u.id === data?.me;
-          const allowed = (k: FeatureKey) => u.features.find((f) => f.feature === k)?.allowed !== false;
-          const chose = (k: FeatureKey) => u.features.find((f) => f.feature === k)?.enabled !== false;
           const name = u.name ?? u.email ?? "Unnamed";
           return (
             <article key={u.id} aria-busy={rowBusy(u.id) || undefined} className="relative rounded-[18px] bg-surface overflow-hidden">
@@ -237,30 +236,32 @@ export default function AdminPage() {
                       )}
 
                       <div>
-                        <h3 className="font-ui text-[13px] font-semibold text-ink mb-2">Can use</h3>
-                        <div className="flex flex-wrap gap-1 sm:gap-1.5">
-                          {FEATURES.map((f) => {
-                            const on = allowed(f.key);
+                        <h3 className="font-ui text-[13px] font-semibold text-ink mb-2">Bundles</h3>
+                        <div className="flex flex-wrap gap-1.5">
+                          {BUNDLES.map((b) => {
+                            const has = effectiveBundles(u.features);
+                            const on = has.includes(b.key);
+                            const parts = b.sections.map((k) => SECTIONS[k].label).join(", ");
                             return (
                               <button
-                                key={f.key}
+                                key={b.key}
                                 type="button"
                                 aria-pressed={on}
                                 disabled={rowBusy(u.id)}
-                                onClick={() => change.mutate({ id: u.id, body: { features: { [f.key]: !on } } })}
-                                aria-label={`${f.label}: ${on ? (chose(f.key) ? "allowed" : "allowed, turned off by them") : "not allowed"}`}
-                                title={`${f.label}${on && !chose(f.key) ? " (allowed, but they turned it off)" : on ? "" : " (not allowed)"}`}
+                                onClick={() =>
+                                  on && has.length === 1
+                                    ? toast("Everyone needs at least one bundle.", "error")
+                                    : change.mutate({ id: u.id, body: { bundles: { [b.key]: !on } } })
+                                }
+                                aria-label={`${b.label} (${parts}): ${on ? "given" : "not given"}`}
+                                title={parts}
                                 className={cn(
-                                  "press relative inline-flex items-center justify-center gap-1.5 h-9 w-9 sm:w-auto sm:h-9 sm:pl-2.5 sm:pr-3 rounded-full font-ui text-[13px] font-semibold border transition-colors",
-                                  on ? "bg-accent-soft border-accent/30 text-accent" : "bg-bg border-line text-ink-soft/60 sm:line-through decoration-1"
+                                  "press inline-flex items-center gap-1.5 h-9 pl-2.5 pr-3 rounded-full font-ui text-[13px] font-semibold border transition-colors",
+                                  on ? "bg-accent-soft border-accent/30 text-accent" : "bg-bg border-line text-ink-soft/60 line-through decoration-1"
                                 )}
                               >
-                                <NavIcon k={f.key} size={16} weight={on ? "fill" : "regular"} />
-                                <span className="hidden sm:inline">{f.label}</span>
-                                {on && !chose(f.key) && <span className="hidden sm:inline font-normal text-ink-soft no-underline">(off)</span>}
-                                {/* phones: a slash for "not allowed", a small dot for "they turned it off" */}
-                                {!on && <span aria-hidden="true" className="sm:hidden absolute w-[26px] h-[1.5px] bg-ink-soft/60 rotate-[-40deg] rounded-full" />}
-                                {on && !chose(f.key) && <span aria-hidden="true" className="sm:hidden absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-saffron ring-2 ring-surface" />}
+                                <NavIcon k={b.mark} size={16} weight={on ? "fill" : "regular"} />
+                                {b.label}
                               </button>
                             );
                           })}

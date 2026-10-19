@@ -55,6 +55,13 @@ export async function readyOffline(page: Page) {
     .toBeGreaterThan(5_000);
 }
 
+/** Give the test member these bundles (as the admin they are), and nothing else. */
+export async function setBundles(page: Page, bundles: string[]) {
+  const all = ["sadhana", "reflection", "expressions"];
+  const res = await page.request.patch(`/api/admin/users/${USER_ID}`, { data: { bundles: Object.fromEntries(all.map((b) => [b, bundles.includes(b)])) } });
+  expect(res.ok(), await res.text()).toBe(true);
+}
+
 /** Saves waiting in the outbox (method and path, ids shortened). */
 export function outbox(page: Page): Promise<string[]> {
   return page.evaluate(
