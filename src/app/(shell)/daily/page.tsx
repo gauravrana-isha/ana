@@ -60,9 +60,10 @@ function DailyContent() {
   // (Adjusting state during render, keyed on the data, instead of in an effect: no extra pass.)
   const [syncedFrom, setSyncedFrom] = useState<unknown>(null);
   if (reflection && reflection !== syncedFrom) {
-    // First copy of a day with nothing saved: open the stepper at the first question, and
-    // keep it open (even as answers save between steps) until Save.
-    if (syncedFrom === null && !hasAnything(reflection)) setEditing("first");
+    // A day with nothing saved opens the cards at the first question (also when a copy kept on
+    // the device had answers and the server's says the day is empty), and they stay open, even
+    // as answers save between cards, until Save.
+    if (editing === null && !hasAnything(reflection)) setEditing("first");
     setSyncedFrom(reflection);
     setLocalAnswers(reflection.answers ?? {});
     setLocalStamps(reflection.stamps ?? {});
