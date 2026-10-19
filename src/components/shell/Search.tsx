@@ -20,6 +20,7 @@ import { Glyph } from "@/components/art/Glyphs";
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { NotificationBell } from "./NotificationBell";
 import { lockScroll } from "@/lib/scroll-lock";
+import { ProfileLink } from "./ProfileLink";
 
 /*
  * Search lives on Today: a search field with the bell beside it. Tapping the field opens the
@@ -57,6 +58,7 @@ export function TodaySearchBar() {
         <kbd className="hidden lg:inline font-ui text-[11px] font-semibold text-ink-soft/80 border border-line rounded-[6px] px-1.5 py-0.5">⌘K</kbd>
       </button>
       <NotificationBell />
+      <ProfileLink />
     </div>
   );
 }

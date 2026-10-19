@@ -116,7 +116,7 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
       {wide ? (
         <div className="grid grid-cols-[300px_minmax(0,1fr)] gap-8 items-start">
           <div className="sticky top-24 flex flex-col gap-5">
-            <Rows active={open} />
+            <Rows active={open} admin={me.role === "ADMIN"} />
             <SignOutButton className="self-start" />
           </div>
           <section aria-labelledby="profile-panel">
@@ -126,7 +126,7 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          <Rows />
+          <Rows admin={me.role === "ADMIN"} />
           <div className="rounded-[18px] bg-surface">
             <SignOutButton className="w-full justify-center h-12 rounded-[18px] text-[14.5px]" />
           </div>
@@ -138,31 +138,52 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 
 // ---------------------------------------------------------------- the rows
 
-function Rows({ active }: { active?: SectionKey }) {
+function Rows({ active, admin }: { active?: SectionKey; admin: boolean }) {
   const rows = rowsFor(useBundles()).map((k) => ({ k, icon: ROW_ICON[k] }));
+  // Pages reached from here (they take no tab): Insights, and Access for admins.
+  const pages = [
+    { href: "/insights", label: "Insights", hint: "Gentle patterns in what you keep", icon: <FeatureGlyph k="insights" size={19} /> },
+    ...(admin ? [{ href: "/admin", label: "Access", hint: "Who's in, and their bundles", icon: <FeatureGlyph k="admin" size={19} /> }] : []),
+  ];
 
   return (
-    <nav aria-label="Settings">
-      <h2 className="mb-2 px-1 font-ui text-[13px] font-semibold text-ink-soft">Settings</h2>
+    <nav aria-label="Settings" className="flex flex-col gap-5">
       <ul className="rounded-[18px] bg-surface p-1.5 flex flex-col gap-0.5">
-        {rows.map((r) => {
-          const on = active === r.k;
-          return (
-            <li key={r.k}>
-              <Link
-                href={`/profile/${r.k}`}
-                scroll={!active}
-                aria-current={on ? "page" : undefined}
-                className={cn("press flex items-center gap-3 px-2.5 py-2.5 rounded-[13px] transition-colors", on ? "bg-bg shadow-[var(--shadow-soft)]" : "hover:bg-bg/60")}
-              >
-                <span className={cn("grid place-items-center w-9 h-9 rounded-[11px] shrink-0 transition-colors", on ? "bg-accent text-bg" : "bg-accent-soft text-accent")}>{r.icon}</span>
-                <span className="flex-1 font-ui text-[15px] font-semibold text-ink whitespace-nowrap">{TITLES[r.k]}</span>
-                <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
-              </Link>
-            </li>
-          );
-        })}
+        {pages.map((p) => (
+          <li key={p.href}>
+            <Link href={p.href} className="press flex items-center gap-3 px-2.5 py-2.5 rounded-[13px] transition-colors hover:bg-bg/60">
+              <span className="grid place-items-center w-9 h-9 rounded-[11px] shrink-0 bg-accent-soft text-accent">{p.icon}</span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-ui text-[15px] font-semibold text-ink">{p.label}</span>
+                <span className="block font-ui text-[12.5px] text-ink-soft truncate">{p.hint}</span>
+              </span>
+              <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
+            </Link>
+          </li>
+        ))}
       </ul>
+      <div>
+        <h2 className="mb-2 px-1 font-ui text-[13px] font-semibold text-ink-soft">Settings</h2>
+        <ul className="rounded-[18px] bg-surface p-1.5 flex flex-col gap-0.5">
+          {rows.map((r) => {
+            const on = active === r.k;
+            return (
+              <li key={r.k}>
+                <Link
+                  href={`/profile/${r.k}`}
+                  scroll={!active}
+                  aria-current={on ? "page" : undefined}
+                  className={cn("press flex items-center gap-3 px-2.5 py-2.5 rounded-[13px] transition-colors", on ? "bg-bg shadow-[var(--shadow-soft)]" : "hover:bg-bg/60")}
+                >
+                  <span className={cn("grid place-items-center w-9 h-9 rounded-[11px] shrink-0 transition-colors", on ? "bg-accent text-bg" : "bg-accent-soft text-accent")}>{r.icon}</span>
+                  <span className="flex-1 font-ui text-[15px] font-semibold text-ink whitespace-nowrap">{TITLES[r.k]}</span>
+                  <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }
