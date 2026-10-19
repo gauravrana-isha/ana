@@ -584,3 +584,6 @@ body:has([data-bare]) .ana-tabbar { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .ana-draw-in { animation: none; }
 }
+
+/* The page never scrolls sideways (anything sliding past the edge is clipped, not scrollable). */
+html, body { overflow-x: clip; }

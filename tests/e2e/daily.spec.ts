@@ -131,3 +131,24 @@ test("the tab bar steps aside only for a real keyboard (focus alone doesn't move
   await page.setViewportSize(size);
   await expect(page.locator("html")).not.toHaveClass(/kb-open/);
 });
+
+test("a card changing never makes the page wider than the screen (Android re-laid out the tab bar)", async ({ page }) => {
+  await clearReflections();
+  await page.waitForTimeout(31_000); // the device's copy of the day is no longer fresh
+  await page.goto("/daily");
+  await page.locator("[aria-roledescription=card]").first().waitFor();
+  await page.evaluate(() => {
+    const w = window as unknown as { widest: number };
+    w.widest = 0;
+    const tick = () => {
+      w.widest = Math.max(w.widest, document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+  await page.getByRole("button", { name: /^(Next|Skip)$/ }).click();
+  await page.waitForTimeout(800);
+  await page.getByRole("button", { name: "Previous question" }).click();
+  await page.waitForTimeout(800);
+  expect(await page.evaluate(() => (window as unknown as { widest: number }).widest)).toBe(0);
+});

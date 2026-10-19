@@ -29,7 +29,7 @@ export function MobileTabBar() {
 
   return (
     <>
-      <nav aria-label="Main" className={cn("ana-tabbar fixed bottom-0 inset-x-0 z-20 lg:hidden bg-nav/95 backdrop-blur-md border-t border-line pb-safe transition-transform duration-200", bare && "hidden")}>
+      <nav aria-label="Main" className={cn("ana-tabbar fixed bottom-0 inset-x-0 z-20 lg:hidden bg-nav/95 backdrop-blur-md border-t border-line pb-safe transition-transform duration-200 will-change-transform", bare && "hidden")}>
         <div className="flex items-stretch justify-around h-16 px-1 max-w-[560px] mx-auto">
           {plan.tabs.map((t) =>
             t.kind === "bundle" ? (

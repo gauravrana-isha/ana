@@ -32,7 +32,9 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         user={{ name: user.name ?? user.email ?? "You", image: user.photoId ? `/api/media/${user.photoId}` : user.image }}
         initialCollapsed={collapsed}
       />
-      <main className="flex-1 min-w-0">
+      {/* Nothing moving sideways (a question card, a sliding panel) may make the page wider than
+          the screen: on Android that re-lays out everything fixed, and the tab bar flickered. */}
+      <main className="flex-1 min-w-0 overflow-x-clip">
         <div className="ana-page max-w-[860px] mx-auto w-full px-4 sm:px-6 pt-[calc(var(--safe-top)+16px)] pb-[calc(96px+env(safe-area-inset-bottom))] lg:px-12 lg:pt-10 lg:pb-16">
           <Topbar />
           {children}
