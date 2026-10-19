@@ -10,36 +10,28 @@ import { WhoAmICard } from "@/components/profile/WhoAmI";
 import { mediaUrl } from "@/lib/media-client";
 import { useMe, type Me } from "@/lib/me";
 import { NotificationSettings } from "@/components/push/Notifications";
-import { usePractices, keys } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
 import { Avatar } from "@/components/shell/Sidebar";
 import { FeatureBadge, FeatureGlyph } from "@/components/art/FeatureBadge";
-import { PracticeIcon } from "@/components/tracker/PracticeIcon";
-import { AddPracticeDialog } from "@/components/tracker/AddPracticeDialog";
-import { describeTracking } from "@/lib/practiceCatalog";
 import { SignOutButton } from "@/components/auth/SignOutButton";
-import { BusyBar } from "@/components/ui/Busy";
 import { Button } from "@/components/ui/Button";
 import { ButtonLoader } from "@/components/ui/Loader";
-import { scaleLabel, specFor, time12 } from "@/lib/practiceSpec";
-import { PracticeEditor } from "@/components/tracker/PracticeEditor";
 import { today } from "@/lib/dates";
 import { applyTheme, type ThemeName } from "@/lib/theme";
-import type { FeatureKey } from "@/lib/features";
-import { settingsOf, type BundleKey } from "@/lib/bundles";
+import type { BundleKey, BundleSetting } from "@/lib/bundles";
+import { monthFiguresOf, settingPart, settingPartsOf } from "@/bundles/parts";
+import { BUNDLE_SLOTS } from "@/lib/nav-plan";
+import { TabBarChooser } from "@/components/shell/BundleNav";
 import { useBundles } from "@/components/shell/Bundles";
 import { cn } from "@/lib/utils";
-import type { Practice } from "@/lib/types";
-import { deletePractice, fetchProfileStats } from "@/lib/journal";
+import { fetchProfileStats } from "@/lib/journal";
 import { exportJournal, importJournal } from "@/lib/importer";
 import { PrivacySettings } from "@/components/vault/PrivacySettings";
-import { DeleteMark, EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
-import { useConfirm } from "@/components/ui/Confirm";
+import { EditMark, MoonMark, SunMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
 import { Chevron } from "@/components/ui/Arrows";
 import { BackButton } from "@/components/ui/DetailBar";
-import { QuestionsEditor } from "./QuestionsEditor";
 import { OnThisPhone } from "./OnThisPhone";
 
 /*
@@ -48,31 +40,27 @@ import { OnThisPhone } from "./OnThisPhone";
  * back); on wider screens the list sits on the left and the open part on the right.
  */
 
-export type SectionKey = "practices" | "questions" | "device" | "privacy" | "data";
+/** Profile's own settings, for everyone (each bundle adds its own: see src/bundles). */
+type CoreKey = "device" | "privacy" | "data";
+export type SectionKey = CoreKey | BundleSetting;
 
-const TITLES: Record<SectionKey, string> = {
-  practices: "Practices",
-  questions: "Reflection questions",
-  device: "Device",
-  privacy: "Privacy & keys",
-  data: "Your data",
+const CORE: Record<CoreKey, { title: string; icon: React.ReactNode }> = {
+  device: { title: "Device", icon: <Glyph k="phone" size={19} /> },
+  privacy: { title: "Privacy & keys", icon: <Glyph k="lock" size={19} /> },
+  data: { title: "Your data", icon: <Glyph k="download" size={19} /> },
 };
+const isCore = (k: string): k is CoreKey => k in CORE;
+
+const titleOf = (k: SectionKey) => (isCore(k) ? CORE[k].title : (settingPart(k)?.title ?? ""));
+const iconOf = (k: SectionKey) => (isCore(k) ? CORE[k].icon : <FeatureGlyph k={settingPart(k)?.mark ?? "today"} size={19} />);
 
 /** The settings someone sees: each of their bundles brings its own (Sadhana its practices, Reflection its questions), then this device, privacy and data. */
 function rowsFor(bundles: readonly BundleKey[]): SectionKey[] {
-  return [...settingsOf(bundles), "device", "privacy", "data"];
+  return [...settingPartsOf(bundles).map((p) => p.key), "device", "privacy", "data"];
 }
 
-const ROW_ICON: Record<SectionKey, React.ReactNode> = {
-  practices: <FeatureGlyph k="tracker" size={19} />,
-  questions: <FeatureGlyph k="daily" size={19} />,
-  device: <Glyph k="phone" size={19} />,
-  privacy: <Glyph k="lock" size={19} />,
-  data: <Glyph k="download" size={19} />,
-};
-
 export function isSectionKey(v: string): v is SectionKey {
-  return v in TITLES;
+  return isCore(v) || !!settingPart(v);
 }
 
 function useWide() {
@@ -87,11 +75,13 @@ function useWide() {
   );
 }
 
-export function ProfileHub({ section }: { section?: SectionKey }) {
+export function ProfileHub({ section: asked }: { section?: SectionKey }) {
   const { data: me } = useMe();
   const hydrated = useHydrated();
   const wide = useWide();
   const bundles = useBundles();
+  // A bundle's setting only for those who have the bundle (otherwise, Profile itself).
+  const section = asked && rowsFor(bundles).includes(asked) ? asked : undefined;
 
   if (!hydrated || !me) return <ProfileSkeleton />;
 
@@ -102,7 +92,7 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
         <div className="sticky top-[max(12px,calc(var(--safe-top)+6px))] z-20 -mx-1 mb-4 pointer-events-none">
           <BackButton to="/profile" label="Back to Profile" />
         </div>
-        <h1 className="mb-5 font-display text-[28px] font-semibold tracking-[-0.015em] text-ink">{TITLES[section]}</h1>
+        <h1 className="mb-5 font-display text-[28px] font-semibold tracking-[-0.015em] text-ink">{titleOf(section)}</h1>
         <Panel k={section} me={me} />
       </div>
     );
@@ -120,7 +110,7 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
             <SignOutButton className="self-start" />
           </div>
           <section aria-labelledby="profile-panel">
-            <h2 id="profile-panel" className="font-display text-[22px] font-semibold text-ink mb-4">{TITLES[open]}</h2>
+            <h2 id="profile-panel" className="font-display text-[22px] font-semibold text-ink mb-4">{titleOf(open)}</h2>
             <Panel k={open} me={me} />
           </section>
         </div>
@@ -139,7 +129,9 @@ export function ProfileHub({ section }: { section?: SectionKey }) {
 // ---------------------------------------------------------------- the rows
 
 function Rows({ active, admin }: { active?: SectionKey; admin: boolean }) {
-  const rows = rowsFor(useBundles()).map((k) => ({ k, icon: ROW_ICON[k] }));
+  const bundles = useBundles();
+  const rows = rowsFor(bundles).map((k) => ({ k, icon: iconOf(k) }));
+  const [choosing, setChoosing] = useState(false);
   // Pages reached from here (they take no tab): Insights, and Access for admins.
   const pages = [
     { href: "/insights", label: "Insights", hint: "Gentle patterns in what you keep", icon: <FeatureGlyph k="insights" size={19} /> },
@@ -161,7 +153,21 @@ function Rows({ active, admin }: { active?: SectionKey; admin: boolean }) {
             </Link>
           </li>
         ))}
+        {/* With more bundles than tabs: which ones sit in the tab bar. */}
+        {bundles.length > BUNDLE_SLOTS && (
+          <li>
+            <button type="button" onClick={() => setChoosing(true)} className="press w-full flex items-center gap-3 px-2.5 py-2.5 rounded-[13px] text-left transition-colors hover:bg-bg/60">
+              <span className="grid place-items-center w-9 h-9 rounded-[11px] shrink-0 bg-accent-soft text-accent"><Glyph k="cards" size={19} /></span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-ui text-[15px] font-semibold text-ink">Tab bar</span>
+                <span className="block font-ui text-[12.5px] text-ink-soft truncate">Which {BUNDLE_SLOTS} bundles sit in it</span>
+              </span>
+              <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
+            </button>
+          </li>
+        )}
       </ul>
+      <TabBarChooser open={choosing} onClose={() => setChoosing(false)} />
       <div>
         <h2 className="mb-2 px-1 font-ui text-[13px] font-semibold text-ink-soft">Settings</h2>
         <ul className="rounded-[18px] bg-surface p-1.5 flex flex-col gap-0.5">
@@ -176,7 +182,7 @@ function Rows({ active, admin }: { active?: SectionKey; admin: boolean }) {
                   className={cn("press flex items-center gap-3 px-2.5 py-2.5 rounded-[13px] transition-colors", on ? "bg-bg shadow-[var(--shadow-soft)]" : "hover:bg-bg/60")}
                 >
                   <span className={cn("grid place-items-center w-9 h-9 rounded-[11px] shrink-0 transition-colors", on ? "bg-accent text-bg" : "bg-accent-soft text-accent")}>{r.icon}</span>
-                  <span className="flex-1 font-ui text-[15px] font-semibold text-ink whitespace-nowrap">{TITLES[r.k]}</span>
+                  <span className="flex-1 font-ui text-[15px] font-semibold text-ink whitespace-nowrap">{titleOf(r.k)}</span>
                   <Chevron dir="right" size={15} className="text-ink-soft shrink-0" />
                 </Link>
               </li>
@@ -191,11 +197,11 @@ function Rows({ active, admin }: { active?: SectionKey; admin: boolean }) {
 // ---------------------------------------------------------------- the parts
 
 function Panel({ k, me }: { k: SectionKey; me: Me }) {
+  if (!isCore(k)) {
+    const Part = settingPart(k)?.Panel;
+    return Part ? <Part me={me} /> : null;
+  }
   switch (k) {
-    case "practices":
-      return <PracticesPanel />;
-    case "questions":
-      return <QuestionsEditor me={me} />;
     case "device":
       return <DevicePanel />;
     case "privacy":
@@ -236,21 +242,6 @@ function AppearancePanel() {
         { value: "dark", label: "Dark", icon: <MoonMark size={17} /> },
       ]}
     />
-  );
-}
-
-function PracticesPanel() {
-  const { data: practices } = usePractices();
-  const [libraryOpen, setLibraryOpen] = useState(false);
-  const list: Practice[] = Array.isArray(practices) ? practices : [];
-  return (
-    <div className="flex flex-col gap-3">
-      <ManagePractices practices={list} />
-      <button type="button" onClick={() => setLibraryOpen(true)} className="press self-start inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-surface font-ui text-[13.5px] font-semibold text-accent hover:bg-surface-2">
-        <EditMark size={17} /> Add or change practices
-      </button>
-      <AddPracticeDialog open={libraryOpen} onClose={() => setLibraryOpen(false)} />
-    </div>
   );
 }
 
@@ -313,85 +304,14 @@ function DataPanel() {
   );
 }
 
-function ManagePractices({ practices }: { practices: Practice[] }) {
-  const qc = useQueryClient();
-  const { toast } = useToast();
-  const [editing, setEditing] = useState<Practice | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const ask = useConfirm();
-
-  async function remove(p: Practice) {
-    if (!(await ask({ title: `Remove ${p.name}?`, body: "Days you've already logged stay as they are.", confirmLabel: "Remove", tone: "danger" }))) return;
-    setBusyId(p.id);
-    try {
-      await deletePractice(p.id);
-      toast(`${p.name} removed`, "success", 1800);
-    } catch {
-      toast("Couldn't remove. Please try again.", "error");
-    }
-    void qc.invalidateQueries({ queryKey: keys.practices() });
-    setBusyId(null);
-  }
-
-  if (practices.length === 0) return <p className="font-ui text-[14px] text-ink-soft">No practices yet. Add some from the library.</p>;
-
-  return (
-    <>
-      <ul className="rounded-[18px] bg-surface divide-y divide-line">
-        {practices.map((p) => (
-          <li key={p.id} inert={busyId === p.id} aria-busy={busyId === p.id || undefined} className={cn("relative flex items-center gap-3 px-3 py-2.5 transition-opacity", busyId === p.id && "opacity-60")}>
-            {busyId === p.id && <BusyBar show className="absolute top-0 inset-x-3" />}
-            <button type="button" onClick={() => setEditing(p)} className="flex flex-1 items-center gap-3 min-w-0 text-left rounded-[10px]">
-              <PracticeIcon name={p.name} iconName={p.iconName} catalogId={p.catalogId} size={36} />
-              <span className="flex-1 min-w-0">
-                <span className="block font-ui text-[14.5px] font-semibold text-ink truncate">{p.name}</span>
-                <span className="block font-ui text-[12.5px] text-ink-soft truncate">{practiceSummary(p)}</span>
-              </span>
-            </button>
-            <button type="button" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-surface-2">
-              <EditMark size={19} />
-            </button>
-            <button type="button" aria-label={`Remove ${p.name}`} onClick={() => remove(p)} className="press grid place-items-center w-9 h-9 rounded-full text-ink-soft hover:text-danger hover:bg-danger/10">
-              <DeleteMark size={19} />
-            </button>
-          </li>
-        ))}
-      </ul>
-      <PracticeEditor practice={editing} open={!!editing} onClose={() => setEditing(null)} />
-    </>
-  );
-}
-
-/** One short line: "time of day · default 4:30 am", "minutes · fills 15 min", "1–2× + kapalbhati · fills 1×, 108". */
-function practiceSummary(p: Practice) {
-  const spec = specFor(p);
-  const what = describeTracking(spec.fields, spec.hasDoneToggle) || "done";
-  const usual = spec.fields
-    .map((f) => {
-      const v = spec.rhythm ? f.default : f.fill;
-      if (v === undefined || v === "" || v === 0) return null;
-      if (f.kind === "TIME") return time12(v);
-      if (f.kind === "ICONSCALE") return scaleLabel(f, v);
-      if (f.taps) return `${v}×`;
-      // A named count is already named in the first half ("kapalbhati"), so just its number.
-      return f.kind === "MINUTES" ? `${v} min` : String(v);
-    })
-    .filter(Boolean);
-  return usual.length ? `${what} · ${spec.rhythm ? "default" : "fills"} ${usual.join(", ")}` : what;
-}
-
 // ---------------------------------------------------------------- your card
 
 function ProfileHeader({ me }: { me: Me }) {
   const [editing, setEditing] = useState(false);
   const { data: stats } = useQuery({ queryKey: ["profile-stats", today()], queryFn: () => fetchProfileStats(today()) });
 
-  const cells = [
-    { k: "daily", label: "Daily", value: stats?.month.daily },
-    { k: "weekly", label: "Weekly", value: stats?.month.weekly },
-    { k: "expressions", label: "Moments", value: stats?.month.expressions },
-    { k: "tracker", label: "Practice days", value: stats?.month.tracker },
-  ].filter((c) => me.features.includes(c.k as FeatureKey));
+  // Each bundle brings its own figures (Reflection: days reflected on; Expressions: moments).
+  const cells = monthFiguresOf(useBundles()).map((f) => ({ k: f.key, mark: f.mark, label: f.label, value: stats ? f.value(stats) : undefined }));
 
   return (
     <section className="rounded-[22px] bg-surface overflow-hidden">
@@ -429,7 +349,7 @@ function ProfileHeader({ me }: { me: Me }) {
           <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {cells.map((c) => (
               <li key={c.k} className="flex items-center gap-2.5 rounded-[16px] bg-bg/70 px-3 py-3">
-                <FeatureBadge k={c.k} size={36} />
+                <FeatureBadge k={c.mark} size={36} />
                 <span className="min-w-0">
                   <span className="block font-display text-[22px] font-semibold text-ink tabular leading-none">{c.value ?? "–"}</span>
                   <span className="block font-ui text-[12.5px] leading-tight text-ink-soft mt-1 text-balance">{c.label}</span>

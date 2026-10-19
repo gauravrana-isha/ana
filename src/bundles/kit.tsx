@@ -1,7 +1,9 @@
 "use client";
 
 import type { Moment, MomentKind } from "@/lib/moment-types";
-import type { TodayData } from "@/lib/journal";
+import type { TodayData, fetchProfileStats } from "@/lib/journal";
+import type { BundleSetting, SectionKey } from "@/lib/bundles";
+import type { Me } from "@/lib/me";
 
 /*
  * What a bundle can bring to the screens everyone has. Each bundle's parts live in its own
@@ -25,6 +27,25 @@ export interface HomeCard {
   /** Where it sits on Home: lower comes first (time-sensitive things near the top). */
   order: number;
   Card: (props: HomeContext) => React.ReactNode;
+}
+
+/** A part of Profile → Settings that a bundle brings (Sadhana: its practices). */
+export interface SettingPart {
+  key: BundleSetting;
+  title: string;
+  /** The mark beside its row (a section's). */
+  mark: SectionKey;
+  Panel: (props: { me: Me }) => React.ReactNode;
+}
+
+export type ProfileStats = Awaited<ReturnType<typeof fetchProfileStats>>;
+
+/** A figure in Profile's "This month" (Reflection: days reflected on, weekly reflections). */
+export interface MonthFigure {
+  key: string;
+  label: string;
+  mark: SectionKey;
+  value: (stats: ProfileStats) => number | undefined;
 }
 
 /** A heading for a part of Home. */

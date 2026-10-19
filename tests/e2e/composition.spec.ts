@@ -30,3 +30,32 @@ test.describe("Home", () => {
     await expect(heading(page, "Keep a moment")).toHaveCount(0);
   });
 });
+
+test.describe("Profile", () => {
+  test("with Reflection alone: its figures and its setting, nothing of the others", async ({ page }) => {
+    await setBundles(page, ["reflection"]);
+    await page.goto("/profile");
+    const month = page.locator("section", { hasText: "This month" });
+    await expect(month.getByText("Daily", { exact: true })).toBeVisible();
+    await expect(month.getByText("Weekly", { exact: true })).toBeVisible();
+    await expect(month.getByText("Moments", { exact: true })).toHaveCount(0);
+    await expect(month.getByText("Practice days", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Reflection questions/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Practices/ })).toHaveCount(0);
+    // Another bundle's setting page isn't theirs: Profile itself.
+    await page.goto("/profile/practices");
+    await expect(page.getByRole("heading", { name: "Practices", exact: true })).toHaveCount(0);
+    await expect(page.getByText("This month")).toBeVisible();
+  });
+
+  test("with every bundle: every figure and setting; no Tab bar choice with four or fewer bundles", async ({ page }) => {
+    await page.goto("/profile");
+    const month = page.locator("section", { hasText: "This month" });
+    for (const label of ["Daily", "Weekly", "Moments", "Practice days"]) await expect(month.getByText(label, { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Practices/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Reflection questions/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Tab bar/ })).toHaveCount(0);
+    await page.getByRole("link", { name: /^Practices/ }).click();
+    await expect(page.getByRole("heading", { name: "Practices", exact: true })).toBeVisible();
+  });
+});
