@@ -2,7 +2,7 @@
   "name": "ana \u2014 sadhana journal",
   "short_name": "ana",
   "description": "Your sadhana, and the moments and people worth keeping.",
-  "start_url": "/today?source=pwa",
+  "start_url": "/home?source=pwa",
   "scope": "/",
   "display": "standalone",
   "theme_color": "#fbf8f2",
@@ -59,7 +59,7 @@
   "shortcuts": [
     {
       "name": "Today",
-      "url": "/today?source=shortcut",
+      "url": "/home?source=shortcut",
       "icons": [
         {
           "src": "/icons/icon-96.png",
@@ -70,7 +70,7 @@
     },
     {
       "name": "Tracker",
-      "url": "/tracker?source=shortcut",
+      "url": "/sadhana?source=shortcut",
       "icons": [
         {
           "src": "/icons/icon-96.png",

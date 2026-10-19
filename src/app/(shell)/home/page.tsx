@@ -74,8 +74,8 @@ export default function TodayPage() {
 
       {/* The commitment letter, when it's time to read it again */}
       {data?.commitment && (
-        <Link href="/commitment" className="press group block rounded-[22px] border border-accent/30 bg-accent-soft p-5 sm:p-6">
-          <span className="inline-flex items-center gap-2 font-ui text-[13px] font-semibold text-accent"><Glyph k="words" size={18} /> Your commitment · time to read it again</span>
+        <Link href="/sankalpa" className="press group block rounded-[22px] border border-accent/30 bg-accent-soft p-5 sm:p-6">
+          <span className="inline-flex items-center gap-2 font-ui text-[13px] font-semibold text-accent"><Glyph k="words" size={18} /> Your sankalpa · time to read it again</span>
           <p className="mt-2 font-serif text-[17px] leading-[1.65] text-ink line-clamp-3 whitespace-pre-line">{data.commitment.body}</p>
           <span className="mt-3 inline-flex items-center gap-1.5 font-ui text-[13.5px] font-semibold text-accent">Read it again <Arrow size={15} className="transition-transform group-hover:translate-x-0.5" /></span>
         </Link>
@@ -129,10 +129,10 @@ export default function TodayPage() {
 
       {/* Until the letter is written, a quiet nudge after the day's own things */}
       {data?.commitmentMissing && (
-        <Link href="/commitment" className="press group flex items-center gap-4 rounded-[20px] bg-surface p-4 sm:p-5 hover:bg-surface-2 transition-colors">
+        <Link href="/sankalpa" className="press group flex items-center gap-4 rounded-[20px] bg-surface p-4 sm:p-5 hover:bg-surface-2 transition-colors">
           <FeatureBadge k="commitment" size={48} />
           <span className="flex-1 min-w-0">
-            <span className="block font-display text-[18px] font-semibold text-ink">Write your commitment</span>
+            <span className="block font-display text-[18px] font-semibold text-ink">Write your sankalpa</span>
           </span>
           <Arrow size={18} className="text-ink-soft group-hover:text-ink transition-colors" />
         </Link>
@@ -149,7 +149,7 @@ export default function TodayPage() {
               <ul className="flex flex-col gap-2">
                 {data.birthdays.map((p) => (
                   <li key={p.id}>
-                    <Link href={`/people/${p.id}`} className="press flex items-center gap-3 p-3 rounded-[16px] bg-surface hover:bg-surface-2">
+                    <Link href={`/presence/${p.id}`} className="press flex items-center gap-3 p-3 rounded-[16px] bg-surface hover:bg-surface-2">
                       <PersonAvatar person={p} size={40} />
                       <span className="flex-1 font-ui text-[15px] font-semibold text-ink">{p.name}</span>
                       <span className="inline-flex items-center gap-1.5 font-ui text-[13px] font-semibold text-saffron">
@@ -231,7 +231,7 @@ function TodayPractices({ date }: { date: string }) {
       <SectionHead
         title="Today's practices"
         action={
-          <Link href="/tracker" className="font-ui text-[13px] font-semibold text-accent hover:underline tabular">
+          <Link href="/sadhana" className="font-ui text-[13px] font-semibold text-accent hover:underline tabular">
             {practices.length ? `${kept} of ${practices.length} · Open tracker` : "Open tracker"}
           </Link>
         }
@@ -239,7 +239,7 @@ function TodayPractices({ date }: { date: string }) {
       {isLoading ? (
         <ListSkeleton kind="practice" count={5} />
       ) : practices.length === 0 ? (
-        <Link href="/tracker" className="block rounded-[16px] bg-surface p-4 font-ui text-[14px] text-ink-soft hover:bg-surface-2">
+        <Link href="/sadhana" className="block rounded-[16px] bg-surface p-4 font-ui text-[14px] text-ink-soft hover:bg-surface-2">
           Add the practices you keep, and tick them here each day.
         </Link>
       ) : (

@@ -9,7 +9,7 @@ import { OFFLINE_PAGE, OFFLINE_SCREENS, OFFLINE_TEMPLATES, PAGES_CACHE, PHOTOS_C
  * scripts and styles (even ones loaded only when needed, like the moment form) are on the
  * device; old versions are cleaned up on update.
  *  - pages: network first (a few seconds), else the saved copy, kept by path (so
- *    /today?source=pwa opens /today); every screen is saved ahead on start and when the app
+ *    /home?source=pwa opens /home); every screen is saved ahead on start and when the app
  *    asks; a moment or person page falls back to its template; else a plain offline page
  *  - a person's own photos from /api/media: kept on the device (whole-file images only)
  *  - images and fonts: cache first
@@ -140,14 +140,14 @@ self.addEventListener("push", (event) => {
       tag: msg.tag,
       // `renotify` isn't in every TypeScript lib yet.
       ...({ renotify: !!msg.tag } as object),
-      data: { url: msg.url || "/today", id: msg.id },
+      data: { url: msg.url || "/home", id: msg.id },
     })
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || "/today", self.location.origin).href;
+  const target = new URL(event.notification.data?.url || "/home", self.location.origin).href;
   const id = event.notification.data?.id;
   event.waitUntil(
     (async () => {

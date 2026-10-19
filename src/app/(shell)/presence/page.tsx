@@ -55,7 +55,7 @@ export default function PeoplePage() {
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {shown.map((p) => (
             <li key={p.id}>
-              <Link href={`/people/${p.id}`} className="press flex items-center gap-3.5 p-3.5 rounded-[18px] bg-surface hover:bg-surface-2 transition-colors">
+              <Link href={`/presence/${p.id}`} className="press flex items-center gap-3.5 p-3.5 rounded-[18px] bg-surface hover:bg-surface-2 transition-colors">
                 <PersonAvatar person={p} size={52} />
                 <span className="flex-1 min-w-0">
                   <span className="block font-ui text-[15.5px] font-semibold text-ink truncate">{p.name}</span>

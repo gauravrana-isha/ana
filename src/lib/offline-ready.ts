@@ -62,7 +62,7 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
       .sort((a, b) => String(b.occurredAt).localeCompare(String(a.occurredAt)))
       .slice(0, RECENT_MOMENTS)
       .map((m) => `/expressions/${m.id}`);
-    const personIds = (Array.isArray(people) ? people : []).slice(0, MAX_PEOPLE).map((p) => `/people/${p.id}`);
+    const personIds = (Array.isArray(people) ? people : []).slice(0, MAX_PEOPLE).map((p) => `/presence/${p.id}`);
 
     // Every screen saved ahead by the service worker, with its code. Counted done only once
     // the worker says so (an older worker, mid-update, can't, and then it's asked again).

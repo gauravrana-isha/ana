@@ -9,15 +9,15 @@ test.describe("offline", () => {
   test("every screen opens offline, as itself", async ({ page, context }) => {
     await context.setOffline(true);
     for (const [path, heading] of [
-      ["/tracker", "Tracker"],
+      ["/sadhana", "Sadhana"],
       ["/daily", "Daily reflection"],
       ["/weekly", "Weekly"],
       ["/expressions", "Expressions"],
-      ["/people", "People"],
-      ["/commitment", "My commitment"],
+      ["/presence", "Presence"],
+      ["/sankalpa", "Sankalpa"],
       ["/insights", "Insights"],
       ["/profile", "Profile"],
-      ["/today?source=pwa", "Today"],
+      ["/home?source=pwa", "Home"],
     ]) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 }).first(), path).toContainText(heading);
@@ -27,7 +27,7 @@ test.describe("offline", () => {
 
   test("moving between screens works offline (tab bar)", async ({ page, context }) => {
     await context.setOffline(true);
-    for (const name of ["Tracker", "Expressions", "Today"]) {
+    for (const name of ["Sadhana", "Expressions", "Home"]) {
       await page.locator("nav a:visible", { hasText: new RegExp(`^${name}$`) }).first().click();
       await expect(page.getByRole("heading", { level: 1 }).first()).toContainText(name);
     }
@@ -59,12 +59,12 @@ test.describe("offline", () => {
     await expect(page.getByText("Written offline, by the river.").first()).toBeVisible();
 
     // A person, added offline, opens offline.
-    await page.goto("/people");
+    await page.goto("/presence");
     await page.getByText("Add a person").first().click();
     await page.getByPlaceholder("Their name").fill("Met Offline");
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await page.getByText("Met Offline").first().click();
-    await expect(page).toHaveURL(/\/people\/c/);
+    await expect(page).toHaveURL(/\/presence\/c/);
 
     // A practice from the library, and a tick.
     await page.goto("/profile/practices");
@@ -74,13 +74,13 @@ test.describe("offline", () => {
     // A person sees it added (✓) before moving on.
     await expect(page.getByRole("button", { name: "Remove Isha Kriya" }).first()).toBeVisible();
     await page.keyboard.press("Escape");
-    await page.goto("/tracker");
+    await page.goto("/sadhana");
     await page.getByRole("button", { name: "Isha Kriya done" }).click();
 
     expect(await outbox(page)).toEqual(expect.arrayContaining(["POST /api/expressions", "POST /api/people", "POST /api/practices"]));
 
     // Back online: the saves go out, counted down.
-    await page.goto("/today");
+    await page.goto("/home");
     await context.setOffline(false);
     await expect(page.getByText("Everything’s in your journal")).toBeVisible({ timeout: 30_000 });
     await expect.poll(() => outbox(page)).toEqual([]);
@@ -102,6 +102,14 @@ test.describe("offline", () => {
     await pullDown(page);
     await expect(page.getByText("No connection · this is everything on your phone")).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { marker: number }).marker)).toBe(1);
+  });
+
+  test("old addresses (Today, Tracker, Commitment, People) lead to the new screens", async ({ page }) => {
+    for (const [from, to] of [["/today", "/home"], ["/tracker", "/sadhana"], ["/commitment", "/sankalpa"], ["/people", "/presence"]]) {
+      const res = await page.request.get(from, { maxRedirects: 0 });
+      expect(res.status(), from).toBe(308);
+      expect(res.headers().location, from).toBe(to);
+    }
   });
 
   test("Access says it needs a connection", async ({ page, context }) => {

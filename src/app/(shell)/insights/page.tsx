@@ -79,7 +79,7 @@ function MonthWeave({ data }: { data: InsightsData }) {
   if (data.practices.length === 0) {
     return (
       <Section title={label}>
-        <Link href="/tracker" className="block rounded-[16px] bg-surface p-4 font-ui text-[14px] text-ink-soft hover:bg-surface-2">
+        <Link href="/sadhana" className="block rounded-[16px] bg-surface p-4 font-ui text-[14px] text-ink-soft hover:bg-surface-2">
           Add your practices in the tracker and their month will appear here.
         </Link>
       </Section>
@@ -220,7 +220,7 @@ function PeopleBars({ rows }: { rows: InsightsData["people"] }) {
         <ul className="rounded-[20px] bg-surface p-4 sm:p-5 flex flex-col gap-3">
           {rows.map((r) => (
             <li key={r.id}>
-              <Link href={`/people/${r.id}`} className="group grid grid-cols-[auto_minmax(0,9rem)_1fr_auto] items-center gap-3 rounded-[10px]">
+              <Link href={`/presence/${r.id}`} className="group grid grid-cols-[auto_minmax(0,9rem)_1fr_auto] items-center gap-3 rounded-[10px]">
                 <PersonAvatar person={r} size={30} />
                 <span className="font-ui text-[14px] font-semibold text-ink truncate group-hover:underline">{r.name}</span>
                 <span className="h-2 rounded-full bg-surface-2 overflow-hidden" aria-hidden="true">

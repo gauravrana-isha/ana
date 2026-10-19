@@ -196,7 +196,7 @@ export function MomentCard({ moment, onEdit, hidePersonId, folded = false }: { m
       {(people.length > 0 || moment.stamps.length > 0) && (
         <footer className="mt-3 flex flex-wrap items-center gap-1.5">
           {people.map((p) => (
-            <Link key={p.id} href={`/people/${p.id}`} className="press relative z-10 inline-flex items-center gap-1.5 h-8 pl-1 pr-3 rounded-full bg-bg hover:bg-surface-2">
+            <Link key={p.id} href={`/presence/${p.id}`} className="press relative z-10 inline-flex items-center gap-1.5 h-8 pl-1 pr-3 rounded-full bg-bg hover:bg-surface-2">
               <PersonAvatar person={p} size={24} />
               <span className="font-ui text-[13px] font-semibold text-ink">{p.name}</span>
             </Link>

@@ -110,7 +110,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
           {moment.people.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {moment.people.map((p) => (
-                <Link key={p.id} href={`/people/${p.id}`} className="press inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-full bg-surface hover:bg-surface-2">
+                <Link key={p.id} href={`/presence/${p.id}`} className="press inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-full bg-surface hover:bg-surface-2">
                   <PersonAvatar person={p} size={28} />
                   <span className="font-ui text-[14px] font-semibold text-ink">{p.name}</span>
                 </Link>

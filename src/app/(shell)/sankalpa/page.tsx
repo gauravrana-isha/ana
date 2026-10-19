@@ -127,7 +127,7 @@ export default function CommitmentPage() {
                 }
               }}
               placeholder="Dear me,"
-              aria-label="Your commitment"
+              aria-label="Your sankalpa"
               className="w-full pr-9 bg-transparent resize-none outline-none focus-visible:outline-none font-serif text-[18px] leading-[1.75] text-ink placeholder:text-ink-soft/60 placeholder:italic"
             />
           </div>
@@ -202,7 +202,7 @@ export default function CommitmentPage() {
       <Sheet
         open={introOpen}
         onClose={closeIntro}
-        title="Your commitment"
+        title="Your sankalpa"
         footer={<div className="flex justify-end"><Button onClick={editing ? begin : closeIntro}>{editing ? "Begin the letter" : "Close"}</Button></div>}
       >
         <div className="flex flex-col gap-5">
@@ -233,8 +233,8 @@ function AboutButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      aria-label="About your commitment"
-      title="About your commitment"
+      aria-label="About your sankalpa"
+      title="About your sankalpa"
       className="press absolute z-10 top-3 right-3 sm:top-4 sm:right-4 grid place-items-center w-9 h-9 rounded-full text-ink-soft/60 hover:text-ink hover:bg-bg/70 transition-colors"
     >
       <InfoMark size={20} />

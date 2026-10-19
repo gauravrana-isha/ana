@@ -18,14 +18,14 @@ export interface SectionDef {
 }
 
 export const SECTIONS = {
-  today: { label: "Today", href: "/today", description: "A calm start: the day's quote, your practices, and moments coming back to you." },
+  today: { label: "Home", href: "/home", description: "A calm start: the day's quote, and what your bundles bring to the day." },
   insights: { label: "Insights", href: "/insights", description: "Gentle patterns in what you keep. Never scores." },
-  tracker: { label: "Tracker", href: "/tracker", description: "Log your daily practices: time, count, minutes, done." },
+  tracker: { label: "Sadhana", href: "/sadhana", description: "Log your daily practices: time, count, minutes, done." },
   daily: { label: "Daily", href: "/daily", description: "A few quiet prompts at the end of each day." },
   weekly: { label: "Weekly", href: "/weekly", description: "Look back on the week, including seva, with a week in review beside it." },
-  commitment: { label: "Commitment", href: "/commitment", description: "A letter to yourself about what you're committing to, read again when you choose." },
+  commitment: { label: "Sankalpa", href: "/sankalpa", description: "Your sankalpa: a letter to yourself about what you're committing to, read again when you choose." },
   expressions: { label: "Expressions", href: "/expressions", description: "Moments worth keeping: writing, voice, video and photos, with the date and time." },
-  people: { label: "People", href: "/people", description: "The people in your life, and every moment you've shared with them." },
+  people: { label: "Presence", href: "/presence", description: "Everyone and everything you meet with attention, and the moments with them." },
 } as const satisfies Record<string, SectionDef>;
 
 export type SectionKey = keyof typeof SECTIONS;

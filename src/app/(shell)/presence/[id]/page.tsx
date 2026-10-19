@@ -58,7 +58,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
     onScreen.personGone(id);
     qc.invalidateQueries({ queryKey: ["people"] });
     qc.invalidateQueries({ queryKey: ["moments"] });
-    router.replace("/people");
+    router.replace("/presence");
   }
 
   if (isLoading) return <PersonSkeleton />;
@@ -66,7 +66,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
     return (
       <div className="py-16 text-center">
         <p className="font-ui text-[15px] text-ink-soft">This person isn&rsquo;t in your journal.</p>
-        <Link href="/people" className="inline-block mt-4 font-ui text-[14px] font-semibold text-accent">Back to People</Link>
+        <Link href="/presence" className="inline-block mt-4 font-ui text-[14px] font-semibold text-accent">Back to Presence</Link>
       </div>
     );
   }
@@ -78,7 +78,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
     <div data-bare>
       {/* A full page, like a moment: back, Edit and Remove float at the top. */}
       {person.photoId && <PhotoViewer photos={[person.photoId]} index={viewing ? 0 : null} onIndex={(i) => setViewing(i !== null)} />}
-      <DetailBar backTo="/people" backLabel="Back to people" what="person" deleteWord="Remove" onEdit={() => setEditing(true)} onDelete={remove} />
+      <DetailBar backTo="/presence" backLabel="Back to Presence" what="person" deleteWord="Remove" onEdit={() => setEditing(true)} onDelete={remove} />
 
       <section inert={removing} aria-busy={removing || undefined} className={cn("relative rounded-[22px] bg-surface p-5 sm:p-6 transition-opacity", removing && "opacity-60")}>
         <BusyBar show={removing} className="absolute top-0 inset-x-6" />

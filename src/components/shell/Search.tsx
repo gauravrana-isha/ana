@@ -214,7 +214,7 @@ export function SearchDialog() {
     [
       { key: "all", label: "All", on: true },
       { key: "moments", label: "Moments", on: has("expressions") },
-      { key: "people", label: "People", on: has("people") },
+      { key: "people", label: "Presence", on: has("people") },
       { key: "reflections", label: "Reflections", on: has("daily") || has("weekly") },
     ] as const
   ).filter((f) => f.on);
@@ -244,7 +244,7 @@ export function SearchDialog() {
   const items = [
     ...sections.map((p) => p.href),
     ...actions.map((p) => p.href),
-    ...people.map((p) => `/people/${p.id}`),
+    ...people.map((p) => `/presence/${p.id}`),
     ...moments.map((m) => `/expressions/${m.id}`),
     ...reflections.map((r) => r.href),
   ];
@@ -384,11 +384,11 @@ export function SearchDialog() {
         );
       })}
 
-      {people.length > 0 && <Group title="People" />}
+      {people.length > 0 && <Group title="Presence" />}
       {people.map((p) => {
         const i = ++idx;
         return (
-          <button key={p.id} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(`/people/${p.id}`)} className={row(i)}>
+          <button key={p.id} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(`/presence/${p.id}`)} className={row(i)}>
             <PersonAvatar person={p} size={36} />
             <span className="min-w-0">
               <span className="block font-ui text-[14.5px] font-semibold text-ink truncate">{p.name}</span>

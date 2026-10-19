@@ -70,7 +70,7 @@ export function OnThisPhone() {
   const stats: [string, string][] = copy
     ? [
         ["Moments", String(copy.moments)],
-        ["People", String(copy.people)],
+        ["Presence", String(copy.people)],
         ["Photos", String(copy.photos)],
         ["Screens", String(copy.screens)],
         ["Space used", copy.bytes === null ? "—" : formatBytes(copy.bytes)],

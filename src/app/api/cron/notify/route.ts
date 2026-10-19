@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
     });
     if (!claimed.count) return;
     try {
-      const made = await notify({ userId: c.userId, kind: "commitment", key: `commitment:${c.id}:${period}`, title: "Your commitment", body: "Time to read your letter again.", url: "/commitment" });
+      const made = await notify({ userId: c.userId, kind: "commitment", key: `commitment:${c.id}:${period}`, title: "Your sankalpa", body: "Time to read your letter again.", url: "/sankalpa" });
       if (made) sent.commitments++;
     } catch (e) {
       await db.commitment.update({ where: { id: c.id }, data: { remindedAt: c.remindedAt } }).catch(() => {});
@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
       key: `birthday:${p.id}:${local.year}`,
       title: "A birthday today",
       body: "Someone in your journal has a birthday today.",
-      url: `/people/${p.id}`,
+      url: `/presence/${p.id}`,
       expiresAt: new Date(now.getTime() + (48 - local.hour) * 60 * 60 * 1000),
     });
     if (made) sent.birthdays++;

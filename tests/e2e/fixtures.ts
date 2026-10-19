@@ -15,12 +15,12 @@ export const test = base.extend<{ page: Page }>({
   page: async ({ page, context, baseURL }, provide) => {
     await context.addInitScript(() => sessionStorage.setItem("ana-splash", "1"));
     await context.addCookies([{ name: "authjs.session-token", value: SESSION_TOKEN, url: baseURL! }]);
-    await page.goto("/today");
+    await page.goto("/home");
     await page.getByText("Unlock your journal").waitFor();
     await page.getByRole("button", { name: /Use your recovery words/ }).click();
     await page.getByLabel("Word 1", { exact: true }).fill(readFileSync(PHRASE_FILE, "utf8").trim());
     await page.getByRole("button", { name: "Unlock" }).click();
-    await expect(page.getByRole("heading", { name: "Today", exact: true })).toBeAttached();
+    await expect(page.getByRole("heading", { name: "Home", exact: true })).toBeAttached();
     await readyOffline(page);
     await provide(page);
   },

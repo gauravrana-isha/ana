@@ -21,7 +21,7 @@ export function ErrorScreen({ error, reset, fullScreen = false }: { error: Error
           <button type="button" onClick={reset} className="press inline-flex items-center h-11 px-5 rounded-full bg-accent text-bg font-ui text-[14.5px] font-semibold hover:bg-accent/90">
             Try again
           </button>
-          <a href="/today" className="press inline-flex items-center h-11 px-5 rounded-full bg-surface text-ink font-ui text-[14.5px] font-semibold hover:bg-surface-2">
+          <a href="/home" className="press inline-flex items-center h-11 px-5 rounded-full bg-surface text-ink font-ui text-[14.5px] font-semibold hover:bg-surface-2">
             Go to Today
           </a>
         </div>

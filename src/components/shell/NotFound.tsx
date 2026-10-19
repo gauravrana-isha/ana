@@ -20,12 +20,12 @@ export function NotFound({ fullScreen = false }: { fullScreen?: boolean }) {
           It may have moved, or the link has a small mistake. Your journal is just as you left it.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
-          <Link href="/today" className="press inline-flex items-center h-11 px-5 rounded-full bg-accent text-bg font-ui text-[14.5px] font-semibold hover:bg-accent/90">
+          <Link href="/home" className="press inline-flex items-center h-11 px-5 rounded-full bg-accent text-bg font-ui text-[14.5px] font-semibold hover:bg-accent/90">
             Go to Today
           </Link>
           <button
             type="button"
-            onClick={() => (window.history.length > 1 ? router.back() : router.push("/today"))}
+            onClick={() => (window.history.length > 1 ? router.back() : router.push("/home"))}
             className="press inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-surface text-ink font-ui text-[14.5px] font-semibold hover:bg-surface-2"
           >
             <BackMark size={16} /> Go back

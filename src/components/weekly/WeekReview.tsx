@@ -158,7 +158,7 @@ export function WeekReview({ weekStart, weekRange }: { weekStart: string; weekRa
           {data.people.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-3">
               {data.people.map((p) => (
-                <Link key={p.id} href={`/people/${p.id}`} className="press inline-flex items-center gap-1.5 h-8 pl-1 pr-3 rounded-full bg-bg hover:bg-surface-2">
+                <Link key={p.id} href={`/presence/${p.id}`} className="press inline-flex items-center gap-1.5 h-8 pl-1 pr-3 rounded-full bg-bg hover:bg-surface-2">
                   <PersonAvatar person={p} size={24} />
                   <span className="font-ui text-[13px] font-semibold text-ink">{p.name}</span>
                   {p.count > 1 && <span className="font-ui text-[12px] text-ink-soft tabular">×{p.count}</span>}

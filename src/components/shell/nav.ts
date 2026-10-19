@@ -8,18 +8,18 @@ export interface NavItem {
 }
 
 /** Reading pages opened from a list: no page header, they bring their own back and ⋯. */
-export const BARE_PAGES = ["/expressions/", "/people/", "/profile/"];
+export const BARE_PAGES = ["/expressions/", "/presence/", "/profile/"];
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/today": "Today",
-  "/tracker": "Tracker",
+  "/home": "Home",
+  "/sadhana": "Sadhana",
   "/daily": "Daily reflection",
   "/weekly": "Weekly",
   "/expressions/": "Moment",
   "/expressions": "Expressions",
-  "/people": "People",
+  "/presence": "Presence",
   "/insights": "Insights",
-  "/commitment": "My commitment",
+  "/sankalpa": "Sankalpa",
   "/profile/who": "Who am I?",
   "/profile": "Profile",
   "/admin": "People & access",

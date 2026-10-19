@@ -55,8 +55,8 @@ function plan(qc: QueryClient, href: string): Planned[] {
   const day = { key: keys.day(date), fn: () => fetchDay(date) };
   const quote = { key: keys.quote(date), fn: json(`/api/quote?date=${date}`), fresh: 60 * 60_000 };
 
-  if (href.startsWith("/today")) return [me, { key: ["today", date], fn: () => fetchToday(date) }, quote, practices, day];
-  if (href.startsWith("/tracker")) {
+  if (href.startsWith("/home")) return [me, { key: ["today", date], fn: () => fetchToday(date) }, quote, practices, day];
+  if (href.startsWith("/sadhana")) {
     // The week grid is only fetched in week view, so only prefetch it there.
     const weekly = stored("tracker.view", "daily") === "weekly";
     return [practices, day, quote, ...(weekly ? [{ key: ["week", week], fn: () => fetchWeek(week) }] : [])];
@@ -69,9 +69,9 @@ function plan(qc: QueryClient, href: string): Planned[] {
       : [{ key: ["weekly", week], fn: () => fetchWeekly(week) }];
   }
   if (href.startsWith("/expressions")) return [{ key: ["moments", "all"], fn: () => syncMoments(qc.getQueryData(["moments", "all"])) }];
-  if (href.startsWith("/people")) return [{ key: ["people"], fn: () => fetchPeople() }];
+  if (href.startsWith("/presence")) return [{ key: ["people"], fn: () => fetchPeople() }];
   if (href.startsWith("/insights")) return [{ key: ["insights", date], fn: () => fetchInsights(date) }];
-  if (href.startsWith("/commitment")) return [{ key: ["commitment"], fn: fetchCommitment }];
+  if (href.startsWith("/sankalpa")) return [{ key: ["commitment"], fn: fetchCommitment }];
   if (href.startsWith("/profile/who")) return [me, { key: ["portraits"], fn: () => fetchPortraits() }];
   if (href.startsWith("/profile")) return [me, practices, { key: ["portraits"], fn: () => fetchPortraits() }, { key: ["profile-stats", date], fn: () => fetchProfileStats(date) }];
   if (href.startsWith("/admin")) return [{ key: ["admin-users"], fn: json("/api/admin/users") }];
