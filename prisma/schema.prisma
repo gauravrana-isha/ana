@@ -249,6 +249,8 @@ model Person {
   /// Birthday, sealed; `birthdayMD` ("MM-DD", no year, no name) is all the server keeps, for the morning reminder.
   birthdaySealed String?
   birthdayMD     String?
+  /// What it is (a person, food, water, earth, a thing, an act…), sealed. Empty: a person.
+  kind           String?
   photoId        String?            @unique
   photo          Attachment?        @relation("PersonPhoto", fields: [photoId], references: [id], onDelete: SetNull)
   createdAt      DateTime           @default(now())

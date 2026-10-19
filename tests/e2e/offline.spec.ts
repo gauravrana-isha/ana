@@ -60,9 +60,9 @@ test.describe("offline", () => {
 
     // A person, added offline, opens offline.
     await page.goto("/presence");
-    await page.getByText("Add a person").first().click();
+    await page.getByRole("button", { name: "Add", exact: true }).first().click();
     await page.getByPlaceholder("Their name").fill("Met Offline");
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Add", exact: true }).click();
     await page.getByText("Met Offline").first().click();
     await expect(page).toHaveURL(/\/presence\/c/);
 

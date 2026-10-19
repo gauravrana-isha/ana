@@ -15,6 +15,8 @@ import { today } from "@/lib/dates";
 import { savePerson } from "@/lib/journal";
 import { MomentGlyph } from "@/components/art/MomentIcon";
 import { onScreen } from "@/lib/on-screen";
+import { PRESENCE_KINDS, kindDef, presenceKind, type PresenceKind } from "@/lib/presence";
+import { PresenceMark } from "./PresenceMark";
 
 export interface PersonDetail {
   id: string;
@@ -23,6 +25,7 @@ export interface PersonDetail {
   howMet: string | null;
   birthday: string | null;
   notes: string | null;
+  kind?: string | null;
   photoId: string | null;
   momentCount: number;
   lastMomentAt: string | null;
@@ -32,12 +35,17 @@ const RELATIONS = ["Family", "Friend", "Seva", "Teacher", "Colleague", "Neighbou
 
 const field = "mt-2 w-full h-12 px-4 rounded-[14px] bg-surface-2 text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/80";
 
-/** Add or edit a person. Returns the saved id through onSaved. */
+/**
+ * Add to Presence, or edit: first what it is (a person, food, water, the earth, a thing, an act,
+ * something else), then its name and photo. Only a person has a relation, a birthday and how
+ * you met. Returns the saved id through onSaved.
+ */
 export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; onClose: () => void; person?: PersonDetail | null; onSaved?: (id: string) => void }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: me } = useMe();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [kind, setKind] = useState<PresenceKind>("person");
   const [name, setName] = useState("");
   const [relation, setRelation] = useState("");
   const [howMet, setHowMet] = useState("");
@@ -52,6 +60,7 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
   if (openKey !== lastKey) {
     setLastKey(openKey);
     if (openKey) {
+      setKind(presenceKind(person?.kind));
       setName(person?.name ?? "");
       setRelation(person?.relation ?? "");
       setHowMet(person?.howMet ?? "");
@@ -68,17 +77,20 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
     try {
       let photoId: string | undefined;
       if (photo) photoId = (await uploadMedia(photo.blob, "photo", { userId: me.id, storage: me.storage, thumbnail: false })).id;
+      const isPerson = kind === "person";
       const saved = await savePerson(person ?? null, {
         name: name.trim(),
-        relation: relation.trim() || null,
-        howMet: howMet.trim() || null,
-        birthday: birthday || null,
+        // Only a person has these.
+        relation: isPerson ? relation.trim() || null : null,
+        howMet: isPerson ? howMet.trim() || null : null,
+        birthday: isPerson ? birthday || null : null,
         notes: notes.trim() || null,
+        kind: isPerson ? null : kind,
         ...(photoId ? { photoId } : {}),
       });
       if (saved.queued) {
         // Offline: show them now; they're saved when the connection is back.
-        onScreen.person({ id: saved.id, name: name.trim(), relation: relation.trim() || null, photoId: photoId ?? person?.photoId ?? null, momentCount: 0, lastMomentAt: null });
+        onScreen.person({ id: saved.id, name: name.trim(), relation: kind === "person" ? relation.trim() || null : null, kind: kind === "person" ? null : kind, photoId: photoId ?? person?.photoId ?? null, momentCount: 0, lastMomentAt: null });
       } else {
         void Promise.all([qc.invalidateQueries({ queryKey: ["people"] }), qc.invalidateQueries({ queryKey: ["person"] })]);
       }
@@ -97,7 +109,7 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
     <Sheet
       open={open}
       onClose={() => !saving && onClose()}
-      title={person ? "Edit person" : "Add a person"}
+      title={person ? "Edit" : "Add to Presence"}
       busy={saving}
       footer={
         <div className="flex justify-end gap-3">
@@ -107,13 +119,36 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
       }
     >
       <div className="flex flex-col gap-5">
+        <div role="radiogroup" aria-label="What is it?">
+          <span className="font-ui text-[13px] font-semibold text-ink">What is it?</span>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {PRESENCE_KINDS.map((k) => {
+              const on = kind === k.key;
+              return (
+                <button
+                  key={k.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  title={k.hint}
+                  onClick={() => setKind(k.key)}
+                  className={`press inline-flex items-center gap-1.5 h-9 pl-2.5 pr-3.5 rounded-full font-ui text-[13px] font-semibold border transition-colors ${on ? "bg-accent text-bg border-accent" : "border-line text-ink-soft hover:text-ink"}`}
+                >
+                  <PresenceMark kind={k.key} size={17} />
+                  {k.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="flex items-center gap-4">
           <button type="button" onClick={() => fileRef.current?.click()} className="press relative rounded-full" aria-label="Choose a photo">
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={preview} alt="" className="w-20 h-20 rounded-full object-cover" />
             ) : (
-              <PersonAvatar person={{ name: name || "?", photoId: person?.photoId ?? null }} size={80} />
+              <PersonAvatar person={{ name: name || "?", photoId: person?.photoId ?? null, kind }} size={80} />
             )}
             <span className="absolute -bottom-0.5 -right-0.5 grid place-items-center w-8 h-8 rounded-full bg-accent text-bg border-[3px] border-bg">
               <MomentGlyph kind="photo" size={16} />
@@ -123,10 +158,12 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
           <PhotoCropper file={picked} onCancel={() => setPicked(null)} onDone={(blob) => { setPicked(null); setPhoto({ blob, url: URL.createObjectURL(blob) }); }} />
           <label className="flex-1">
             <span className="font-ui text-[13px] font-semibold text-ink">Name</span>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} className={field} placeholder="Their name" />
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} className={field} placeholder={kindDef(kind).example} />
           </label>
         </div>
 
+        {kind === "person" && (
+        <>
         <div>
           <span className="font-ui text-[13px] font-semibold text-ink">Who they are to you</span>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -148,10 +185,12 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
           <span className="font-ui text-[13px] font-semibold text-ink">Birthday <span className="font-normal text-ink-soft">(optional)</span></span>
           <div className="mt-2"><DateField label="Birthday" value={birthday} max={today()} clearable placeholder="Add their birthday" onChange={setBirthday} /></div>
         </div>
+        </>
+        )}
 
         <label className="block">
           <span className="font-ui text-[13px] font-semibold text-ink">Notes <span className="font-normal text-ink-soft">(optional)</span></span>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value.slice(0, 4000))} rows={4} placeholder="Anything you want to remember about them" className="mt-2 w-full px-4 py-3 rounded-[14px] bg-surface-2 text-ink font-ui text-[16px] leading-[1.55] outline-none border border-transparent focus:border-accent resize-none placeholder:text-ink-soft/80" />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value.slice(0, 4000))} rows={4} placeholder={kind === "person" ? "Anything you want to remember about them" : "Anything you want to remember"} className="mt-2 w-full px-4 py-3 rounded-[14px] bg-surface-2 text-ink font-ui text-[16px] leading-[1.55] outline-none border border-transparent focus:border-accent resize-none placeholder:text-ink-soft/80" />
         </label>
       </div>
     </Sheet>

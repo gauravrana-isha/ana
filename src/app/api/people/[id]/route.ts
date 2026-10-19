@@ -15,6 +15,7 @@ const PatchSchema = z.object({
   birthday: sealed(500).nullable().optional(),
   birthdayMD: z.string().regex(/^\d{2}-\d{2}$/).nullable().optional(),
   notes: sealed(20_000).nullable().optional(),
+  kind: sealed(500).nullable().optional(),
   photoId: z.string().max(40).nullable().optional(),
 });
 
@@ -45,6 +46,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     howMet: p.howMet,
     birthday: p.birthdaySealed ?? p.birthday?.toISOString().slice(0, 10) ?? null,
     notes: p.notes,
+    kind: p.kind,
     photoId: p.photoId,
     momentCount: p._count.moments,
     lastMomentAt: last ? (last.expression.occurredAt ?? last.expression.date).toISOString() : null,
@@ -80,6 +82,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       howMet: d.howMet,
       ...(d.birthday !== undefined ? { birthdaySealed: d.birthday, birthday: null, birthdayMD: d.birthdayMD ?? null } : {}),
       notes: d.notes,
+      kind: d.kind,
       photoId,
     },
   });

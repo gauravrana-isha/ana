@@ -13,6 +13,8 @@ import { useToast } from "@/components/ui/Toast";
 import { PersonAvatar, usePeople } from "@/components/people/People";
 import { PhotoViewer } from "@/components/moments/PhotoViewer";
 import { PersonForm, type PersonDetail } from "@/components/people/PersonForm";
+import { PresenceMark } from "@/components/people/PresenceMark";
+import { kindDef, presenceKind } from "@/lib/presence";
 import { LazyMomentComposer } from "@/components/moments/LazyMomentComposer";
 import { MomentTimeline } from "@/components/moments/MomentCard";
 import { useMoments } from "@/lib/moments-client";
@@ -65,12 +67,14 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
   if (!person) {
     return (
       <div className="py-16 text-center">
-        <p className="font-ui text-[15px] text-ink-soft">This person isn&rsquo;t in your journal.</p>
+        <p className="font-ui text-[15px] text-ink-soft">This isn&rsquo;t in your journal.</p>
         <Link href="/presence" className="inline-block mt-4 font-ui text-[14px] font-semibold text-accent">Back to Presence</Link>
       </div>
     );
   }
 
+  const kind = presenceKind(person.kind);
+  const isPerson = kind === "person";
   const birthday = person.birthday ? new Date(person.birthday + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "long" }) : null;
   const openNew = (k: MomentKind) => setComposer({ open: true, moment: null, kind: k });
 
@@ -78,7 +82,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
     <div data-bare>
       {/* A full page, like a moment: back, Edit and Remove float at the top. */}
       {person.photoId && <PhotoViewer photos={[person.photoId]} index={viewing ? 0 : null} onIndex={(i) => setViewing(i !== null)} />}
-      <DetailBar backTo="/presence" backLabel="Back to Presence" what="person" deleteWord="Remove" onEdit={() => setEditing(true)} onDelete={remove} />
+      <DetailBar backTo="/presence" backLabel="Back to Presence" what={isPerson ? "person" : "entry"} deleteWord="Remove" onEdit={() => setEditing(true)} onDelete={remove} />
 
       <section inert={removing} aria-busy={removing || undefined} className={cn("relative rounded-[22px] bg-surface p-5 sm:p-6 transition-opacity", removing && "opacity-60")}>
         <BusyBar show={removing} className="absolute top-0 inset-x-6" />
@@ -93,10 +97,14 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
           )}
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-[24px] sm:text-[28px] font-semibold tracking-[-0.015em] text-ink leading-tight">{person.name}</h1>
-            {person.relation && <p className="font-ui text-[14px] text-ink-soft mt-0.5">{person.relation}</p>}
+            {isPerson ? (
+              person.relation && <p className="font-ui text-[14px] text-ink-soft mt-0.5">{person.relation}</p>
+            ) : (
+              <p className="font-ui text-[14px] text-ink-soft mt-0.5 inline-flex items-center gap-1.5"><PresenceMark kind={kind} size={16} /> {kindDef(kind).label}</p>
+            )}
             <p className="font-ui text-[13.5px] text-accent font-semibold mt-2">
               {person.lastMomentAt
-                ? `Last moment together ${timeAgo(person.lastMomentAt)} · ${person.momentCount} in all`
+                ? `${isPerson ? "Last moment together" : "Last moment"} ${timeAgo(person.lastMomentAt)} · ${person.momentCount} in all`
                 : "No moments yet"}
             </p>
           </div>
@@ -125,7 +133,7 @@ export default function PersonPage({ params }: { params: Promise<{ id: string }>
           <div className="flex flex-col items-center text-center py-10 gap-3">
             <Ornament name="divider" width={200} className="text-ink-soft/40" />
             <p className="font-serif italic text-[16px] text-ink-soft max-w-[320px]">
-              When you share something with {person.name.split(" ")[0]}, keep it here.
+              {isPerson ? `When you share something with ${person.name.split(" ")[0]}, keep it here.` : `When ${person.name} is with you, keep the moment here.`}
             </p>
           </div>
         ) : (

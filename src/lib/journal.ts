@@ -279,6 +279,8 @@ export interface PersonInput {
   howMet?: string | null;
   birthday?: string | null;
   notes?: string | null;
+  /** What it is, for anything that isn't a person (food, water…); null for a person. */
+  kind?: string | null;
   photoId?: string;
 }
 
@@ -297,8 +299,8 @@ export async function fetchPerson<T>(id: string): Promise<T | null> {
 export async function savePerson(existing: { id: string } | null, p: PersonInput) {
   const id = existing?.id ?? newId();
   const sealedFields = await sealFields(
-    { name: p.name, relation: p.relation, howMet: p.howMet, birthday: p.birthday, notes: p.notes },
-    ["name", "relation", "howMet", "birthday", "notes"]
+    { name: p.name, relation: p.relation, howMet: p.howMet, birthday: p.birthday, notes: p.notes, kind: p.kind },
+    ["name", "relation", "howMet", "birthday", "notes", "kind"]
   );
   const body = {
     ...(existing ? {} : { id }),

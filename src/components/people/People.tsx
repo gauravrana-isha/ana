@@ -8,11 +8,15 @@ import { CrossMark, PlusMark } from "@/components/art/PenMarks";
 import { fetchPeople, savePerson } from "@/lib/journal";
 import { StoredImg } from "@/components/moments/StoredMedia";
 import { onScreen } from "@/lib/on-screen";
+import { kindDef, presenceKind } from "@/lib/presence";
+import { PresenceMark } from "./PresenceMark";
 
 export interface PersonSummary {
   id: string;
   name: string;
   relation?: string | null;
+  /** What it is (see lib/presence); none: a person. */
+  kind?: string | null;
   photoId: string | null;
   momentCount?: number;
   lastMomentAt?: string | null;
@@ -33,7 +37,7 @@ function tone(name: string) {
   return TONES[Math.abs(h) % TONES.length];
 }
 
-export function PersonAvatar({ person, size = 36, className }: { person: Pick<PersonSummary, "name" | "photoId">; size?: number; className?: string }) {
+export function PersonAvatar({ person, size = 36, className }: { person: Pick<PersonSummary, "name" | "photoId"> & { kind?: string | null }; size?: number; className?: string }) {
   if (person.photoId) {
     return (
       <StoredImg
@@ -43,6 +47,15 @@ export function PersonAvatar({ person, size = 36, className }: { person: Pick<Pe
         className={cn("rounded-full object-cover shrink-0 bg-surface-2", className)}
         style={{ width: size, height: size }}
       />
+    );
+  }
+  // Anything that isn't a person, without a photo: its kind's mark.
+  const kind = presenceKind(person.kind);
+  if (kind !== "person") {
+    return (
+      <span aria-hidden="true" className={cn("rounded-full grid place-items-center shrink-0 text-white", className)} style={{ width: size, height: size, background: tone(person.name) }}>
+        <PresenceMark kind={kind} size={Math.round(size * 0.56)} />
+      </span>
     );
   }
   const initials = person.name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
@@ -172,8 +185,8 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
               onChange(value.slice(0, -1));
             }
           }}
-          placeholder={selected.length ? "Add someone else" : "Who was there?"}
-          aria-label="Add people"
+          placeholder={selected.length ? "Add another" : "Who or what was with you?"}
+          aria-label="Add who or what was with you"
           className="flex-1 min-w-[120px] h-9 px-2 bg-transparent outline-none focus-visible:outline-none font-ui text-[16px] text-ink placeholder:text-ink-soft/80"
         />
       </div>
@@ -189,7 +202,11 @@ export function PeoplePicker({ value, onChange }: { value: string[]; onChange: (
                 <PersonAvatar person={p} size={30} />
                 <span className="flex-1 min-w-0">
                   <span className="block font-ui text-[14px] font-semibold text-ink truncate">{p.name}</span>
-                  {p.relation && <span className="block font-ui text-[12.5px] text-ink-soft truncate">{p.relation}</span>}
+                  {presenceKind(p.kind) !== "person" ? (
+                    <span className="block font-ui text-[12.5px] text-ink-soft truncate">{kindDef(presenceKind(p.kind)).label}</span>
+                  ) : (
+                    p.relation && <span className="block font-ui text-[12.5px] text-ink-soft truncate">{p.relation}</span>
+                  )}
                 </span>
               </PickButton>
             </li>

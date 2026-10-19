@@ -16,6 +16,8 @@ const PersonFields = {
   /** "MM-DD" only (no year, no name), so the morning birthday note can go out. */
   birthdayMD: z.string().regex(/^\d{2}-\d{2}$/).nullable().optional(),
   notes: sealed(20_000).nullable().optional(),
+  /** What it is (a person, food, water…), sealed. */
+  kind: sealed(500).nullable().optional(),
   photoId: z.string().max(40).nullable().optional(),
 };
 const PersonSchema = z.object({ id: z.string().regex(/^[a-z0-9]{20,40}$/).optional(), ...PersonFields });
@@ -38,6 +40,7 @@ export async function GET() {
       id: true,
       name: true,
       relation: true,
+      kind: true,
       photoId: true,
       _count: { select: { moments: true } },
       moments: {
@@ -55,6 +58,7 @@ export async function GET() {
         id: p.id,
         name: p.name,
         relation: p.relation,
+        kind: p.kind,
         photoId: p.photoId,
         momentCount: p._count.moments,
         lastMomentAt: last ? (last.occurredAt ?? last.date).toISOString() : null,
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   // Sent again after a dropped connection: already here.
   if (d.id) {
-    const existing = await db.person.findFirst({ where: { id: d.id, userId: user.id }, select: { id: true, name: true, relation: true, photoId: true } });
+    const existing = await db.person.findFirst({ where: { id: d.id, userId: user.id }, select: { id: true, name: true, relation: true, kind: true, photoId: true } });
     if (existing) return NextResponse.json({ ...existing, momentCount: 0, lastMomentAt: null });
   }
 
@@ -92,9 +96,10 @@ export async function POST(req: NextRequest) {
       birthdaySealed: d.birthday ?? null,
       birthdayMD: d.birthdayMD ?? null,
       notes: d.notes ?? null,
+      kind: d.kind ?? null,
       photoId,
     },
-    select: { id: true, name: true, relation: true, photoId: true },
+    select: { id: true, name: true, relation: true, kind: true, photoId: true },
   });
   return NextResponse.json({ ...person, momentCount: 0, lastMomentAt: null }, { status: 201 });
 }
