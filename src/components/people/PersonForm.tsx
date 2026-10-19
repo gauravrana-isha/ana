@@ -17,6 +17,7 @@ import { MomentGlyph } from "@/components/art/MomentIcon";
 import { onScreen } from "@/lib/on-screen";
 import { PRESENCE_KINDS, kindDef, presenceKind, type PresenceKind } from "@/lib/presence";
 import { PresenceMark } from "./PresenceMark";
+import { AnimatePresence, motion } from "framer-motion";
 
 export interface PersonDetail {
   id: string;
@@ -132,10 +133,14 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
                   aria-checked={on}
                   title={k.hint}
                   onClick={() => setKind(k.key)}
-                  className={`press inline-flex items-center gap-1.5 h-9 pl-2.5 pr-3.5 rounded-full font-ui text-[13px] font-semibold border transition-colors ${on ? "bg-accent text-bg border-accent" : "border-line text-ink-soft hover:text-ink"}`}
+                  className={`press relative inline-flex items-center gap-1.5 h-9 pl-2.5 pr-3.5 rounded-full font-ui text-[13px] font-semibold border transition-colors duration-300 ${on ? "border-accent text-bg" : "border-line text-ink-soft hover:text-ink"}`}
                 >
-                  <PresenceMark kind={k.key} size={17} />
-                  {k.label}
+                  {/* One pill that slides to the chosen kind. */}
+                  {on && <motion.span layoutId="presence-kind" className="absolute -inset-px rounded-full bg-accent" transition={{ type: "spring", stiffness: 520, damping: 40 }} />}
+                  <span className="relative inline-flex items-center gap-1.5">
+                    <PresenceMark kind={k.key} size={17} />
+                    {k.label}
+                  </span>
                 </button>
               );
             })}
@@ -148,7 +153,11 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
               // eslint-disable-next-line @next/next/no-img-element
               <img src={preview} alt="" className="w-20 h-20 rounded-full object-cover" />
             ) : (
-              <PersonAvatar person={{ name: name || "?", photoId: person?.photoId ?? null, kind }} size={80} />
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span key={kind} className="block" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }} transition={{ duration: 0.22 }}>
+                  <PersonAvatar person={{ name: name || "?", photoId: person?.photoId ?? null, kind }} size={80} />
+                </motion.span>
+              </AnimatePresence>
             )}
             <span className="absolute -bottom-0.5 -right-0.5 grid place-items-center w-8 h-8 rounded-full bg-accent text-bg border-[3px] border-bg">
               <MomentGlyph kind="photo" size={16} />
@@ -162,8 +171,18 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
           </label>
         </div>
 
+        {/* A person's own fields fold in and out smoothly as the kind changes. */}
+        <AnimatePresence initial={false}>
         {kind === "person" && (
-        <>
+        <motion.div
+          key="person-fields"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ height: { type: "spring", stiffness: 380, damping: 38 }, opacity: { duration: 0.18 } }}
+          className="overflow-hidden -mx-1 px-1"
+        >
+        <div className="flex flex-col gap-5 pb-0.5">
         <div>
           <span className="font-ui text-[13px] font-semibold text-ink">Who they are to you</span>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -185,8 +204,10 @@ export function PersonForm({ open, onClose, person, onSaved }: { open: boolean; 
           <span className="font-ui text-[13px] font-semibold text-ink">Birthday <span className="font-normal text-ink-soft">(optional)</span></span>
           <div className="mt-2"><DateField label="Birthday" value={birthday} max={today()} clearable placeholder="Add their birthday" onChange={setBirthday} /></div>
         </div>
-        </>
+        </div>
+        </motion.div>
         )}
+        </AnimatePresence>
 
         <label className="block">
           <span className="font-ui text-[13px] font-semibold text-ink">Notes <span className="font-normal text-ink-soft">(optional)</span></span>
