@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { BARE_PAGES, PAGE_TITLES } from "./nav";
 import { InfoMark } from "@/components/art/PenMarks";
+import { BundleTitle } from "./BundleTitle";
 
 /** Pages that explain themselves on request: the ⓘ asks the page to open its help. */
 const HELP_PAGES: string[] = [];
@@ -10,8 +11,9 @@ export const HELP_EVENT = "ana:page-help";
 
 /**
  * The top of every section page: no title row (the tab bar and sidebar already show where you
- * are). Search and the bell sit on Today; pages with an explanation get a small ⓘ. Full-page
- * views (a moment, a person, a settings page) bring their own bar.
+ * are). Search and the bell sit on Home; pages with an explanation get a small ⓘ. Full-page
+ * views (a moment, a person, a settings page) bring their own bar. On phones, when each bundle
+ * is one tab, the title of a bundle's screen is shown: it's the way between its screens.
  */
 export function Topbar() {
   const pathname = usePathname();
@@ -46,6 +48,7 @@ export function Topbar() {
           </button>
         </div>
       )}
+      <BundleTitle />
     </>
   );
 }
