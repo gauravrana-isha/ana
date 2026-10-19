@@ -59,3 +59,22 @@ test.describe("Profile", () => {
     await expect(page.getByRole("heading", { name: "Practices", exact: true })).toBeVisible();
   });
 });
+
+test.describe("Insights", () => {
+  test("a section for each bundle, under its name", async ({ page }) => {
+    await page.goto("/insights");
+    for (const name of ["Sadhana", "Reflection", "Expressions"]) await expect(page.getByRole("heading", { name, level: 2 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Practice and mood together" })).toBeVisible();
+  });
+
+  test("with Reflection alone: only its section", async ({ page }) => {
+    await setBundles(page, ["reflection"]);
+    await page.goto("/insights");
+    await expect(page.getByRole("heading", { name: "Reflection", level: 2 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mood, the last eight weeks" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sadhana", level: 2 })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Expressions", level: 2 })).toHaveCount(0);
+    // Practice-and-mood needs both bundles.
+    await expect(page.getByRole("heading", { name: "Practice and mood together" })).toHaveCount(0);
+  });
+});

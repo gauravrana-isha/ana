@@ -16,6 +16,7 @@ import { BUNDLES, SECTIONS } from "@/lib/bundles";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Chevron } from "@/components/ui/Arrows";
+import { BackButton } from "@/components/ui/DetailBar";
 import { TickMark } from "@/components/tracker/FieldInput";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
@@ -115,6 +116,10 @@ export default function AdminPage() {
 
   return (
     <div>
+      {/* Reached from Profile on phones: the way back. */}
+      <div className="lg:hidden -mx-1 mb-4">
+        <BackButton to="/profile" label="Back to Profile" />
+      </div>
       {/* Access is the one page that needs a connection: approving, inviting and pausing
           happen on the server. What's shown offline may be out of date. */}
       {!online && (
