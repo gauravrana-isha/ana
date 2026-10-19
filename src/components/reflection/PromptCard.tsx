@@ -21,7 +21,7 @@ function fit(el: HTMLTextAreaElement) {
 }
 
 export function PromptCard({
-  number,
+
   question,
   hint,
   answer,
@@ -32,11 +32,7 @@ export function PromptCard({
 }: PromptCardProps) {
   return (
     <div className="rounded-[22px] p-5 sm:p-6 mb-3.5 bg-surface border border-line/70">
-      <span className="inline-flex items-center gap-2 font-ui text-[12px] font-semibold uppercase tracking-[0.09em] text-accent">
-        <span aria-hidden="true" className="w-4 h-[2px] rounded-full bg-accent/70" />
-        {number ? `Question ${number}` : "An earlier question"}
-      </span>
-      <p className="mt-2 font-display text-[19px] sm:text-[21px] font-semibold leading-[1.3] text-ink text-balance">{question}</p>
+      <p className="font-display text-[19px] sm:text-[21px] font-semibold leading-[1.3] text-ink text-balance">{question}</p>
       {hint && <p className="mt-1.5 font-serif italic text-[14.5px] text-ink-soft leading-[1.55]">{hint}</p>}
       <textarea
         className="mt-3 w-full bg-transparent resize-none px-0.5 font-serif text-[16.5px] leading-[28px] text-ink outline-none min-h-[56px] placeholder:italic placeholder:text-ink-soft/55"

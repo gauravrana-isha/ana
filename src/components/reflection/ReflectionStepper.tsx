@@ -18,13 +18,14 @@ interface Props {
   prompts: Prompt[];
   answers: Record<string, string>;
   stamps: Record<string, string[]>;
-  mood: string | null;
+  /** The day's mood, asked on a last card (Daily). Leave out for no mood card (Weekly). */
+  mood?: string | null;
   /** Step to open on (a question index, or prompts.length for the mood). */
   startAt: number;
   saving: boolean;
   onAnswer: (key: string, value: string) => void;
   onStamp: (key: string, stamp: string) => void;
-  onMood: (mood: string | null) => void;
+  onMood?: (mood: string | null) => void;
   /** Called on every step change, so answers are kept as you go. */
   onStep: () => void;
   onDone: () => void;
@@ -43,7 +44,8 @@ const SWIPE = 90;
  */
 export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, saving, onAnswer, onStamp, onMood, onStep, onDone }: Props) {
   const reduce = useReducedMotion();
-  const total = prompts.length + 1; // + mood
+  const withMood = mood !== undefined;
+  const total = prompts.length + (withMood ? 1 : 0);
   const [step, setStep] = useState(Math.min(Math.max(0, startAt), total - 1));
   const [dir, setDir] = useState(1);
   const drag = useDragControls();
@@ -135,15 +137,13 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
           >
             {isMood ? (
               <>
-                <CardEyebrow>The day, in one feeling</CardEyebrow>
-                <div className="mt-3 flex-1">
-                  <MoodPicker bare value={mood} onChange={onMood} />
+                <div className="flex-1">
+                  <MoodPicker bare value={mood ?? null} onChange={(m) => onMood?.(m)} />
                 </div>
               </>
             ) : (
               <>
-                <CardEyebrow>Question {step + 1}</CardEyebrow>
-                <h2 className="mt-2 font-display text-[23px] sm:text-[26px] font-semibold leading-[1.28] tracking-[-0.01em] text-ink text-balance">{prompt.q}</h2>
+                <h2 className="font-display text-[23px] sm:text-[26px] font-semibold leading-[1.28] tracking-[-0.01em] text-ink text-balance">{prompt.q}</h2>
                 {prompt.hint && <p className="mt-2 font-serif italic text-[15px] leading-[1.55] text-ink-soft">{prompt.hint}</p>}
                 <Lined
                   value={answers[prompt.key] ?? ""}
@@ -180,16 +180,6 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
         )}
       </div>
     </div>
-  );
-}
-
-/** The small line above a card's question, with an ink mark before it. */
-function CardEyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-2 font-ui text-[12px] font-semibold uppercase tracking-[0.09em] text-accent">
-      <span aria-hidden="true" className="w-4 h-[2px] rounded-full bg-accent/70" />
-      {children}
-    </span>
   );
 }
 

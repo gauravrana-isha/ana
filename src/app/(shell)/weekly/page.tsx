@@ -2,24 +2,22 @@
 
 import { usePersistentState } from "@/lib/persist";
 
-import { useState, useCallback, Suspense } from "react";
+import { useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { PromptCard } from "@/components/reflection/PromptCard";
+import { ReflectionStepper } from "@/components/reflection/ReflectionStepper";
 import { DatePicker } from "@/components/ui/DatePicker";
-import { ButtonLoader } from "@/components/ui/Loader";
 import { Busy } from "@/components/ui/Busy";
 import { WeekReview } from "@/components/weekly/WeekReview";
 import { weekStart as getWeekStart, today, addDays } from "@/lib/dates";
 import { fetchWeekly, saveWeekly } from "@/lib/journal";
 import { useMe } from "@/lib/me";
 import { readingQuestions, shownQuestions, type QuestionSets } from "@/lib/questions";
-import { EditMark } from "@/components/art/PenMarks";
-import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
-import { Portal } from "@/components/ui/Portal";
 import { onScreen } from "@/lib/on-screen";
+import { EditSaveFab } from "@/components/reflection/EditSaveFab";
 
 export default function WeeklyPage() {
   return (
@@ -51,12 +49,23 @@ function WeeklyContent() {
     queryFn: () => fetchWeekly(selectedWeekStart),
   });
 
+  // Each change counts up; a save's reply clears "unsaved" only if nothing changed meanwhile.
+  const edits = useRef(0);
   const mutation = useMutation({
-    mutationFn: (payload: { answers: Record<string, string>; stamps: Record<string, string[]> }) => saveWeekly(selectedWeekStart, payload),
-    // The reply is the saved reflection: show it directly; ask again only if saving failed.
-    onSuccess: (saved) => onScreen.weekly(selectedWeekStart, saved),
+    mutationFn: async ({ payload, version }: { payload: { answers: Record<string, string>; stamps: Record<string, string[]> }; version: number }) => ({
+      saved: await saveWeekly(selectedWeekStart, payload),
+      version,
+    }),
+    // The reply is the saved reflection: keep it as the cached copy without reading it back into
+    // the form (a late reply would undo anything changed since); ask again only if saving failed.
+    onSuccess: ({ saved, version }) => {
+      onScreen.weekly(selectedWeekStart, saved);
+      setSyncedFrom(qc.getQueryData(["weekly", selectedWeekStart]));
+      if (version === edits.current) setDirty(false);
+    },
     onError: () => qc.invalidateQueries({ queryKey: ["weekly", selectedWeekStart] }),
   });
+  const saveNow = () => mutation.mutate({ payload: { answers: localAnswers, stamps: localStamps }, version: edits.current });
 
   const answers: Record<string, string> = reflection?.answers ?? {};
 
@@ -78,6 +87,7 @@ function WeeklyContent() {
   const handleAnswerChange = useCallback(
     (key: string, val: string) => {
       setLocalAnswers(prev => ({ ...prev, [key]: val }));
+      edits.current++;
       setDirty(true);
     },
     []
@@ -92,6 +102,7 @@ function WeeklyContent() {
           : [...current, stamp];
         return { ...prev, [promptKey]: updated };
       });
+      edits.current++;
       setDirty(true);
     },
     []
@@ -119,15 +130,20 @@ function WeeklyContent() {
 
       {tab === "reflection" ? (
         <WeeklyReflectionView
+          key={selectedWeekStart}
+          loaded={!!reflection}
           questions={me?.questions ?? null}
           localAnswers={localAnswers}
           localStamps={localStamps}
           serverAnswers={answers}
+          serverStamps={reflection?.stamps ?? {}}
+          onCancel={() => setSyncedFrom(null)}
           dirty={dirty}
           isPending={mutation.isPending}
           onAnswerChange={handleAnswerChange}
           onStampToggle={handleStampToggle}
-          onSave={() => mutation.mutate({ answers: localAnswers, stamps: localStamps })}
+          onSave={saveNow}
+          onQuietSave={() => dirty && saveNow()}
         />
       ) : (
         <WeekReview weekStart={selectedWeekStart} weekRange={weekRange} />
@@ -137,6 +153,10 @@ function WeeklyContent() {
 }
 
 function WeeklyReflectionView({
+  loaded,
+  serverStamps,
+  onCancel,
+  onQuietSave,
   questions,
   localAnswers,
   localStamps,
@@ -156,10 +176,49 @@ function WeeklyReflectionView({
   onAnswerChange: (key: string, val: string) => void;
   onStampToggle: (key: string, stamp: string) => void;
   onSave: () => void;
+  onQuietSave: () => void;
+  loaded: boolean;
+  serverStamps: Record<string, string[]>;
+  onCancel: () => void;
 }) {
   const [editing, setEditing] = useState(true);
   const prompts = shownQuestions("weekly", questions);
-  const hasSavedData = Object.values(serverAnswers).some(v => v && v.trim().length > 0);
+  const hasSavedData = Object.values(serverAnswers).some((v) => v && v.trim().length > 0) || Object.values(serverStamps).some((v) => v.length > 0);
+  // A week not answered yet: one question at a time, as cards (decided once, when the week's
+  // copy arrives, and kept until Save, even as answers save between cards).
+  const [deck, setDeck] = useState<boolean | null>(null);
+  // Save pressed on the last card: the cards stay until that save lands, then it's read back.
+  const [finishing, setFinishing] = useState(false);
+  if (finishing && !isPending && !dirty) {
+    setFinishing(false);
+    setDeck(false);
+    setEditing(false);
+  }
+  if (deck === null && loaded) setDeck(!hasSavedData);
+  // Everything cleared and saved: the cards again, as for a week not yet answered.
+  if (deck === false && !finishing && loaded && !hasSavedData && !dirty && !editing && !isPending) setDeck(true);
+
+  if (deck) {
+    return (
+      <div className="pb-20">
+        <ReflectionStepper
+          prompts={prompts}
+          answers={localAnswers}
+          stamps={localStamps}
+          startAt={0}
+          // Saves between cards are quiet: they never hold up the next card.
+          saving={finishing}
+          onAnswer={onAnswerChange}
+          onStamp={onStampToggle}
+          onStep={onQuietSave}
+          onDone={() => {
+            onSave();
+            setFinishing(true);
+          }}
+        />
+      </div>
+    );
+  }
 
   // If saved and not dirty, show read-only view
   const showSavedView = hasSavedData && !dirty && !editing;
@@ -191,18 +250,7 @@ function WeeklyReflectionView({
           );
         })}
 
-        {/* Edit button */}
-        <Portal>
-          <button
-            onClick={() => setEditing(true)}
-            className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
-                       w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
-                       shadow-[0_6px_16px_var(--accent-soft)] z-20"
-            aria-label="Edit reflection"
-          >
-            <EditMark size={24} />
-          </button>
-        </Portal>
+        <EditSaveFab editing={false} onEdit={() => setEditing(true)} onSave={() => {}} onCancel={() => {}} />
       </div>
     );
   }
@@ -222,21 +270,15 @@ function WeeklyReflectionView({
         />
       ))}
 
-      {/* Floating save */}
-      {dirty && (
-        <Portal>
-          <button
-            onClick={() => { onSave(); setEditing(false); }}
-            disabled={isPending}
-            className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
-                       w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
-                       shadow-[0_6px_16px_var(--accent-soft)] z-20
-                       disabled:opacity-50 transition-opacity"
-            aria-label="Save reflection"
-          >
-            {isPending ? <ButtonLoader /> : <Glyph k="save" size={24} />}
-          </button>
-        </Portal>
+      {/* The same floating ✓ as Daily, with Cancel beside it (only once there's a saved week to go back to). */}
+      {(dirty || hasSavedData) && (
+        <EditSaveFab
+          editing
+          saving={isPending}
+          onEdit={() => {}}
+          onSave={() => { onSave(); setEditing(false); }}
+          onCancel={() => { onCancel(); setEditing(false); }}
+        />
       )}
     </Busy>
   );
