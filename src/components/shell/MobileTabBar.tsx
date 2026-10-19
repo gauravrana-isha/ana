@@ -131,14 +131,24 @@ function useKeyboardAware() {
     const vv = window.visualViewport;
     const isField = (el: Element | null) =>
       !!el && (el.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select") || (el as HTMLElement).isContentEditable);
-    // The bar only exists below the desktop breakpoint, so any focused text field there means
-    // a keyboard is (or is about to be) up. Pointer type isn't reliable across Android/emulators.
+    // The keyboard is up when a text field has focus AND the screen has really shrunk for it.
+    // Focus alone isn't enough: a field can hold focus with the keyboard down (focus moved by the
+    // page, the keyboard closing), and guessing then made the bar slide out and back in. The
+    // full height is the tallest seen (iPhones shrink only the visual viewport, Android the
+    // whole page), reset when the phone turns.
+    let full = Math.max(window.innerHeight, vv?.height ?? 0);
     const update = () => {
+      const now = vv?.height ?? window.innerHeight;
+      if (!isField(document.activeElement)) full = Math.max(full, window.innerHeight, now);
       const narrow = window.innerWidth < 1024;
-      const shrunk = vv ? window.innerHeight - vv.height > 120 : false;
-      const typing = narrow && isField(document.activeElement);
-      html.classList.toggle("kb-open", typing || (narrow && shrunk));
+      const shrunk = full - now > 120;
+      html.classList.toggle("kb-open", narrow && isField(document.activeElement) && shrunk);
     };
+    const turned = () => {
+      full = 0;
+      setTimeout(update, 400);
+    };
+    window.addEventListener("orientationchange", turned);
     // Leaving a field: wait a moment before the bar returns, so a tap that caused the blur
     // (e.g. on a floating Save button) lands before anything moves under the finger.
     const later = () => setTimeout(update, 320);
@@ -159,6 +169,7 @@ function useKeyboardAware() {
       window.removeEventListener("resize", update);
       document.removeEventListener("focusin", update);
       document.removeEventListener("focusout", later);
+      window.removeEventListener("orientationchange", turned);
       html.classList.remove("kb-open");
     };
   }, []);

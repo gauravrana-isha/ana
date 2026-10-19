@@ -111,3 +111,23 @@ test("swiping a card with a finger, from the question or the writing area, moves
   expect(await page.evaluate(() => (window as unknown as { flips: number }).flips)).toBeLessThanOrEqual(2);
   await expect(page.locator("html")).not.toHaveClass(/kb-open/);
 });
+
+test("the tab bar steps aside only for a real keyboard (focus alone doesn't move it)", async ({ page }) => {
+  await clearReflections();
+  await page.waitForTimeout(31_000); // the device's copy of the day is no longer fresh
+  await page.goto("/daily");
+  const ta = page.locator("[aria-roledescription=card] textarea").first();
+  await ta.waitFor();
+  const size = page.viewportSize()!;
+  // Focus without the keyboard (as when focus moves on its own): the bar stays.
+  await ta.focus();
+  await page.waitForTimeout(400);
+  await expect(page.locator("html")).not.toHaveClass(/kb-open/);
+  // The keyboard opens (the screen shrinks): the bar steps aside.
+  await page.setViewportSize({ width: size.width, height: size.height - 320 });
+  await expect(page.locator("html")).toHaveClass(/kb-open/);
+  // Next card: the box lets go, the keyboard closes, the bar is back.
+  await page.getByRole("button", { name: /^(Next|Skip)$/ }).click();
+  await page.setViewportSize(size);
+  await expect(page.locator("html")).not.toHaveClass(/kb-open/);
+});
