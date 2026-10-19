@@ -29,6 +29,8 @@ export function MoodPicker({ value, onChange, bare = false }: MoodPickerProps) {
   const reduce = useReducedMotion();
   const rowRef = useRef<HTMLDivElement>(null);
   const [sliding, setSliding] = useState(false);
+  // The press began on the mood already chosen: lifting there clears it (tap again to undo).
+  const pressedChosen = useRef(false);
   const current = MOODS.findIndex((m) => m.key === value);
 
   function pickAt(clientX: number) {
@@ -62,6 +64,8 @@ export function MoodPicker({ value, onChange, bare = false }: MoodPickerProps) {
         // Slide along the row to choose; vertical scrolling still works.
         className="grid grid-cols-5 gap-1 touch-pan-y select-none"
         onPointerDown={(e) => {
+          const r = rowRef.current?.getBoundingClientRect();
+          pressedChosen.current = !!r && current >= 0 && Math.floor(((e.clientX - r.left) / r.width) * MOODS.length) === current;
           setSliding(true);
           pickAt(e.clientX);
         }}
@@ -80,7 +84,12 @@ export function MoodPicker({ value, onChange, bare = false }: MoodPickerProps) {
               aria-checked={on}
               aria-label={m.label}
               tabIndex={on || (current < 0 && i === 2) ? 0 : -1}
-              onClick={() => onChange(m.key)}
+              onClick={(e) => {
+                // Tapped (or pressed with the keyboard) while already chosen: cleared.
+                const clear = on && (e.detail === 0 || pressedChosen.current);
+                pressedChosen.current = false;
+                onChange(clear ? null : m.key);
+              }}
               className="press relative flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
             >
               {on && (

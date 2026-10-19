@@ -1,5 +1,5 @@
 import { test as plain, expect as plainExpect } from "@playwright/test";
-import { test, expect, setBundles } from "./fixtures";
+import { test, expect, setBundles, clearReflections } from "./fixtures";
 import { BUNDLES, BUNDLE_KEYS, type BundleDef } from "../../src/lib/bundles";
 import { planTabs } from "../../src/lib/nav-plan";
 
@@ -41,6 +41,7 @@ plain.describe("the tab bar rule", () => {
 
 test.describe("moving around on a phone", () => {
   test.afterEach(async ({ page }) => setBundles(page, ["sadhana", "reflection", "expressions"]));
+  test.setTimeout(120_000);
 
   const tabs = (page: import("@playwright/test").Page) => page.locator("nav[aria-label=Main]:visible > div > a");
 
@@ -94,6 +95,31 @@ test.describe("moving around on a phone", () => {
     // The tab returns to the screen last open in it.
     await tabs(page).filter({ hasText: "Home" }).click();
     await tabs(page).filter({ hasText: "Reflection" }).click();
+    await expect(page).toHaveURL(/\/weekly$/);
+  });
+
+  test("a swipe on Daily's question card is the card's own; elsewhere it switches screens", async ({ page }) => {
+    await clearReflections();
+    await page.waitForTimeout(31_000); // the device's copy of the day is no longer fresh
+    await page.goto("/daily");
+    const card = page.locator("[aria-roledescription=card]").first();
+    await card.waitFor();
+    const swipeOn = (selector: string) =>
+      page.evaluate((sel) => {
+        const el = document.querySelector(sel)!;
+        const fire = (type: string, x: number) => {
+          const e = new Event(type, { bubbles: true });
+          Object.defineProperty(e, type === "touchend" ? "changedTouches" : "touches", { value: [{ clientX: x, clientY: 400 }] });
+          el.dispatchEvent(e);
+        };
+        fire("touchstart", 320);
+        fire("touchend", 120);
+      }, selector);
+    await swipeOn("[aria-roledescription=card]");
+    await page.waitForTimeout(600);
+    await expect(page).toHaveURL(/\/daily$/);
+    // On the title row instead: the next screen.
+    await swipeOn("main [aria-haspopup=menu]");
     await expect(page).toHaveURL(/\/weekly$/);
   });
 

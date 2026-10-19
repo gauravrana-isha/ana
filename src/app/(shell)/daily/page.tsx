@@ -11,15 +11,13 @@ import { PromptCard } from "@/components/reflection/PromptCard";
 import { MoodPicker } from "@/components/reflection/MoodPicker";
 import { StampChip } from "@/components/art/StampIcon";
 import { Busy } from "@/components/ui/Busy";
-import { Button } from "@/components/ui/Button";
 import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
 import { formatDateHand, today } from "@/lib/dates";
 import { fetchDaily, saveDaily } from "@/lib/journal";
 import { useMe } from "@/lib/me";
 import { readingQuestions, shownQuestions } from "@/lib/questions";
-import { EditMark } from "@/components/art/PenMarks";
-import { Portal } from "@/components/ui/Portal";
 import { onScreen } from "@/lib/on-screen";
+import { EditSaveFab } from "@/components/reflection/EditSaveFab";
 
 export default function DailyPage() {
   return (
@@ -60,9 +58,10 @@ function DailyContent() {
   // (Adjusting state during render, keyed on the data, instead of in an effect: no extra pass.)
   const [syncedFrom, setSyncedFrom] = useState<unknown>(null);
   if (reflection && reflection !== syncedFrom) {
-    // First copy of a day with nothing saved: open the stepper at the first question, and
-    // keep it open (even as answers save between steps) until Save.
-    if (syncedFrom === null && !hasAnything(reflection)) setEditing("first");
+    // A day with nothing saved opens the cards at the first question (also when a copy kept on
+    // the device had answers and the server's says the day is empty), and they stay open, even
+    // as answers save between cards, until Save.
+    if (editing === null && !hasAnything(reflection)) setEditing("first");
     setSyncedFrom(reflection);
     setLocalAnswers(reflection.answers ?? {});
     setLocalStamps(reflection.stamps ?? {});
@@ -83,7 +82,8 @@ function DailyContent() {
       onScreen.daily(date, saved);
       setSyncedFrom(qc.getQueryData(["daily", date]));
       if (version === edits.current) setDirty(false);
-      if (close) setEditing(null);
+      // Finished: read it back, or (everything cleared) the cards again, as for a fresh day.
+      if (close) setEditing(hasAnything(saved) ? null : "first");
       // Today shows "x of 7 answered", Profile counts reflection days: refresh both.
       qc.invalidateQueries({ queryKey: ["today"] });
       qc.invalidateQueries({ queryKey: ["profile-stats"] });
@@ -174,18 +174,7 @@ function DailyContent() {
             </button>
           )}
 
-          {/* Edit button */}
-          <Portal>
-            <button
-              onClick={() => { setFocusKey(null); setEditing(prompts[0].key); }}
-              className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8
-                         w-12 h-12 rounded-full bg-accent text-bg grid place-items-center
-                         shadow-[0_6px_16px_var(--accent-soft)] z-20"
-              aria-label="Edit reflection"
-            >
-              <EditMark size={24} />
-            </button>
-          </Portal>
+          <EditSaveFab editing={false} onEdit={() => { setFocusKey(null); setEditing(prompts[0].key); }} onSave={() => {}} onCancel={() => {}} />
         </>
       ) : (
         editing === "first" ? (
@@ -205,7 +194,7 @@ function DailyContent() {
         />
         ) : (
         /* Changing a saved day: a page of its own (no tab bar), every question on it, opened at
-           the one tapped (with the cursor in it), and Cancel / Save pinned at the bottom. */
+           the one tapped (with the cursor in it); the floating ✓ saves, Cancel beside it. */
         <div data-bare className="pb-24 lg:pb-0">
         <Busy busy={mutation.isPending}>
           {/* The questions asked now, then any others this day has answers for (hidden or removed since). */}
@@ -227,12 +216,7 @@ function DailyContent() {
             <MoodPicker value={localMood} onChange={handleMoodChange} />
           </div>
         </Busy>
-          <div className="fixed lg:sticky inset-x-0 bottom-0 z-30 mt-6 bg-bg/95 backdrop-blur-md border-t border-line lg:border lg:rounded-[18px] lg:bottom-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] lg:pb-3">
-            <div className="max-w-[860px] mx-auto px-4 sm:px-6 lg:px-4 flex justify-end gap-3">
-              <Button variant="secondary" className="flex-1 sm:flex-none" onClick={() => { setEditing(null); setSyncedFrom(null); }} disabled={mutation.isPending}>Cancel</Button>
-              <Button className="flex-1 sm:flex-none" onClick={() => save(true)} loading={mutation.isPending}>Save</Button>
-            </div>
-          </div>
+          <EditSaveFab editing saving={mutation.isPending} onEdit={() => {}} onSave={() => save(true)} onCancel={() => { setEditing(null); setSyncedFrom(null); }} />
         </div>
         )
       )}

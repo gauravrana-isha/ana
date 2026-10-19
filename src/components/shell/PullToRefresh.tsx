@@ -41,7 +41,10 @@ export function PullToRefresh() {
       if (!start.current) return;
       const dy = e.touches[0].clientY - start.current.y;
       const dx = Math.abs(e.touches[0].clientX - start.current.x);
-      if (dy <= 0 || window.scrollY > 0 || dx > dy) {
+      // Not decided yet: a small wobble at the start of a sideways swipe (a card, the screens)
+      // mustn't be taken for a pull.
+      if (!live.current && Math.max(dy, dx) < 10) return;
+      if (dy <= 0 || window.scrollY > 0 || dx * 1.5 > dy) {
         if (live.current) setPull((live.current = 0));
         if (dy < 0 || dx > dy) start.current = null;
         return;

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { test as base, expect, type Page } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
 
 /** The member global-setup creates. */
 export const USER_ID = "e2etestmember000000000000";
@@ -60,6 +61,17 @@ export async function setBundles(page: Page, bundles: string[]) {
   const all = ["sadhana", "reflection", "expressions"];
   const res = await page.request.patch(`/api/admin/users/${USER_ID}`, { data: { bundles: Object.fromEntries(all.map((b) => [b, bundles.includes(b)])) } });
   expect(res.ok(), await res.text()).toBe(true);
+}
+
+/** Start from a day and a week not answered yet (tests share one database). */
+export async function clearReflections() {
+  const db = new PrismaClient({ datasources: { db: { url: process.env.TEST_DATABASE_URL } } });
+  try {
+    await db.dailyReflection.deleteMany({ where: { userId: USER_ID } });
+    await db.weeklyReflection.deleteMany({ where: { userId: USER_ID } });
+  } finally {
+    await db.$disconnect();
+  }
 }
 
 /** Saves waiting in the outbox (method and path, ids shortened). */
