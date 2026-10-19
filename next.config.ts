@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     // every tap (screens fetch their own data; this is just the page shell).
     staleTimes: { dynamic: 300, static: 600 },
   },
-  // The old names of screens (Today, Tracker, Commitment, People), for saved links and
+  // The old names of screens (Today, Tracker, Commitment, People, Expressions), for saved links and
   // notifications sent before the rename.
   async redirects() {
     return [
@@ -31,6 +31,7 @@ const nextConfig: NextConfig = {
       ["/tracker", "/sadhana"],
       ["/commitment", "/sankalpa"],
       ["/people", "/presence"],
+      ["/expressions", "/moments"],
     ].flatMap(([from, to]) => [
       { source: from, destination: to, permanent: true },
       { source: `${from}/:path*`, destination: `${to}/:path*`, permanent: true },

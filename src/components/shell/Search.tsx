@@ -225,7 +225,7 @@ export function SearchDialog() {
   const pages = useMemo(() => {
     const all = [
       ...FEATURES.filter((f) => me?.features.includes(f.key)).map((f) => ({ key: f.key, label: f.label, hint: f.description, href: f.href, icon: "badge" as const })),
-      ...(me?.features.includes("expressions") ? [{ key: "new-moment", label: "New moment", hint: "Write, record or add a photo", href: "/expressions?new=1", icon: "plus" as const }] : []),
+      ...(me?.features.includes("expressions") ? [{ key: "new-moment", label: "New moment", hint: "Write, record or add a photo", href: "/moments?new=1", icon: "plus" as const }] : []),
       { key: "profile", label: "Profile & settings", hint: "Theme, sections, practices, data", href: "/profile", icon: "profile" as const },
       ...(me?.role === "ADMIN" ? [{ key: "admin", label: "People & access", hint: "Approve sign-ups, manage access", href: "/admin", icon: "admin" as const }] : []),
     ];
@@ -247,7 +247,7 @@ export function SearchDialog() {
     ...sections.map((p) => p.href),
     ...actions.map((p) => p.href),
     ...people.map((p) => `/presence/${p.id}`),
-    ...moments.map((m) => `/expressions/${m.id}`),
+    ...moments.map((m) => `/moments/${m.id}`),
     ...reflections.map((r) => r.href),
   ];
 
@@ -404,7 +404,7 @@ export function SearchDialog() {
       {moments.map((m) => {
         const i = ++idx;
         return (
-          <button key={m.id} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(`/expressions/${m.id}`)} className={row(i)}>
+          <button key={m.id} type="button" onMouseEnter={() => setActive(i)} onClick={() => go(`/moments/${m.id}`)} className={row(i)}>
             <span className="grid place-items-center w-9 h-9 rounded-[11px] bg-surface-2 text-accent shrink-0">
               <MomentGlyph kind={m.kind} size={18} />
             </span>

@@ -12,7 +12,7 @@ test.describe("offline", () => {
       ["/sadhana", "Sadhana"],
       ["/daily", "Daily reflection"],
       ["/weekly", "Weekly"],
-      ["/expressions", "Expressions"],
+      ["/moments", "Moments"],
       ["/presence", "Presence"],
       ["/sankalpa", "Sankalpa"],
       ["/insights", "Insights"],
@@ -27,9 +27,9 @@ test.describe("offline", () => {
 
   test("moving between screens works offline (tab bar)", async ({ page, context }) => {
     await context.setOffline(true);
-    for (const name of ["Sadhana", "Expressions", "Home"]) {
-      await page.locator("nav a:visible", { hasText: new RegExp(`^${name}$`) }).first().click();
-      await expect(page.getByRole("heading", { level: 1 }).first()).toContainText(name);
+    for (const [tab, heading] of [["Sadhana", "Sadhana"], ["Presence", "Moments"], ["Home", "Home"]]) {
+      await page.locator("nav a:visible", { hasText: new RegExp(`^${tab}$`) }).first().click();
+      await expect(page.getByRole("heading", { level: 1 }).first()).toContainText(heading);
     }
   });
 
@@ -44,7 +44,7 @@ test.describe("offline", () => {
     await expect(page.getByText("Kept on your phone · no connection needed")).toBeVisible();
 
     // A moment, written offline, opens offline.
-    await page.goto("/expressions");
+    await page.goto("/moments");
     await page.locator("button:visible", { hasText: "New moment" }).first().click();
     const editor = page.getByRole("dialog").locator("[contenteditable=true]").first();
   await editor.waitFor();
@@ -55,7 +55,7 @@ test.describe("offline", () => {
     await page.getByRole("link", { name: /Open .*Written offline/ }).first().waitFor();
     await page.waitForTimeout(300);
     await page.getByRole("link", { name: /Open .*Written offline/ }).first().click();
-    await expect(page).toHaveURL(/\/expressions\/c/);
+    await expect(page).toHaveURL(/\/moments\/c/);
     await expect(page.getByText("Written offline, by the river.").first()).toBeVisible();
 
     // A person, added offline, opens offline.
@@ -104,8 +104,8 @@ test.describe("offline", () => {
     expect(await page.evaluate(() => (window as unknown as { marker: number }).marker)).toBe(1);
   });
 
-  test("old addresses (Today, Tracker, Commitment, People) lead to the new screens", async ({ page }) => {
-    for (const [from, to] of [["/today", "/home"], ["/tracker", "/sadhana"], ["/commitment", "/sankalpa"], ["/people", "/presence"]]) {
+  test("old addresses (Today, Tracker, Commitment, People, Expressions) lead to the new screens", async ({ page }) => {
+    for (const [from, to] of [["/today", "/home"], ["/tracker", "/sadhana"], ["/commitment", "/sankalpa"], ["/people", "/presence"], ["/expressions", "/moments"]]) {
       const res = await page.request.get(from, { maxRedirects: 0 });
       expect(res.status(), from).toBe(308);
       expect(res.headers().location, from).toBe(to);

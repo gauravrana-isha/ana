@@ -7,7 +7,7 @@ import { test, expect, outbox, waitingFiles } from "./fixtures";
  */
 
 test("a photo added offline shows at once and is uploaded, linked to its moment, when back online", async ({ page, context }) => {
-  await page.goto("/expressions");
+  await page.goto("/moments");
   await page.locator("button:visible", { hasText: "New moment" }).first().click();
   await page.getByRole("dialog").getByRole("radio", { name: "Photo" }).click();
 

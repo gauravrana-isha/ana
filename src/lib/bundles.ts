@@ -1,6 +1,6 @@
 /*
  * What ana is made of. Sections are the screens (each its own menu); bundles group them into
- * what a person is given: Sadhana, Reflection, Expressions (Music later). Home and Insights
+ * what a person is given: Sadhana, Reflection, Presence (Music later). Home and Insights
  * are there for everyone and show only what the chosen bundles bring.
  *
  * Everything else (navigation, Home, Insights, Profile, onboarding, offline save-ahead, the
@@ -24,7 +24,7 @@ export const SECTIONS = {
   daily: { label: "Daily", href: "/daily", description: "A few quiet prompts at the end of each day." },
   weekly: { label: "Weekly", href: "/weekly", description: "Look back on the week, including seva, with a week in review beside it." },
   commitment: { label: "Sankalpa", href: "/sankalpa", description: "Your sankalpa: a letter to yourself about what you're committing to, read again when you choose." },
-  expressions: { label: "Expressions", href: "/expressions", description: "Moments worth keeping: writing, voice, video and photos, with the date and time." },
+  expressions: { label: "Moments", href: "/moments", description: "Moments worth keeping: writing, voice, video and photos, with the date and time." },
   people: { label: "Presence", href: "/presence", description: "Everyone and everything you meet with attention, and the moments with them." },
 } as const satisfies Record<string, SectionDef>;
 
@@ -77,9 +77,9 @@ export const BUNDLES = [
   },
   {
     key: "expressions",
-    label: "Expressions",
+    label: "Presence",
     mark: "expressions",
-    description: "Moments worth keeping, and the people and things in them.",
+    description: "Moments worth keeping, and everyone and everything in them.",
     sections: ["expressions", "people"],
     settings: [],
     onboarding: [],

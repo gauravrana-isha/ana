@@ -35,7 +35,7 @@ test("adding the river and a meal: their kind, no person fields, grouped, and in
   expect(kaveri, "the kind is stored sealed").toBeTruthy();
 
   // A moment's With offers it, marked as what it is.
-  await page.goto("/expressions");
+  await page.goto("/moments");
   await page.locator("button:visible", { hasText: "New moment" }).first().click();
   await page.getByRole("combobox", { name: /Add who or what/ }).or(page.getByLabel("Add who or what was with you")).first().fill("Kav");
   await expect(page.getByRole("button", { name: /The Kaveri.*Water/ })).toBeVisible();

@@ -11,13 +11,13 @@ plain.describe("the tab bar rule", () => {
   plain("screens get their own tabs when Home and all of them fit in five", () => {
     plainExpect(labels(["reflection"])).toEqual(["Home", "Daily", "Weekly", "Sankalpa"]);
     plainExpect(labels(["sadhana", "reflection"])).toEqual(["Home", "Sadhana", "Daily", "Weekly", "Sankalpa"]);
-    plainExpect(labels(["sadhana", "expressions"])).toEqual(["Home", "Sadhana", "Expressions", "Presence"]);
+    plainExpect(labels(["sadhana", "expressions"])).toEqual(["Home", "Sadhana", "Moments", "Presence"]);
     plainExpect(planTabs(["sadhana"]).mode).toBe("menus");
   });
 
   plain("otherwise each bundle is one tab, the whole bar at once", () => {
-    plainExpect(labels(["reflection", "expressions"])).toEqual(["Home", "Reflection", "Expressions"]);
-    plainExpect(labels(["sadhana", "reflection", "expressions"])).toEqual(["Home", "Sadhana", "Reflection", "Expressions"]);
+    plainExpect(labels(["reflection", "expressions"])).toEqual(["Home", "Reflection", "Presence"]);
+    plainExpect(labels(["sadhana", "reflection", "expressions"])).toEqual(["Home", "Sadhana", "Reflection", "Presence"]);
     plainExpect(planTabs(["sadhana", "reflection", "expressions"]).tabs.every((t) => t.kind !== "section")).toBe(true);
   });
 
@@ -46,7 +46,7 @@ test.describe("moving around on a phone", () => {
 
   test("all bundles: Home and a tab per bundle, no More, Profile is the picture on Home", async ({ page }) => {
     await page.goto("/home");
-    await expect(tabs(page)).toHaveText(["Home", "Sadhana", "Reflection", "Expressions"]);
+    await expect(tabs(page)).toHaveText(["Home", "Sadhana", "Reflection", "Presence"]);
     await expect(page.getByRole("button", { name: "More" })).toHaveCount(0);
     await page.getByRole("link", { name: "Profile" }).click();
     await expect(page).toHaveURL(/\/profile$/);

@@ -9,7 +9,7 @@ import { BUNDLE_KEYS, isBundleKey } from "@/lib/bundles";
 const PatchSchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "SUSPENDED"]).optional(),
   role: z.enum(["MEMBER", "ADMIN"]).optional(),
-  /** bundle key → has it (Sadhana, Reflection, Expressions…) */
+  /** bundle key → has it (Sadhana, Reflection, Presence…) */
   bundles: z.record(z.string(), z.boolean()).optional(),
 });
 

@@ -22,7 +22,7 @@ const PersonFields = {
 };
 const PersonSchema = z.object({ id: z.string().regex(/^[a-z0-9]{20,40}$/).optional(), ...PersonFields });
 
-/** Anyone who can tag people (People or Expressions) can list them. */
+/** Anyone who can tag people (Presence or Moments) can list them. */
 async function peopleUser() {
   const user = await resolveUser();
   if (!user || !(user.effective.includes("people") || user.effective.includes("expressions"))) return null;

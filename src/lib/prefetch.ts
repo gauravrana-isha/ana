@@ -68,7 +68,7 @@ function plan(qc: QueryClient, href: string): Planned[] {
       ? [{ key: ["week-review", week], fn: () => fetchDigest(week, date) }]
       : [{ key: ["weekly", week], fn: () => fetchWeekly(week) }];
   }
-  if (href.startsWith("/expressions")) return [{ key: ["moments", "all"], fn: () => syncMoments(qc.getQueryData(["moments", "all"])) }];
+  if (href.startsWith("/moments")) return [{ key: ["moments", "all"], fn: () => syncMoments(qc.getQueryData(["moments", "all"])) }];
   if (href.startsWith("/presence")) return [{ key: ["people"], fn: () => fetchPeople() }];
   if (href.startsWith("/insights")) return [{ key: ["insights", date], fn: () => fetchInsights(date) }];
   if (href.startsWith("/sankalpa")) return [{ key: ["commitment"], fn: fetchCommitment }];

@@ -8,7 +8,7 @@ import { test, expect, outbox } from "./fixtures";
  */
 
 async function writeMoment(page: Page, words: string) {
-  await page.goto("/expressions");
+  await page.goto("/moments");
   await page.locator("button:visible", { hasText: "New moment" }).first().click();
   const editor = page.getByRole("dialog").locator("[contenteditable=true]").first();
   await editor.waitFor();
@@ -41,7 +41,7 @@ test("a moment kept offline is marked, listed and dotted, then sent and the mark
   await expect(sheet.getByText("Everything’s in your journal.")).toBeVisible({ timeout: 30_000 });
   await page.goto("/home");
   await expect(page.getByRole("img", { name: /waiting to send/ })).toHaveCount(0);
-  await page.goto("/expressions");
+  await page.goto("/moments");
   await expect(page.locator("article", { hasText: "Kept while offline." }).first().getByRole("img", { name: "Kept on this phone, not sent yet" })).toHaveCount(0);
   await expect.poll(() => outbox(page)).toEqual([]);
 });

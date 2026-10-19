@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     // Its words are sealed (only the person's devices can read them), so the note says what kind it is and when.
     const words = m.kind === "audio" ? "A voice note" : m.kind === "video" ? "A video" : m.kind === "photo" ? "Photos" : "Something you wrote";
     try {
-      const made = await notify({ userId: m.userId, kind: "moment", key: `moment:${m.id}`, title: "A moment is back", body: `${words} · from ${when}`, url: `/expressions/${m.id}` });
+      const made = await notify({ userId: m.userId, kind: "moment", key: `moment:${m.id}`, title: "A moment is back", body: `${words} · from ${when}`, url: `/moments/${m.id}` });
       if (made) sent.moments++;
     } catch (e) {
       // Give the claim back so the next run tries again.

@@ -171,7 +171,7 @@ export function WeekReview({ weekStart, weekRange }: { weekStart: string; weekRa
               {data.moments.map((m) => {
                 return (
                   <li key={m.id}>
-                    <Link href={`/expressions/${m.id}`} className="flex items-center gap-3 p-2 -mx-2 rounded-[12px] hover:bg-bg">
+                    <Link href={`/moments/${m.id}`} className="flex items-center gap-3 p-2 -mx-2 rounded-[12px] hover:bg-bg">
                       <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-bg text-accent shrink-0"><MomentGlyph kind={m.kind} size={18} /></span>
                       <span className="flex-1 font-ui text-[14px] text-ink truncate">{m.title || "Untitled moment"}</span>
                       <span className="font-ui text-[12px] text-ink-soft tabular">{new Date(m.at).toLocaleDateString(undefined, { weekday: "short" })}</span>
@@ -181,7 +181,7 @@ export function WeekReview({ weekStart, weekRange }: { weekStart: string; weekRa
               })}
             </ul>
           ) : (
-            <Link href="/expressions?new=1" className="font-ui text-[13.5px] font-semibold text-accent">Keep one now</Link>
+            <Link href="/moments?new=1" className="font-ui text-[13.5px] font-semibold text-accent">Keep one now</Link>
           )}
         </Card>
       )}

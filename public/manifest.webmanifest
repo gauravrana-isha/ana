@@ -82,7 +82,7 @@
     {
       "name": "New moment",
       "short_name": "Moment",
-      "url": "/expressions?new=1",
+      "url": "/moments?new=1",
       "icons": [
         {
           "src": "/icons/icon-96.png",

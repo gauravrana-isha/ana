@@ -14,7 +14,7 @@ import { fetchInsights } from "@/lib/journal";
 
 /**
  * Insights, reached from Profile: one section for each of your bundles, each under its own
- * name (Sadhana, Reflection, Expressions), so it's clear what every pattern is about.
+ * name (Sadhana, Reflection, Presence), so it's clear what every pattern is about.
  */
 export default function InsightsPage() {
   const date = todayStr();

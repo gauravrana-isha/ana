@@ -45,7 +45,7 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
     return (
       <div className="py-16 text-center">
         <p className="font-serif italic text-[17px] text-ink-soft">This moment isn&rsquo;t here any more.</p>
-        <Link href="/expressions" className="press mt-4 inline-flex h-10 items-center px-4 rounded-full bg-surface font-ui text-[14px] font-semibold text-accent">All moments</Link>
+        <Link href="/moments" className="press mt-4 inline-flex h-10 items-center px-4 rounded-full bg-surface font-ui text-[14px] font-semibold text-accent">All moments</Link>
       </div>
     );
   }
@@ -58,14 +58,14 @@ export default function MomentPage({ params }: { params: Promise<{ id: string }>
 
   async function remove() {
     setDeleting(true);
-    if (await del(moment!)) router.replace("/expressions");
+    if (await del(moment!)) router.replace("/moments");
     else setDeleting(false);
   }
 
   return (
     <article data-bare inert={deleting} className={cn("pb-10 transition-opacity", deleting && "opacity-50")}>
       {/* No page header here: back, Edit and Delete float at the top and stay in reach while reading. */}
-      <DetailBar backTo="/expressions" backLabel="Back to moments" what="moment" onEdit={() => setEditing(true)} onDelete={remove} />
+      <DetailBar backTo="/moments" backLabel="Back to moments" what="moment" onEdit={() => setEditing(true)} onDelete={remove} />
 
       <header className="flex items-start gap-3.5">
         <MomentBadge kind={moment.kind} size={44} className="mt-1" />

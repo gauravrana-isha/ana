@@ -17,7 +17,7 @@ export const HELP_EVENT = "ana:page-help";
  */
 export function Topbar() {
   const pathname = usePathname();
-  // The most specific match wins (e.g. "/expressions/…" is a moment, "/expressions" the list).
+  // The most specific match wins (e.g. "/moments/…" is a moment, "/moments" the list).
   const title =
     Object.entries(PAGE_TITLES)
       .filter(([href]) => pathname.startsWith(href))

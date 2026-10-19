@@ -4,7 +4,7 @@ import Link from "next/link";
 import { PersonAvatar } from "@/components/people/People";
 import { Section, type InsightsData } from "../insights-kit";
 
-/** Expressions in Insights: who and what has been most present in your moments. */
+/** Presence in Insights: who and what has been most present in your moments. */
 export function ExpressionsInsights({ data }: { data: InsightsData }) {
   return <PeopleBars rows={data.people} />;
 }

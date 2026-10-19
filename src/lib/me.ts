@@ -14,7 +14,7 @@ export interface Me {
   role: "MEMBER" | "ADMIN";
   status: string;
   features: FeatureKey[];
-  /** The bundles they have (Sadhana, Reflection, Expressions…). */
+  /** The bundles they have (Sadhana, Reflection, Presence…). */
   bundles: BundleKey[];
   storage: "r2" | "local";
   intention: string | null;

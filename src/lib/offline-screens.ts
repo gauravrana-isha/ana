@@ -18,7 +18,7 @@ export const OFFLINE_SCREENS = [
  * A moment's and a person's page, kept once as a template: those pages read their id from the
  * address, so offline one saved copy opens any moment or person (even one made offline).
  */
-export const OFFLINE_TEMPLATES: Record<string, string> = { "/expressions/": "/expressions/~", "/presence/": "/presence/~" };
+export const OFFLINE_TEMPLATES: Record<string, string> = { "/moments/": "/moments/~", "/presence/": "/presence/~" };
 
 /** Shown offline for a page this device never saved. */
 export const OFFLINE_PAGE = "/offline.html";

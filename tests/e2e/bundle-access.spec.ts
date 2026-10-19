@@ -28,7 +28,7 @@ test("everyone keeps at least one bundle", async ({ page }) => {
   await page.goto("/admin");
   await page.getByRole("radio", { name: /^All/ }).click();
   await page.getByRole("button", { name: "Show details" }).first().click();
-  await page.getByRole("button", { name: /^Expressions .*given/ }).click();
+  await page.getByRole("button", { name: /^Presence .*given/ }).click();
   await expect(page.getByText("Everyone needs at least one bundle.")).toBeVisible();
   // Giving another works.
   await page.getByRole("button", { name: /^Sadhana .*not given/ }).click();

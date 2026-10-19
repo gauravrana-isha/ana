@@ -316,7 +316,7 @@ function ProfileHeader({ me }: { me: Me }) {
   const [editing, setEditing] = useState(false);
   const { data: stats } = useQuery({ queryKey: ["profile-stats", today()], queryFn: () => fetchProfileStats(today()) });
 
-  // Each bundle brings its own figures (Reflection: days reflected on; Expressions: moments).
+  // Each bundle brings its own figures (Reflection: days reflected on; Presence: moments).
   const cells = monthFiguresOf(useBundles()).map((f) => ({ k: f.key, mark: f.mark, label: f.label, value: stats ? f.value(stats) : undefined }));
 
   return (

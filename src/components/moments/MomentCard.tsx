@@ -67,7 +67,7 @@ export function useDeleteMoment() {
   };
 }
 
-export const momentHref = (m: Moment) => `/expressions/${m.id}`;
+export const momentHref = (m: Moment) => `/moments/${m.id}`;
 
 /** The ⋯ menu on a moment's card: Edit, Delete. */
 export function MomentMenu({ onEdit, onDelete, className }: { onEdit: () => void; onDelete: () => void; className?: string }) {
