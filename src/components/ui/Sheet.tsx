@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { AnimatePresence, motion, useDragControls, useReducedMotion, type PanInfo } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "./Busy";
@@ -23,12 +23,16 @@ interface SheetProps {
   busy?: boolean;
 }
 
+/** The sheets open now, oldest first (the last is on top). */
+const openSheets: string[] = [];
+
 /** Bottom sheet on phones, centred dialog on larger screens. */
 export function Sheet({ open, onClose, title, children, footer, header, size = "md", busy = false }: SheetProps) {
   const reduce = useReducedMotion();
   const area = useVisibleArea(open);
   const bodyRef = useRef<HTMLDivElement>(null);
   const drag = useDragControls();
+  const id = useId();
 
   // Phones: pull the sheet down by its handle or title to close it; a short pull springs back.
   const startDrag = (e: React.PointerEvent) => {
@@ -88,16 +92,24 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
     };
   }, [open]);
 
+  // Escape closes the sheet on top only (a practice's editor, not the list under it too).
+  // Its place in the pile is kept for as long as it's open, whatever re-renders.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !busy && onClose();
+    openSheets.push(id);
+    return () => void openSheets.splice(openSheets.lastIndexOf(id), 1);
+  }, [open, id]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !busy && openSheets[openSheets.length - 1] === id && onClose();
     const unlock = lockScroll();
     window.addEventListener("keydown", onKey);
     return () => {
       unlock();
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose, busy]);
+  }, [open, onClose, busy, id]);
 
   return (
     <Portal>

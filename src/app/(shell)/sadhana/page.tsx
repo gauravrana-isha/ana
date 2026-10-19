@@ -26,6 +26,8 @@ import { PracticeIcon } from "@/components/tracker/PracticeIcon";
 import { WeeklyTable } from "@/components/tracker/WeeklyTable";
 import { WeeklyEntryModal } from "@/components/tracker/WeeklyEntryModal";
 import { AddPracticeDialog } from "@/components/tracker/AddPracticeDialog";
+import { Sheet } from "@/components/ui/Sheet";
+import { PracticesPanel } from "@/bundles/sadhana/practices";
 import { PlusMark } from "@/components/art/PenMarks";
 import { Button } from "@/components/ui/Button";
 import { TrackerSkeleton } from "@/components/skeletons/ScreenSkeletons";
@@ -46,6 +48,7 @@ export default function TrackerPage() {
   const [date, setDate] = useState(today());
   const [view, setView] = usePersistentState("tracker.view", "daily", ["daily", "weekly"] as const);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [managing, setManaging] = useState(false);
   const [reordering, setReordering] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
   const [weeklyModal, setWeeklyModal] = useState<{ practice: Practice; date: string } | null>(null);
@@ -255,16 +258,21 @@ export default function TrackerPage() {
           )}
 
           <button
-            onClick={() => setDialogOpen(true)}
-            className="font-ui text-[13px] text-accent mt-3 inline-flex items-center gap-1.5"
+            type="button"
+            onClick={() => setManaging(true)}
+            className="press mt-4 inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-surface font-ui text-[13.5px] font-semibold text-accent hover:bg-surface-2"
           >
-            <EditMark size={16} />
+            <EditMark size={17} />
             Edit practices
           </button>
         </>
       )}
 
       <AddPracticeDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      {/* Add, edit and remove practices right here (the same as Profile → Practices). */}
+      <Sheet open={managing} onClose={() => setManaging(false)} title="Your practices">
+        <PracticesPanel />
+      </Sheet>
     </div>
   );
 }
