@@ -35,7 +35,14 @@ export function callName(me: Pick<Me, "name" | "preferredName"> | undefined | nu
 export function useMe() {
   return useQuery({
     queryKey: ["me"],
-    queryFn: async (): Promise<Me> => openDeep((await (await fetch("/api/me")).json()) as Me),
+    queryFn: async (): Promise<Me> => {
+      const res = await fetch("/api/me");
+      const me = (await res.json().catch(() => null)) as Me | null;
+      // Only a proper reply replaces the copy kept on the device: a "signed out" or error reply
+      // (a request caught mid-deploy, say) mustn't become "your details" and break every screen.
+      if (!res.ok || !me || !Array.isArray(me.features)) throw new Error("Couldn't load your details");
+      return openDeep(me);
+    },
     staleTime: 60_000,
   });
 }
