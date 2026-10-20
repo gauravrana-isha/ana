@@ -62,36 +62,59 @@ test("landing hero loop", async ({ page }) => {
     cdp.on("Page.screencastFrame", onFrame);
     await cdp.send("Page.startScreencast", { format: "jpeg", quality: 88, maxWidth: 780, maxHeight: 1688, everyNthFrame: 1 });
     await page.waitForTimeout(1500);
+    // Each tap shows where it lands: a soft dot and a ring spreading out (recording only).
+    const tap = async (target: import("@playwright/test").Locator) => {
+      const box = await target.boundingBox();
+      if (box) {
+        await page.evaluate(([x, y]) => {
+          const dot = document.createElement("div");
+          dot.style.cssText = `position:fixed;left:${x}px;top:${y}px;width:0;height:0;z-index:99999;pointer-events:none`;
+          dot.innerHTML =
+            '<span style="position:absolute;left:-17px;top:-17px;width:34px;height:34px;border-radius:50%;background:color-mix(in oklab,var(--accent) 34%,transparent);animation:anaTapDot .7s ease-out forwards"></span>' +
+            '<span style="position:absolute;left:-17px;top:-17px;width:34px;height:34px;border-radius:50%;border:2px solid color-mix(in oklab,var(--accent) 70%,transparent);animation:anaTapRing .7s ease-out forwards"></span>';
+          if (!document.getElementById("ana-tap-style")) {
+            const st = document.createElement("style");
+            st.id = "ana-tap-style";
+            st.textContent = "@keyframes anaTapDot{0%{transform:scale(.4);opacity:0}25%{transform:scale(1);opacity:1}100%{transform:scale(1.1);opacity:0}}@keyframes anaTapRing{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.4);opacity:0}}";
+            document.head.appendChild(st);
+          }
+          document.body.appendChild(dot);
+          setTimeout(() => dot.remove(), 900);
+        }, [box.x + box.width / 2, box.y + box.height / 2]);
+        await page.waitForTimeout(160);
+      }
+      await target.click();
+    };
     // 1. A practice ticked, on Sadhana.
-    await page.getByRole("button", { name: "Isha Kriya done" }).first().click();
+    await tap(page.getByRole("button", { name: "Isha Kriya done" }).first());
     await page.waitForTimeout(900);
-    await page.getByRole("button", { name: "Surya Kriya done" }).first().click();
+    await tap(page.getByRole("button", { name: "Surya Kriya done" }).first());
     await page.waitForTimeout(1300);
     // 2. The evening question, written.
-    await page.locator("nav[aria-label=Main]:visible a", { hasText: "Reflection" }).click();
+    await tap(page.locator("nav[aria-label=Main]:visible a", { hasText: "Reflection" }));
     const card = page.locator("[aria-roledescription=card]").first();
     await card.waitFor();
     await page.waitForTimeout(800);
-    await card.locator("textarea").click();
+    await tap(card.locator("textarea"));
     await card.locator("textarea").pressSequentially("Twice today. Once at dawn by the river, once before sleep.", { delay: 42 });
     await page.mouse.click(20, 140);
     await page.waitForTimeout(1200);
     // 3. A photo kept as a moment, straight from Home.
-    await page.locator("nav[aria-label=Main]:visible a", { hasText: "Home" }).click();
+    await tap(page.locator("nav[aria-label=Main]:visible a", { hasText: "Home" }));
     await page.getByRole("button", { name: "Photo" }).first().waitFor();
     await page.addStyleTag({ content: "main figure:has(blockquote){display:none!important}" });
     await page.waitForTimeout(900);
-    await page.getByRole("button", { name: "Photo" }).first().click();
+    await tap(page.getByRole("button", { name: "Photo" }).first());
     await page.locator('input[type=file][accept="image/*"][multiple]').setInputFiles(path.join(__dirname, "dawn.jpg"));
     const editor = page.getByRole("dialog").locator("[contenteditable=true]").first();
     await editor.waitFor();
-    await editor.click();
+    await tap(editor);
     await page.keyboard.type("The river at dawn.", { delay: 50 });
     await page.waitForTimeout(500);
-    await page.getByRole("button", { name: /Keep it/ }).click();
+    await tap(page.getByRole("button", { name: /Keep it/ }));
     await page.waitForTimeout(900);
     // …and there it is, in Moments.
-    await page.locator("nav[aria-label=Main]:visible a", { hasText: "Presence" }).click();
+    await tap(page.locator("nav[aria-label=Main]:visible a", { hasText: "Presence" }));
     await page.getByText("The river at dawn.").first().waitFor();
     await page.waitForTimeout(2200);
     await cdp.send("Page.stopScreencast");
