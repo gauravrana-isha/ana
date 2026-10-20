@@ -5,7 +5,7 @@ import { Ornament } from "@/components/art/Ornament";
 import { Glyph } from "@/components/art/Glyphs";
 import { DoneMark } from "@/components/art/PenMarks";
 import { cn } from "@/lib/utils";
-import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, SwapWord, Yantra, PillarYantra } from "./Motion";
+import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, Yantra, PillarYantra } from "./Motion";
 
 /*
  * ana's front door, for anyone not signed in: what ana is, what it holds, why it's private,
@@ -120,7 +120,7 @@ function Hero() {
         <div className="text-center lg:text-left lg:-mt-20">
           <HeroLine />
           <p className="mt-6 mx-auto lg:mx-0 max-w-[40ch] font-serif italic text-[16px] sm:text-[17px] leading-[1.6] text-ink-soft/75">
-            <SwapWord words={["Vasari", "Logger"]} /> for you, your reflections and moments that matter.
+            Logger for you, your reflections and moments that matter.
           </p>
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
             <BeginButton className="w-full sm:w-auto" />

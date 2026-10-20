@@ -12,7 +12,7 @@ plain("a visitor sees the landing page, and Begin leads to sign in", async ({ pa
   // The app in use, looping; the quiet line; the words sealed as they leave the phone.
   await expect(page.locator("video[src*='hero-light']")).toBeVisible();
   await expect(page.getByText("Just here and now", { exact: true }).first()).toBeVisible();
-  await expect(page.getByLabel("Vasari (Logger)")).toBeVisible();
+  await expect(page.getByText("Logger for you, your reflections and moments that matter.")).toBeVisible();
   await page.getByText("What leaves your phone").scrollIntoViewIfNeeded();
   await expect(page.getByText(/^e1:/)).toBeVisible({ timeout: 8000 });
   // Nothing makes the page wider than the phone.
