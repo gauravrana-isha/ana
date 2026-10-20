@@ -219,9 +219,9 @@ function Inside() {
                     <SeenBadge k={f.badge} />
                     <Eyebrow>{f.eyebrow}</Eyebrow>
                   </div>
-                  <h3 className="hidden sm:block mt-5 font-display text-[clamp(26px,3.3vw,36px)] font-semibold leading-[1.15] tracking-[-0.015em] text-balance">{f.title}</h3>
+                  <h3 className="mt-4 sm:mt-5 font-display text-[clamp(26px,3.3vw,36px)] font-semibold leading-[1.15] tracking-[-0.015em] text-balance">{f.title}</h3>
                   <p className="hidden sm:block mt-4 font-serif text-[17.5px] leading-[1.65] text-ink-soft">{f.body}</p>
-                  <ul className="mt-5 sm:mt-6 flex flex-col gap-2.5 text-left max-w-[420px] mx-auto lg:mx-0" {...(i === 0 ? { "data-step": 1 } : {})}>
+                  <ul className="hidden sm:flex mt-6 flex-col gap-2.5 text-left max-w-[420px] mx-auto lg:mx-0" {...(i === 0 ? { "data-step": 1 } : {})}>
                     {f.points.map((p) => (
                       <li key={p} className="flex items-start gap-3 font-ui text-[15px] text-ink">
                         <DoneMark size={20} className="text-accent shrink-0 mt-[1px]" />
@@ -230,9 +230,9 @@ function Inside() {
                     ))}
                   </ul>
                 </div>
-                {/* Phones: the section's own screen under its words (wider screens: the sticky phone). */}
+                {/* Phones: the headline, then the section's own screen (wider screens: the sticky phone). */}
                 <div className="mt-7 sm:mt-10 flex justify-center lg:hidden">
-                  <Phone shot={f.mobile.shot} alt={f.mobile.alt} className="w-[min(64vw,270px,calc((100svh-405px)*0.462))] sm:w-[min(60vw,270px,calc((100svh-605px)*0.462))]" />
+                  <Phone shot={f.mobile.shot} alt={f.mobile.alt} className="w-[min(72vw,290px,calc((100svh-355px)*0.462))] sm:w-[min(60vw,270px,calc((100svh-605px)*0.462))]" />
                 </div>
               </article>
             ))}
