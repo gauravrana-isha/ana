@@ -252,7 +252,7 @@ function Quiet() {
       <Yantra draw={false} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(150vw,1100px)] h-auto text-ink/[0.045] landing-turn" />
       <Wrap className="relative py-16 flex flex-col items-center text-center">
         <p className="font-display italic text-[clamp(40px,7vw,84px)] leading-[1.05] tracking-[-0.02em] text-ink">Just here and now</p>
-        <PillarYantra className="mt-10 sm:mt-12" />
+        <PillarYantra className="mt-12 sm:mt-20" />
       </Wrap>
     </section>
   );
