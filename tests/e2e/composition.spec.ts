@@ -82,8 +82,8 @@ test.describe("Insights", () => {
 test("a stray 'not signed in' reply for your details never breaks Home (it showed the error screen)", async ({ page }) => {
   await page.route("**/api/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ signedIn: false }) }));
   await page.goto("/home");
-  await expect(page.getByRole("button", { name: /Search your journal/ })).toBeVisible();
-  await page.getByRole("button", { name: /Search your journal/ }).click();
+  await expect(page.getByRole("button", { name: /Search your logger/ })).toBeVisible();
+  await page.getByRole("button", { name: /Search your logger/ }).click();
   await expect(page.getByText("Something went wrong")).toHaveCount(0);
   await page.unroute("**/api/me");
 });

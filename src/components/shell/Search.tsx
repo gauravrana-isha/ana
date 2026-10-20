@@ -56,7 +56,7 @@ export function TodaySearchBar() {
         className="press flex-1 min-w-0 flex items-center gap-3 h-12 pl-4 pr-3 rounded-full bg-surface text-ink-soft hover:bg-surface-2 transition-colors"
       >
         <SearchMark size={20} />
-        <span className="flex-1 text-left font-ui text-[15px] truncate">Search your journal</span>
+        <span className="flex-1 text-left font-ui text-[15px] truncate">Search your logger</span>
         <kbd className="hidden lg:inline font-ui text-[11px] font-semibold text-ink-soft/80 border border-line rounded-[6px] px-1.5 py-0.5">⌘K</kbd>
       </button>
       <NotificationBell />
