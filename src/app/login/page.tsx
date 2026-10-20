@@ -83,7 +83,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </p>
           ) : (
             <p className="mt-6 font-ui text-[13px] leading-[1.6] text-ink-soft">
-              {invite === "used" ? "That invite link has been used up or has ended. You can still continue with Google and an admin will let you in." : "New here? Continue with Google and an admin will let you in. After that, your passkey signs you in."}
+              {invite === "used" ? "That invite link has been used up or has ended. You can still continue with Google and an admin will let you in." : "New here? Continue with Google."}
             </p>
           )}
         </div>
