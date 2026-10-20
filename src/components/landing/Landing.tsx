@@ -247,7 +247,7 @@ function Inside() {
 /** One quiet moment in the page: just the line, and a yantra drawing itself beneath it, between two pillars. */
 function Quiet() {
   return (
-    <section aria-label="Just here and now" data-stop="Just here and now" className="landing-snap relative overflow-clip border-t border-line/70 flex items-center">
+    <section aria-label="Just here and now" data-stop="Just here and now" className="landing-snap relative border-t border-line/70 flex items-center">
       {/* The same yantra, very large and faint, turning slowly behind. */}
       <Yantra draw={false} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(150vw,1100px)] h-auto text-ink/[0.045] landing-turn" />
       <Wrap className="relative py-16 flex flex-col items-center text-center">
@@ -392,7 +392,7 @@ function Questions() {
   ];
   return (
     <section data-stop="Questions" className="landing-snap-start relative border-t border-line/70">
-      <Backdrop className="-right-48 top-[25%] w-[620px]" />
+      <Backdrop className="-right-48 top-40 w-[620px]" />
       <Wrap className="relative py-20 sm:py-24 max-w-[760px]">
         <div className="text-center">
           <Eyebrow>Questions</Eyebrow>
