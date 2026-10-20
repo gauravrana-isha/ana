@@ -2,27 +2,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { BrandMark } from "@/components/art/BrandMark";
 import { Ornament } from "@/components/art/Ornament";
-import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { Glyph } from "@/components/art/Glyphs";
 import { DoneMark } from "@/components/art/PenMarks";
 import { cn } from "@/lib/utils";
+import { DrawnKolam, HeroLoop, SealedLine, SeenBadge, StickyPhone } from "./Motion";
 
 /*
  * ana's front door, for anyone not signed in: what ana is, what it holds, why it's private,
  * and how to begin. One page, rendered on the server (fast, and readable by link previews),
- * phone-first, in the journal's own look. The screenshots are the real app, filled with the
- * staging journal's made-up data, in light and dark.
+ * phone-first, in the journal's own look. The screenshots and the hero loop are the real app,
+ * filled with the staging journal's made-up data, in light and dark. The page reads as one day:
+ * dawn at the top, the background deepening (barely) towards night as you scroll.
  */
 
-const LINE = "Absolute devotion towards what is there at present.";
+const LINE = "Absolute devotion to what's here and now.";
 
 export function Landing() {
   return (
-    <div className="min-h-dvh bg-bg text-ink overflow-x-clip">
+    <div className="landing-sky min-h-dvh text-ink overflow-x-clip">
       <Header />
       <main>
         <Hero />
         <Inside />
+        <Quiet />
         <Private />
         <Anywhere />
         <Begin />
@@ -119,11 +121,9 @@ function Hero() {
           <Ornament name="flourish" width={140} className="mt-10 mx-auto lg:mx-0 text-ink-soft/40" />
         </div>
 
-        {/* Home, with Daily and Presence behind it on wider screens. */}
-        <div className="relative mx-auto w-full max-w-[460px] h-[540px] sm:h-[600px] landing-rise [animation-delay:120ms]">
-          <Phone shot="daily" alt="Daily reflection, one question at a time" className="hidden sm:block absolute left-0 top-12 w-[220px] -rotate-[7deg] opacity-95" />
-          <Phone shot="presence" alt="Presence: the people and things in your moments" className="hidden sm:block absolute right-0 top-12 w-[220px] rotate-[7deg] opacity-95" />
-          <Phone shot="home" alt="ana's Home: your sankalpa, keeping a moment, today's practices" priority className="absolute left-1/2 -translate-x-1/2 top-0 w-[255px] sm:w-[270px]" />
+        {/* The app in use: a practice ticked, the evening question written, a photo kept. */}
+        <div className="flex justify-center landing-rise [animation-delay:120ms]">
+          <HeroLoop />
         </div>
       </Wrap>
     </section>
@@ -132,72 +132,93 @@ function Hero() {
 
 const FEATURES = [
   {
+    step: 0,
+    mobile: { shot: "sadhana", alt: "Today's practices, each ticked with a tap" },
     badge: "tracker",
     eyebrow: "Sadhana",
     title: "Tick your practices. See your rhythm.",
     body: "Shambhavi, Isha Kriya, Surya Kriya, your waking time and anything else you keep. A tap marks it done; the weeks show the rhythm of your practice, gently, never as a score.",
     points: ["Your own practices, in your order", "Times, counts and minutes where they matter", "Patterns over the month, not streaks to keep"],
-    shots: [
-      { shot: "sadhana", alt: "Today's practices, each ticked with a tap" },
-      { shot: "insights", alt: "Insights: the month of each practice, and mood over eight weeks" },
-    ],
   },
   {
+    step: 2,
+    mobile: { shot: "daily", alt: "A daily question as a card, with room to write and stamps" },
     badge: "daily",
     eyebrow: "Reflection",
     title: "A few quiet questions, one at a time.",
     body: "Each evening a handful of questions, one card at a time, with room to write and stamps for growth, struggle, insight, stillness or devotion. Each week a deeper look. And your sankalpa, a letter to yourself to return to.",
     points: ["Daily and weekly questions, your own if you like", "The day's mood in one tap", "Your sankalpa comes back when it's time to read it again"],
-    shots: [{ shot: "daily", alt: "A daily question as a card, with room to write and stamps" }],
   },
   {
+    step: 3,
+    mobile: { shot: "moments", alt: "Moments, newest first" },
     badge: "expressions",
     eyebrow: "Presence",
     title: "Keep the moments, and who was with you.",
     body: "Write, record your voice, keep a photo or a video. Note who or what was there: a person, the river, the food, the mountain, your walk. Moments come back to you on the day you choose, and on this day in years to come.",
     points: ["Words, voice, photos and video", "People and things alike, each with their moments", "Birthdays and moments that come back"],
-    shots: [
-      { shot: "moments", alt: "Moments, newest first" },
-      { shot: "presence", alt: "Presence: people and things, each with their moments" },
-    ],
   },
+] as const;
+
+/** The sticky phone's screens, in order; the text marks where each one shows (data-step). */
+const STEPS = [
+  { shot: "sadhana", alt: "Today's practices, each ticked with a tap" },
+  { shot: "insights", alt: "Insights: the month of each practice, and mood over eight weeks" },
+  { shot: "daily", alt: "A daily question as a card, with room to write and stamps" },
+  { shot: "moments", alt: "Moments, newest first" },
 ] as const;
 
 function Inside() {
   return (
-    <section id="inside" className="scroll-mt-20 border-t border-line/70 bg-surface/40">
+    <section id="inside" className="scroll-mt-20 border-t border-line/70">
       <Wrap className="py-20 sm:py-24">
         <div className="text-center max-w-[640px] mx-auto">
           <Eyebrow>What ana holds</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your practice, your reflections, your moments. In one quiet place.</h2>
         </div>
-        <div className="mt-16 sm:mt-20 flex flex-col gap-24 sm:gap-28">
-          {FEATURES.map((f, i) => (
-            <article key={f.eyebrow} className="grid lg:grid-cols-2 items-center gap-12 lg:gap-16">
-              <div className={cn("max-w-[520px] mx-auto lg:mx-0 text-center lg:text-left", i % 2 === 1 && "lg:order-2")}>
-                <div className="inline-flex items-center gap-3">
-                  <FeatureBadge k={f.badge} size={44} />
-                  <Eyebrow>{f.eyebrow}</Eyebrow>
+        <div className="mt-16 sm:mt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-20">
+          <div className="flex flex-col gap-24 lg:gap-0">
+            {FEATURES.map((f, i) => (
+              <article key={f.eyebrow} data-step={f.step} className="lg:min-h-[78vh] lg:flex lg:flex-col lg:justify-center">
+                <div className="max-w-[520px] mx-auto lg:mx-0 text-center lg:text-left">
+                  <div className="inline-flex items-center gap-3">
+                    <SeenBadge k={f.badge} />
+                    <Eyebrow>{f.eyebrow}</Eyebrow>
+                  </div>
+                  <h3 className="mt-5 font-display text-[clamp(26px,3.3vw,36px)] font-semibold leading-[1.15] tracking-[-0.015em] text-balance">{f.title}</h3>
+                  <p className="mt-4 font-serif text-[17.5px] leading-[1.65] text-ink-soft">{f.body}</p>
+                  <ul className="mt-6 flex flex-col gap-2.5 text-left max-w-[420px] mx-auto lg:mx-0" {...(i === 0 ? { "data-step": 1 } : {})}>
+                    {f.points.map((p) => (
+                      <li key={p} className="flex items-start gap-3 font-ui text-[15px] text-ink">
+                        <DoneMark size={20} className="text-accent shrink-0 mt-[1px]" />
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <h3 className="mt-5 font-display text-[clamp(26px,3.3vw,36px)] font-semibold leading-[1.15] tracking-[-0.015em] text-balance">{f.title}</h3>
-                <p className="mt-4 font-serif text-[17.5px] leading-[1.65] text-ink-soft">{f.body}</p>
-                <ul className="mt-6 flex flex-col gap-2.5 text-left max-w-[420px] mx-auto lg:mx-0">
-                  {f.points.map((p) => (
-                    <li key={p} className="flex items-start gap-3 font-ui text-[15px] text-ink">
-                      <DoneMark size={20} className="text-accent shrink-0 mt-[1px]" />
-                      {p}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className={cn("relative flex justify-center gap-4 sm:gap-6", i % 2 === 1 && "lg:order-1")}>
-                {f.shots.map((s, j) => (
-                  <Phone key={s.shot} shot={s.shot} alt={s.alt} className={cn("w-[min(44vw,250px)]", f.shots.length === 1 && "w-[min(68vw,270px)]", j === 1 && "mt-10 sm:mt-14")} />
-                ))}
-              </div>
-            </article>
-          ))}
+                {/* Phones: the section's own screen under its words (wider screens: the sticky phone). */}
+                <div className="mt-10 flex justify-center lg:hidden">
+                  <Phone shot={f.mobile.shot} alt={f.mobile.alt} className="w-[min(68vw,270px)]" />
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <StickyPhone steps={STEPS} />
+          </div>
         </div>
+      </Wrap>
+    </section>
+  );
+}
+
+/** One quiet moment in the page: just the line, and a kolam drawing itself beneath it. */
+function Quiet() {
+  return (
+    <section aria-label="Just here and now" className="border-t border-line/70">
+      <Wrap className="py-24 sm:py-32 flex flex-col items-center text-center">
+        <p className="font-display italic text-[clamp(40px,7vw,84px)] leading-[1.05] tracking-[-0.02em] text-ink">Just here and now.</p>
+        <DrawnKolam className="mt-12 w-[min(70vw,260px)] h-auto text-accent" />
       </Wrap>
     </section>
   );
@@ -218,6 +239,13 @@ function Private() {
             <p className="font-ui text-[12.5px] font-semibold uppercase tracking-[0.12em] text-bg/75">Private by design</p>
             <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your journal is yours alone.</h2>
             <p className="mt-4 font-serif text-[18px] leading-[1.6] text-bg/85">What you write in ana is between you and you.</p>
+          </div>
+          {/* What leaves your phone: your words, sealed. */}
+          <div className="relative mt-10 rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-5 sm:p-6 max-w-[640px]">
+            <p className="font-ui text-[12px] font-semibold uppercase tracking-[0.1em] text-bg/70">What leaves your phone</p>
+            <div className="mt-3">
+              <SealedLine text="Sat by the river this morning. The mind was quiet." />
+            </div>
           </div>
           <ul className="relative mt-12 grid sm:grid-cols-3 gap-4 sm:gap-5">
             {steps.map((s) => (

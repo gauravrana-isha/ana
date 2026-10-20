@@ -595,3 +595,16 @@ html, body { overflow-x: clip; }
 @keyframes landing-rise { from { opacity: 0; transform: translateY(14px); } }
 .landing-rise { animation: landing-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @media (prefers-reduced-motion: reduce) { .landing-rise { animation: none; } }
+
+/* Landing as one day: the background deepens, barely, from dawn at the top towards night at the
+   foot, with the scroll. Without scroll-driven animation it simply stays at dawn. */
+@property --dusk { syntax: "<number>"; inherits: true; initial-value: 0; }
+:root { --sky-night: #23312c; }
+[data-theme="dark"] { --sky-night: #070908; }
+.landing-sky { background: color-mix(in oklab, var(--bg), var(--sky-night) calc(var(--dusk) * 1%)); }
+@keyframes landing-dusk { 0% { --dusk: 0; } 55% { --dusk: 6; } 100% { --dusk: 16; } }
+@supports (animation-timeline: scroll()) {
+  .landing-sky { animation: landing-dusk linear both; animation-timeline: scroll(root); }
+}
+/* Less motion: the kolam is simply there, drawn. */
+@media (prefers-reduced-motion: reduce) { .landing-kolam * { transition: none !important; } }
