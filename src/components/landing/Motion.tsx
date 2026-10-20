@@ -514,44 +514,61 @@ export function SectionPager() {
 /** When a yantra layer (its index in YANTRA) starts drawing. */
 const drawsAt = (i: number) => 0.4 + i * 0.75;
 
-const LEGEND = [
-  { side: "left", top: "8%", at: 0, name: "Bhupura", line: "The square with four gates: the world, and the way in." },
-  { side: "left", top: "50%", at: 2, name: "Circles", line: "Time turning, from the outer towards the inner." },
-  { side: "left", top: "92%", at: 3, name: "Sixteen petals", line: "The lotus beginning to open." },
-  { side: "right", top: "8%", at: 5, name: "Eight petals", line: "Opening further, nearer the centre." },
-  { side: "right", top: "50%", at: 7, name: "Two triangles", line: "Effort and grace, the outer and the inner, held as one." },
-  { side: "right", top: "92%", at: YANTRA.length, name: "Bindu", line: "The one point. Here, now." },
-] as const;
+/**
+ * One side's band: the yantra's two square lines (outer and inner, as in its bhupura) carried on
+ * sideways, with a gate stepping outwards every so often. Drawn for the left side, starting at
+ * the square's corner (x = LEN) and running out to the edge (x = 0); the right side is a mirror.
+ */
+const LEN = 1400;
+function band(top: boolean) {
+  const out = top ? -1 : 1; // gates step away from the yantra's centre
+  const line = (y: number, half: number, depth: number) => {
+    let d = `M${LEN} ${y}`;
+    for (let c = LEN - 110; c - half > 0; c -= 220) {
+      d += ` L${c + half} ${y} L${c + half} ${y + out * depth} L${c - half} ${y + out * depth} L${c - half} ${y}`;
+    }
+    return `${d} L0 ${y}`;
+  };
+  return top
+    ? [line(C - 176, 34, 14), line(C - 166, 30, 10)]
+    : [line(C + 176, 34, 14), line(C + 166, 30, 10)];
+}
+const BANDS = [...band(true), ...band(false)];
 
-/** The yantra drawing itself, outside in, each part named at the sides as it arrives (wide screens). */
-export function YantraLegend({ className }: { className?: string }) {
+/** The yantra drawing itself, outside in, its square's lines running out to both edges as it does. */
+export function GateYantra({ className }: { className?: string }) {
   const [ref, seen] = useSeen<HTMLDivElement>("-20% 0px");
+  const side = (right: boolean) => (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute top-0 h-full"
+      // The bands meet the square at its corners: 24/400 in from the yantra's own edges.
+      style={{
+        [right ? "left" : "right"]: "94%",
+        maskImage: `linear-gradient(to ${right ? "right" : "left"}, black 35%, transparent 95%)`,
+        WebkitMaskImage: `linear-gradient(to ${right ? "right" : "left"}, black 35%, transparent 95%)`,
+      }}
+    >
+      <svg viewBox={`0 0 ${LEN} 400`} fill="none" className={cn("block h-full w-auto text-accent/70", right && "-scale-x-100")}>
+        {BANDS.map((d, i) => (
+          <path
+            key={i}
+            d={d}
+            pathLength={1}
+            stroke="currentColor"
+            strokeWidth={i % 2 ? 1 : 1.6}
+            strokeLinejoin="round"
+            style={{ strokeDasharray: 1, strokeDashoffset: seen ? 0 : 1, transition: `stroke-dashoffset 5s cubic-bezier(0.45, 0, 0.25, 1) ${drawsAt(0) + 1.2 + (i % 2) * 0.4}s` }}
+          />
+        ))}
+      </svg>
+    </div>
+  );
   return (
     <div ref={ref} className={cn("relative", className)}>
-      <Yantra show={seen} className="w-[min(78vw,340px)] lg:w-[min(380px,calc(100svh-360px))] h-auto text-accent" />
-      {LEGEND.map((l) => (
-        <div
-          key={l.name}
-          className={cn(
-            "hidden lg:flex absolute w-[250px] xl:w-[280px] items-center gap-4",
-            l.side === "left" ? "right-full mr-8 flex-row-reverse text-right" : "left-full ml-8 text-left"
-          )}
-          style={{
-            top: l.top,
-            opacity: seen ? 1 : 0,
-            transform: `translate(${seen ? 0 : l.side === "left" ? -12 : 12}px, -50%)`,
-            transition: `opacity 1.2s ease ${drawsAt(l.at) + 0.6}s, transform 1.2s ease ${drawsAt(l.at) + 0.6}s`,
-          }}
-        >
-          <span aria-hidden="true" className="relative h-px w-14 shrink-0 bg-accent/35">
-            <span className={cn("absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-accent/60", l.side === "left" ? "right-0" : "left-0")} />
-          </span>
-          <div>
-            <p className="font-ui text-[11.5px] font-semibold uppercase tracking-[0.14em] text-accent">{l.name}</p>
-            <p className="mt-1 font-serif italic text-[15.5px] leading-[1.45] text-ink-soft">{l.line}</p>
-          </div>
-        </div>
-      ))}
+      {side(false)}
+      {side(true)}
+      <Yantra show={seen} className="relative w-[min(78vw,340px)] lg:w-[min(380px,calc(100svh-360px))] h-auto text-accent" />
     </div>
   );
 }

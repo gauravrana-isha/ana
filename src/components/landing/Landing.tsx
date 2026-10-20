@@ -5,7 +5,7 @@ import { Ornament } from "@/components/art/Ornament";
 import { Glyph } from "@/components/art/Glyphs";
 import { DoneMark } from "@/components/art/PenMarks";
 import { cn } from "@/lib/utils";
-import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, SwapWord, Yantra, YantraLegend } from "./Motion";
+import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, SwapWord, Yantra, GateYantra } from "./Motion";
 
 /*
  * ana's front door, for anyone not signed in: what ana is, what it holds, why it's private,
@@ -194,11 +194,7 @@ function Inside() {
       <Wrap className="relative pb-12 lg:pb-0">
         {/* On wide screens a screen of its own, so each step after it has the whole screen. */}
         <div data-stop="What ana holds" className="landing-snap-start text-center max-w-[720px] mx-auto pt-20 sm:pt-24 lg:pt-0 lg:min-h-[calc(100svh-65px)] lg:flex lg:flex-col lg:items-center lg:justify-center">
-          {/* The logo, as in the header. */}
-          <div className="mb-6 flex items-center justify-center gap-2.5">
-            <BrandMark size={44} />
-            <span className="font-display text-[38px] font-semibold text-ink tracking-[-0.01em] leading-none">ana</span>
-          </div>
+          <BrandMark size={72} className="mb-6" />
           <Eyebrow>
             What <Ana /> holds
           </Eyebrow>
@@ -248,7 +244,7 @@ function Inside() {
   );
 }
 
-/** One quiet moment in the page: just the line, and a yantra drawing itself beneath it, its parts named at the sides. */
+/** One quiet moment in the page: just the line, and a yantra drawing itself beneath it, its square running out to the edges. */
 function Quiet() {
   return (
     <section aria-label="Just here and now" data-stop="Just here and now" className="landing-snap relative overflow-clip border-t border-line/70 flex items-center">
@@ -256,7 +252,7 @@ function Quiet() {
       <Yantra draw={false} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(150vw,1100px)] h-auto text-ink/[0.045] landing-turn" />
       <Wrap className="relative py-16 flex flex-col items-center text-center">
         <p className="font-display italic text-[clamp(40px,7vw,84px)] leading-[1.05] tracking-[-0.02em] text-ink">Just here and now</p>
-        <YantraLegend className="mt-10 sm:mt-12" />
+        <GateYantra className="mt-10 sm:mt-12" />
       </Wrap>
     </section>
   );
