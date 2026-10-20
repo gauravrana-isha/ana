@@ -427,8 +427,10 @@ export function SectionPager() {
         anchor = y;
         return;
       }
+      // One stop on from where the swipe began, even if its glide carried further: so the end of
+      // a tall screen (the phone under the words, on a phone) is never skipped.
       if (performance.now() - swipedAt < 2500) {
-        const stop = nextMark(y, Math.sign(y - anchor) || 1);
+        const stop = nextMark(anchor, Math.sign(y - anchor) || 1);
         if (stop !== undefined) go(stop);
         return;
       }
