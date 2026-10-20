@@ -196,8 +196,8 @@ function ExpressionsContent() {
         title="Filter and sort"
         footer={
           <>
-            <button type="button" onClick={() => { setPerson(""); setStamp(""); setSort("newest"); setGroup("month"); setView("full"); }} className="press flex-1 h-11 rounded-[14px] bg-surface-2 text-ink font-ui text-[14px] font-semibold">Clear</button>
-            <button type="button" onClick={() => setFiltersOpen(false)} className="press flex-1 h-11 rounded-[14px] bg-accent text-bg font-ui text-[14px] font-semibold">Show moments</button>
+            <Button variant="secondary" className="flex-1" onClick={() => { setPerson(""); setStamp(""); setSort("newest"); setGroup("month"); setView("full"); }}>Clear</Button>
+            <Button className="flex-1" onClick={() => setFiltersOpen(false)}>Show moments</Button>
           </>
         }
       >

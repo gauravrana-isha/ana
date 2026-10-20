@@ -2,8 +2,7 @@
 
 import { Busy } from "@/components/ui/Busy";
 
-import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
@@ -12,9 +11,7 @@ import { keys, usePractices } from "@/lib/queries";
 import { catalogFor, describeTracking, type CatalogPractice } from "@/lib/practiceCatalog";
 import type { PracticeField } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { CloseButton } from "@/components/ui/CloseButton";
-import { Portal } from "@/components/ui/Portal";
-import { useVisibleArea } from "@/lib/visual-viewport";
+import { Sheet } from "@/components/ui/Sheet";
 import { PracticeLibrary } from "./PracticeLibrary";
 import { PracticeEditor } from "./PracticeEditor";
 import { specFor } from "@/lib/practiceSpec";
@@ -29,7 +26,6 @@ import { createPractice, deletePractice } from "@/lib/journal";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Segmented } from "@/components/ui/Segmented";
 import { Switch } from "@/components/ui/Switch";
-import { lockScroll } from "@/lib/scroll-lock";
 
 const ICON_OPTIONS = [
   "Leaf", "Flower", "FlowerLotus", "Sun", "SunHorizon", "Moon", "Star", "Sparkle",
@@ -60,67 +56,31 @@ interface AddPracticeDialogProps {
 }
 
 export function AddPracticeDialog({ open, onClose }: AddPracticeDialogProps) {
-  const reduce = useReducedMotion();
-  const area = useVisibleArea(open);
   const [tab, setTab] = useState<"yours" | "library" | "custom">("yours");
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    const unlock = lockScroll();
-    window.addEventListener("keydown", onKey);
-    return () => {
-      unlock();
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
-
   return (
-    <Portal>
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6" style={area} role="dialog" aria-modal="true" aria-label="Your practices">
-          <motion.div
-            className="absolute inset-0 bg-[rgba(24,22,15,0.36)]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          <motion.div
-            className="relative w-full sm:max-w-[620px] h-[92%] sm:h-[min(820px,88%)] flex flex-col bg-bg rounded-t-[24px] sm:rounded-[24px] shadow-[var(--shadow-lift)] overflow-hidden"
-            initial={reduce ? { opacity: 0 } : { y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={reduce ? { opacity: 0 } : { y: 40, opacity: 0 }}
-            transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <span className="sm:hidden mx-auto mt-2.5 w-10 h-1 rounded-full bg-line" aria-hidden="true" />
-            <header className="flex items-center justify-between gap-3 px-5 sm:px-6 pt-4 sm:pt-6">
-              <h2 className="font-display text-[24px] font-semibold tracking-[-0.015em] text-ink">Your practices</h2>
-              <CloseButton onClick={onClose} />
-            </header>
-
-            <Segmented
-              label="Practices"
-              fill
-              className="mx-5 sm:mx-6 mt-4"
-              value={tab}
-              onChange={setTab}
-              options={[
-                { value: "yours", label: "Yours" },
-                { value: "library", label: "Library" },
-                { value: "custom", label: "Create" },
-              ]}
-            />
-
-            <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
-              {tab === "yours" ? <YoursTab onAdd={() => setTab("library")} /> : tab === "library" ? <LibraryTab /> : <CustomTab onDone={() => setTab("yours")} />}
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-    </Portal>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Your practices"
+      size="lg"
+      tall
+      header={
+        <Segmented
+          label="Practices"
+          fill
+          className="mt-4"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: "yours", label: "Yours" },
+            { value: "library", label: "Library" },
+            { value: "custom", label: "Create" },
+          ]}
+        />
+      }
+    >
+      {tab === "yours" ? <YoursTab onAdd={() => setTab("library")} /> : tab === "library" ? <LibraryTab /> : <CustomTab onDone={() => setTab("yours")} />}
+    </Sheet>
   );
 }
 

@@ -7,17 +7,34 @@ import { EditMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 
 /**
- * The one floating button for a reflection, Daily and Weekly alike, always in the same corner:
- * a pen while reading (tap to change it), a ✓ while changing (tap to save), with a small
- * Cancel beside it. Nothing pinned across the bottom of the screen.
+ * The one floating button for a reflection, Daily, Weekly and the sankalpa alike, always in the
+ * same corner: a pen while reading (tap to change it), a ✓ while changing (tap to save), with a
+ * small Cancel beside it (none when there's nothing to go back to, like a first letter).
+ * Nothing pinned across the bottom of the screen.
  */
-export function EditSaveFab({ editing, saving = false, onEdit, onSave, onCancel }: { editing: boolean; saving?: boolean; onEdit: () => void; onSave: () => void; onCancel: () => void }) {
+export function EditSaveFab({
+  editing,
+  saving = false,
+  canSave = true,
+  what = "reflection",
+  onEdit,
+  onSave,
+  onCancel,
+}: {
+  editing: boolean;
+  saving?: boolean;
+  canSave?: boolean;
+  what?: string;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel?: () => void;
+}) {
   const reduce = useReducedMotion();
   return (
     <Portal>
       <div className="ana-fab fixed bottom-[calc(80px+env(safe-area-inset-bottom))] right-6 lg:bottom-8 lg:right-8 z-20 flex items-center gap-2.5">
         <AnimatePresence>
-          {editing && (
+          {editing && onCancel && (
             <motion.button
               key="cancel"
               type="button"
@@ -35,8 +52,8 @@ export function EditSaveFab({ editing, saving = false, onEdit, onSave, onCancel 
         <button
           type="button"
           onClick={editing ? onSave : onEdit}
-          disabled={saving}
-          aria-label={editing ? "Save reflection" : "Edit reflection"}
+          disabled={saving || (editing && !canSave)}
+          aria-label={editing ? `Save ${what}` : `Edit ${what}`}
           className="press w-12 h-12 rounded-full bg-accent text-bg grid place-items-center shadow-[0_6px_16px_var(--accent-soft)] disabled:opacity-60"
         >
           <AnimatePresence mode="wait" initial={false}>

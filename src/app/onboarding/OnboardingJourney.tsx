@@ -11,6 +11,7 @@ import { BrandMark } from "@/components/art/BrandMark";
 import { SnakeLoader } from "@/components/ui/Loader";
 import { Ornament } from "@/components/art/Ornament";
 import { Button } from "@/components/ui/Button";
+import { ScreenFooter } from "@/components/vault/VaultScreen";
 import { STARTER_IDS } from "@/lib/practiceCatalog";
 import { bundleByKey, type BundleKey } from "@/lib/bundles";
 import { PracticeLibrary } from "@/components/tracker/PracticeLibrary";
@@ -233,18 +234,16 @@ export function OnboardingJourney({ user, bundles, vault }: Props) {
       </main>
 
       {/* Action */}
-      <footer className="fixed md:static bottom-0 inset-x-0 z-10 bg-bg border-t border-line md:border-0 pt-4 md:pt-2 pb-[max(20px,env(safe-area-inset-bottom))] md:pb-16">
-        <div className="max-w-[560px] mx-auto px-5">
-          {error && (
-            <p role="alert" className="mb-3 font-ui text-[13px] text-danger text-center">
-              {error}
-            </p>
-          )}
-          <Button size="lg" className="w-full" onClick={next} disabled={!canContinue} loading={saving}>
-            {step === "welcome" ? "Begin" : "Continue"}
-          </Button>
-        </div>
-      </footer>
+      <ScreenFooter width="max-w-[560px]">
+        {error && (
+          <p role="alert" className="mb-1 font-ui text-[13px] text-danger text-center">
+            {error}
+          </p>
+        )}
+        <Button size="lg" className="w-full" onClick={next} disabled={!canContinue} loading={saving}>
+          {step === "welcome" ? "Begin" : "Continue"}
+        </Button>
+      </ScreenFooter>
     </div>
   );
 }

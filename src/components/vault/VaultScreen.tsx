@@ -44,12 +44,20 @@ export function VaultScreen({
           </motion.section>
         </AnimatePresence>
       </main>
-      {footer && (
-        <footer className="fixed md:static bottom-0 inset-x-0 z-10 bg-bg/95 backdrop-blur-md border-t border-line md:border-0 pt-4 pb-[max(20px,env(safe-area-inset-bottom))] md:pb-16">
-          <div className="max-w-[520px] mx-auto px-5 flex flex-col gap-2">{footer}</div>
-        </footer>
-      )}
+      {footer && <ScreenFooter>{footer}</ScreenFooter>}
     </div>
+  );
+}
+
+/**
+ * The main action of a full-screen step (setting up, unlocking, first steps): pinned to the
+ * bottom on phones, under the content on wider screens. The one such bar, wherever it's used.
+ */
+export function ScreenFooter({ children, width = "max-w-[520px]" }: { children: React.ReactNode; width?: string }) {
+  return (
+    <footer className="fixed md:static bottom-0 inset-x-0 z-10 bg-bg/95 backdrop-blur-md border-t border-line md:border-0 pt-4 pb-[max(20px,env(safe-area-inset-bottom))] md:pb-16">
+      <div className={cn(width, "mx-auto px-5 flex flex-col gap-2")}>{children}</div>
+    </footer>
   );
 }
 
