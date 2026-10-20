@@ -265,7 +265,7 @@ function Quiet() {
 function Private() {
   const steps = [
     { glyph: "lock", title: "Sealed on your phone", body: "Every word, photo and recording is encrypted on your phone before it leaves it." },
-    { glyph: "fingerprint", title: "Opened only by you", body: "Your passkey or your 12 recovery words open your journal. Nothing else can." },
+    { glyph: "fingerprint", title: "Opened only by you", body: "Your passkey or your 12 recovery words open your logger. Nothing else can." },
     { glyph: "shield", title: "Unreadable to everyone else", body: "Not the server, not the people who run ana. Only what you keep, for you." },
   ] as const;
   return (
@@ -275,7 +275,7 @@ function Private() {
           <Ornament name="kolam" width={340} className="pointer-events-none absolute -right-20 -bottom-24 text-bg/10" />
           <div className="relative max-w-[620px]">
             <p className="font-ui text-[12.5px] font-semibold uppercase tracking-[0.12em] text-bg/75">Private by design</p>
-            <h2 className="mt-3 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your journal is yours alone.</h2>
+            <h2 className="mt-3 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your logger is yours alone.</h2>
             <p className="mt-3 font-serif text-[18px] leading-[1.6] text-bg/85">What you write in ana is between you and you.</p>
           </div>
           {/* What leaves your phone: your words, sealed. */}
@@ -342,12 +342,12 @@ function Begin() {
         <div className="text-center lg:text-left">
           <Eyebrow>Begin</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Three small steps.</h2>
-          <p className="mt-4 font-serif text-[18px] leading-[1.6] text-ink-soft max-w-[40ch] mx-auto lg:mx-0">Sign in, and your journal is opened for you. Then keep it on your home screen.</p>
+          <p className="mt-4 font-serif text-[18px] leading-[1.6] text-ink-soft max-w-[40ch] mx-auto lg:mx-0">Sign in, and your logger is opened for you. Then keep it on your home screen.</p>
           <BeginButton className="mt-8 w-full sm:w-auto" />
         </div>
         <ol className="flex flex-col gap-4">
           {[
-            { n: "1", title: "Sign in with Google", body: "Use the Google account you'd like your journal under." },
+            { n: "1", title: "Sign in with Google", body: "Use the Google account you'd like your logger under." },
             { n: "2", title: "Your access is opened", body: "Once you're let in, you set up your private key: your passkey, and 12 recovery words to keep safe." },
             { n: "3", title: "Put ana on your home screen", body: null },
           ].map((s) => (
@@ -390,8 +390,8 @@ function Install({ os, steps }: { os: string; steps: string[] }) {
 
 function Questions() {
   const faq = [
-    { q: "Who can see my journal?", a: "Only you. It's encrypted on your phone before it leaves it, and only your passkey or recovery words can open it. Not even the people who run ana can read it." },
-    { q: "What if I lose my phone?", a: "Sign in on your new phone and open your journal with your passkey or your 12 recovery words. Everything is there. Keep the words somewhere safe: without them and your passkey, no one can open the journal, not even us." },
+    { q: "Who can see my logger?", a: "Only you. It's encrypted on your phone before it leaves it, and only your passkey or recovery words can open it. Not even the people who run ana can read it." },
+    { q: "What if I lose my phone?", a: "Sign in on your new phone and open your logger with your passkey or your 12 recovery words. Everything is there. Keep the words somewhere safe: without them and your passkey, no one can open the logger, not even us." },
     { q: "Does it work without internet?", a: "Yes. Everything is kept on your phone, so ana opens and works offline. What you add is sent as soon as you're back online." },
   ];
   return (
