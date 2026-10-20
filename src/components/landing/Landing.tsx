@@ -42,12 +42,13 @@ function Wrap({ className, children }: { className?: string; children: React.Rea
 
 function BeginButton({ className, children = "Begin" }: { className?: string; children?: React.ReactNode }) {
   return (
-    <Link
-      href="/login"
-      className={cn("press inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-accent text-bg font-ui text-[15px] font-semibold shadow-[var(--shadow-soft)] hover:brightness-110 transition", className)}
-    >
-      {children}
-      <span aria-hidden="true">→</span>
+    <Link href="/login" className={cn("landing-cta group press", className)}>
+      <span className="relative">{children}</span>
+      <span aria-hidden="true" className="landing-cta-arrow">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 8h10M9 4l4 4-4 4" />
+        </svg>
+      </span>
     </Link>
   );
 }
@@ -109,16 +110,19 @@ function Hero() {
   return (
     <section className="relative overflow-hidden">
       <Backdrop className="-right-40 -top-24 w-[760px]" turn />
-      <Wrap className="relative grid lg:grid-cols-[1.05fr_1fr] items-center gap-12 lg:gap-8 pt-12 pb-16 sm:pt-16 lg:pt-20 lg:pb-24">
-        <div className="text-center lg:text-left">
+      <Wrap className="relative grid lg:grid-cols-[1.05fr_1fr] items-center gap-12 lg:gap-8 pt-10 pb-16 sm:pt-12 lg:pt-14 lg:pb-24">
+        <div className="text-center lg:text-left lg:-mt-20">
           <HeroLine />
           <p className="mt-6 mx-auto lg:mx-0 max-w-[40ch] font-serif italic text-[16px] sm:text-[17px] leading-[1.6] text-ink-soft/75">
             <SwapWord words={["Vasari", "Logger"]} /> for you, your reflections and moments that matter.
           </p>
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
             <BeginButton className="w-full sm:w-auto" />
-            <a href="#inside" className="press inline-flex items-center justify-center h-12 px-6 rounded-full font-ui text-[15px] font-semibold text-ink hover:bg-surface w-full sm:w-auto">
+            <a href="#inside" className="landing-ghost group press w-full sm:w-auto">
               See what it holds
+              <svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="landing-ghost-arrow">
+                <path d="M8 3v10M4 9l4 4 4-4" />
+              </svg>
             </a>
           </div>
           <Ornament name="flourish" width={140} className="mt-10 mx-auto lg:mx-0 text-ink-soft/40" />

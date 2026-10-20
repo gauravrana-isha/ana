@@ -627,3 +627,69 @@ html:has(.landing-sky) { scroll-snap-type: y proximity; scroll-padding-top: 64px
   .landing-yantra * { transition: none !important; }
   html:has(.landing-sky) { scroll-snap-type: none; }
 }
+
+/* === Toasts: above the tab bar on phones, above a floating save button when there is one === */
+.ana-toasts { bottom: calc(80px + env(safe-area-inset-bottom)); }
+body:has(.ana-fab) .ana-toasts { bottom: calc(144px + env(safe-area-inset-bottom)); }
+html.kb-open .ana-toasts,
+body:has([data-bare]) .ana-toasts { bottom: calc(16px + env(safe-area-inset-bottom)); }
+@media (min-width: 1024px) {
+  .ana-toasts { bottom: 32px; }
+  body:has(.ana-fab) .ana-toasts { bottom: 104px; }
+}
+.ana-toast-tick { stroke-dasharray: 14; stroke-dashoffset: 14; animation: ana-toast-tick 0.35s 0.12s ease-out forwards; }
+@keyframes ana-toast-tick { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .ana-toast-tick { animation: none; stroke-dashoffset: 0; } }
+
+/* === Landing buttons === */
+.landing-cta {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; gap: 14px;
+  height: 56px; padding: 0 8px 0 28px; border-radius: 999px;
+  font-family: var(--font-ui); font-size: 16px; font-weight: 600; letter-spacing: 0.01em;
+  color: var(--bg);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 88%, white) 0%, var(--accent) 55%, color-mix(in oklab, var(--accent) 86%, black) 100%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 28%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, black 18%, transparent),
+    0 1px 2px color-mix(in oklab, var(--accent) 30%, transparent),
+    0 14px 30px -12px color-mix(in oklab, var(--accent) 70%, transparent);
+  transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s;
+}
+/* A slow light passing across, now and then. */
+.landing-cta::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in oklab, white 22%, transparent) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: landing-shine 6s 2.4s ease-in-out infinite;
+}
+.landing-cta-arrow {
+  position: relative; display: grid; place-items: center;
+  width: 40px; height: 40px; border-radius: 999px;
+  background: color-mix(in oklab, var(--bg) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--bg) 22%, transparent);
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), background .3s;
+}
+.landing-cta:hover { transform: translateY(-1px); box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 28%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, black 18%, transparent),
+    0 1px 2px color-mix(in oklab, var(--accent) 30%, transparent),
+    0 20px 38px -14px color-mix(in oklab, var(--accent) 80%, transparent); }
+.landing-cta:hover .landing-cta-arrow { transform: translateX(3px); background: var(--bg); color: var(--accent); }
+.landing-cta:focus-visible, .landing-ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.landing-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  height: 56px; padding: 0 24px; border-radius: 999px;
+  font-family: var(--font-ui); font-size: 16px; font-weight: 600; color: var(--ink);
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line);
+  backdrop-filter: blur(8px);
+  transition: background .25s, box-shadow .25s;
+}
+.landing-ghost:hover { background: var(--surface); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 22%, transparent); }
+.landing-ghost-arrow { color: var(--accent); transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.landing-ghost:hover .landing-ghost-arrow { transform: translateY(2px); }
+
+@keyframes landing-shine { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+@media (prefers-reduced-motion: reduce) { .landing-cta::before { animation: none; display: none; } }
