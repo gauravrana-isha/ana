@@ -5,7 +5,7 @@ import { Ornament } from "@/components/art/Ornament";
 import { Glyph } from "@/components/art/Glyphs";
 import { DoneMark } from "@/components/art/PenMarks";
 import { cn } from "@/lib/utils";
-import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, SwapWord, Yantra, GateYantra } from "./Motion";
+import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, SwapWord, Yantra, PillarYantra } from "./Motion";
 
 /*
  * ana's front door, for anyone not signed in: what ana is, what it holds, why it's private,
@@ -244,7 +244,7 @@ function Inside() {
   );
 }
 
-/** One quiet moment in the page: just the line, and a yantra drawing itself beneath it, its square running out to the edges. */
+/** One quiet moment in the page: just the line, and a yantra drawing itself beneath it, between two pillars. */
 function Quiet() {
   return (
     <section aria-label="Just here and now" data-stop="Just here and now" className="landing-snap relative overflow-clip border-t border-line/70 flex items-center">
@@ -252,7 +252,7 @@ function Quiet() {
       <Yantra draw={false} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(150vw,1100px)] h-auto text-ink/[0.045] landing-turn" />
       <Wrap className="relative py-16 flex flex-col items-center text-center">
         <p className="font-display italic text-[clamp(40px,7vw,84px)] leading-[1.05] tracking-[-0.02em] text-ink">Just here and now</p>
-        <GateYantra className="mt-10 sm:mt-12" />
+        <PillarYantra className="mt-10 sm:mt-12" />
       </Wrap>
     </section>
   );
