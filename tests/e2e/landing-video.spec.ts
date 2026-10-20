@@ -49,10 +49,9 @@ test("landing hero loop", async ({ page }) => {
     const dir = path.join(OUT, theme);
     mkdirSync(dir, { recursive: true });
     await page.evaluate((t) => (document.cookie = "ana-theme=" + t + "; path=/; max-age=31536000"), theme);
-    await page.goto("/home");
-    await page.addStyleTag({ content: "main figure:has(blockquote){display:none!important}" });
-    await page.getByText("Today's practices").first().waitFor();
-    await page.waitForTimeout(1200);
+    await page.goto("/sadhana");
+    await page.getByRole("button", { name: "Edit practices" }).waitFor();
+    await page.waitForTimeout(1000);
     const frames: { file: string; at: number }[] = [];
     const onFrame = async (f: { data: string; sessionId: number; metadata: { timestamp?: number } }) => {
       const file = path.join(dir, `f${String(frames.length).padStart(5, "0")}.jpg`);
@@ -62,27 +61,27 @@ test("landing hero loop", async ({ page }) => {
     };
     cdp.on("Page.screencastFrame", onFrame);
     await cdp.send("Page.startScreencast", { format: "jpeg", quality: 88, maxWidth: 780, maxHeight: 1688, everyNthFrame: 1 });
-    await page.waitForTimeout(1600);
-    // 1. A practice ticked.
-    await page.getByText("Today's practices").first().scrollIntoViewIfNeeded();
-    await page.waitForTimeout(900);
-    await page.getByRole("button", { name: "Isha Kriya done" }).first().click();
     await page.waitForTimeout(1500);
+    // 1. A practice ticked, on Sadhana.
+    await page.getByRole("button", { name: "Isha Kriya done" }).first().click();
+    await page.waitForTimeout(900);
+    await page.getByRole("button", { name: "Surya Kriya done" }).first().click();
+    await page.waitForTimeout(1300);
     // 2. The evening question, written.
-    await page.locator("nav[aria-label=Main] a", { hasText: "Reflection" }).click();
+    await page.locator("nav[aria-label=Main]:visible a", { hasText: "Reflection" }).click();
     const card = page.locator("[aria-roledescription=card]").first();
     await card.waitFor();
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(800);
     await card.locator("textarea").click();
-    await card.locator("textarea").pressSequentially("Twice today. Once at dawn by the river, once before sleep.", { delay: 45 });
+    await card.locator("textarea").pressSequentially("Twice today. Once at dawn by the river, once before sleep.", { delay: 42 });
     await page.mouse.click(20, 140);
-    await page.waitForTimeout(1300);
-    // 3. A photo kept as a moment.
-    await page.goto("/moments");
-    await page.getByText("Sunrise at the lake").first().waitFor();
-    await page.waitForTimeout(700);
-    await page.locator("button:visible", { hasText: "New moment" }).first().click();
-    await page.getByRole("dialog").getByRole("radio", { name: "Photo" }).click();
+    await page.waitForTimeout(1200);
+    // 3. A photo kept as a moment, straight from Home.
+    await page.locator("nav[aria-label=Main]:visible a", { hasText: "Home" }).click();
+    await page.getByRole("button", { name: "Photo" }).first().waitFor();
+    await page.addStyleTag({ content: "main figure:has(blockquote){display:none!important}" });
+    await page.waitForTimeout(900);
+    await page.getByRole("button", { name: "Photo" }).first().click();
     await page.locator('input[type=file][accept="image/*"][multiple]').setInputFiles(path.join(__dirname, "dawn.jpg"));
     const editor = page.getByRole("dialog").locator("[contenteditable=true]").first();
     await editor.waitFor();
@@ -90,6 +89,9 @@ test("landing hero loop", async ({ page }) => {
     await page.keyboard.type("The river at dawn.", { delay: 50 });
     await page.waitForTimeout(500);
     await page.getByRole("button", { name: /Keep it/ }).click();
+    await page.waitForTimeout(900);
+    // …and there it is, in Moments.
+    await page.locator("nav[aria-label=Main]:visible a", { hasText: "Presence" }).click();
     await page.getByText("The river at dawn.").first().waitFor();
     await page.waitForTimeout(2200);
     await cdp.send("Page.stopScreencast");

@@ -5,7 +5,7 @@ import { Ornament } from "@/components/art/Ornament";
 import { Glyph } from "@/components/art/Glyphs";
 import { DoneMark } from "@/components/art/PenMarks";
 import { cn } from "@/lib/utils";
-import { DrawnKolam, HeroLoop, SealedLine, SeenBadge, StickyPhone } from "./Motion";
+import { HeroLine, HeroLoop, SealedLine, SeenBadge, StickyPhone, SwapWord, Yantra } from "./Motion";
 
 /*
  * ana's front door, for anyone not signed in: what ana is, what it holds, why it's private,
@@ -15,7 +15,6 @@ import { DrawnKolam, HeroLoop, SealedLine, SeenBadge, StickyPhone } from "./Moti
  * dawn at the top, the background deepening (barely) towards night as you scroll.
  */
 
-const LINE = "Absolute devotion to what's here and now.";
 
 export function Landing() {
   return (
@@ -79,6 +78,11 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   return <p className="font-ui text-[12.5px] font-semibold uppercase tracking-[0.12em] text-accent">{children}</p>;
 }
 
+/** Faint yantra geometry behind a section, sometimes turning very slowly. */
+function Backdrop({ className, turn = false }: { className?: string; turn?: boolean }) {
+  return <Yantra draw={false} className={cn("pointer-events-none absolute h-auto text-ink/[0.04]", turn && "landing-turn", className)} />;
+}
+
 // ---------------------------------------------------------------- sections
 
 function Header() {
@@ -104,13 +108,12 @@ function Header() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <Ornament name="leaves" width={460} className="pointer-events-none absolute -left-64 -top-6 text-ink-soft/[0.07] hidden xl:block" />
-      <Wrap className="grid lg:grid-cols-[1.05fr_1fr] items-center gap-12 lg:gap-8 pt-12 pb-16 sm:pt-16 lg:pt-20 lg:pb-24">
-        <div className="text-center lg:text-left landing-rise">
-          <Eyebrow>A journal for your sadhana</Eyebrow>
-          <h1 className="mt-5 font-display text-[clamp(38px,6.2vw,66px)] font-semibold leading-[1.04] tracking-[-0.025em] text-balance">{LINE}</h1>
-          <p className="mt-6 mx-auto lg:mx-0 max-w-[34ch] font-serif text-[clamp(18px,2.1vw,21px)] leading-[1.55] text-ink-soft">
-            A private journal for your sadhana, your reflections and the moments that matter.
+      <Backdrop className="-right-40 -top-24 w-[760px]" turn />
+      <Wrap className="relative grid lg:grid-cols-[1.05fr_1fr] items-center gap-12 lg:gap-8 pt-12 pb-16 sm:pt-16 lg:pt-20 lg:pb-24">
+        <div className="text-center lg:text-left">
+          <HeroLine />
+          <p className="mt-6 mx-auto lg:mx-0 max-w-[40ch] font-serif italic text-[16px] sm:text-[17px] leading-[1.6] text-ink-soft/75">
+            <SwapWord words={["Vasari", "Logger"]} /> for you, your reflections and moments that matter.
           </p>
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
             <BeginButton className="w-full sm:w-auto" />
@@ -121,9 +124,14 @@ function Hero() {
           <Ornament name="flourish" width={140} className="mt-10 mx-auto lg:mx-0 text-ink-soft/40" />
         </div>
 
-        {/* The app in use: a practice ticked, the evening question written, a photo kept. */}
-        <div className="flex justify-center landing-rise [animation-delay:120ms]">
-          <HeroLoop />
+        {/* The app in use (a practice ticked, the evening question written, a photo kept), with
+            Daily and Presence fanned out behind it. */}
+        <div className="relative mx-auto w-full max-w-[480px] h-[560px] sm:h-[620px] landing-rise [animation-delay:200ms]">
+          <Phone shot="daily" alt="Daily reflection, one question at a time" className="absolute -left-6 sm:left-0 top-16 w-[44vw] max-w-[220px] -rotate-[7deg] opacity-95" />
+          <Phone shot="presence" alt="Presence: the people and things in your moments" className="absolute -right-6 sm:right-0 top-16 w-[44vw] max-w-[220px] rotate-[7deg] opacity-95" />
+          <div className="absolute left-1/2 -translate-x-1/2 top-0">
+            <HeroLoop />
+          </div>
         </div>
       </Wrap>
     </section>
@@ -170,8 +178,10 @@ const STEPS = [
 
 function Inside() {
   return (
-    <section id="inside" className="scroll-mt-20 border-t border-line/70">
-      <Wrap className="py-20 sm:py-24">
+    <section id="inside" className="relative overflow-hidden scroll-mt-20 border-t border-line/70">
+      <Backdrop className="-left-64 top-[18%] w-[820px]" />
+      <Backdrop className="-right-72 bottom-[8%] w-[760px]" turn />
+      <Wrap className="relative py-20 sm:py-24">
         <div className="text-center max-w-[640px] mx-auto">
           <Eyebrow>What ana holds</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your practice, your reflections, your moments. In one quiet place.</h2>
@@ -215,10 +225,12 @@ function Inside() {
 /** One quiet moment in the page: just the line, and a kolam drawing itself beneath it. */
 function Quiet() {
   return (
-    <section aria-label="Just here and now" className="border-t border-line/70">
-      <Wrap className="py-24 sm:py-32 flex flex-col items-center text-center">
+    <section aria-label="Just here and now" className="landing-snap relative overflow-hidden border-t border-line/70 flex items-center">
+      {/* The same yantra, very large and faint, turning slowly behind. */}
+      <Yantra draw={false} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(150vw,1100px)] h-auto text-ink/[0.045] landing-turn" />
+      <Wrap className="relative py-16 flex flex-col items-center text-center">
         <p className="font-display italic text-[clamp(40px,7vw,84px)] leading-[1.05] tracking-[-0.02em] text-ink">Just here and now.</p>
-        <DrawnKolam className="mt-12 w-[min(70vw,260px)] h-auto text-accent" />
+        <Yantra className="mt-10 sm:mt-12 w-[min(78vw,340px)] h-auto text-accent" />
       </Wrap>
     </section>
   );
@@ -231,8 +243,8 @@ function Private() {
     { glyph: "shield", title: "Unreadable to everyone else", body: "Not the server, not the people who run ana. Only what you keep, for you." },
   ] as const;
   return (
-    <section id="private" className="scroll-mt-20">
-      <Wrap className="py-20 sm:py-24">
+    <section id="private" className="landing-snap flex items-center">
+      <Wrap className="py-12 sm:py-16">
         <div className="relative overflow-hidden rounded-[32px] bg-accent text-bg px-6 py-14 sm:px-12 sm:py-16">
           <Ornament name="kolam" width={340} className="pointer-events-none absolute -right-20 -bottom-24 text-bg/10" />
           <div className="relative max-w-[620px]">
@@ -271,8 +283,9 @@ function Anywhere() {
     { glyph: "sunrise", title: "Light and dark", body: "A calm page by day, a quiet one at night. Your choice, kept on every device." },
   ] as const;
   return (
-    <section className="border-y border-line/70 bg-surface/40">
-      <Wrap className="py-20 sm:py-24">
+    <section className="relative overflow-hidden border-y border-line/70 bg-surface/40">
+      <Backdrop className="left-1/2 -translate-x-1/2 -top-56 w-[900px]" />
+      <Wrap className="relative py-20 sm:py-24">
         <div className="text-center max-w-[600px] mx-auto">
           <Eyebrow>With you anywhere</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(28px,3.8vw,40px)] font-semibold leading-[1.12] tracking-[-0.02em] text-balance">On the mat, on the road, in the ashram.</h2>
@@ -295,8 +308,9 @@ function Anywhere() {
 
 function Begin() {
   return (
-    <section id="begin" className="scroll-mt-20">
-      <Wrap className="py-20 sm:py-24 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-start">
+    <section id="begin" className="relative overflow-hidden scroll-mt-20">
+      <Backdrop className="-left-56 -bottom-40 w-[700px]" turn />
+      <Wrap className="relative py-20 sm:py-24 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-start">
         <div className="text-center lg:text-left">
           <Eyebrow>Begin</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Three small steps.</h2>
@@ -353,8 +367,9 @@ function Questions() {
     { q: "Does it work without internet?", a: "Yes. Everything is kept on your phone, so ana opens and works offline. What you add is sent as soon as you're back online." },
   ];
   return (
-    <section className="border-t border-line/70">
-      <Wrap className="py-20 sm:py-24 max-w-[760px]">
+    <section className="relative overflow-hidden border-t border-line/70">
+      <Backdrop className="-right-48 top-0 w-[620px]" />
+      <Wrap className="relative py-20 sm:py-24 max-w-[760px]">
         <div className="text-center">
           <Eyebrow>Questions</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(28px,3.8vw,40px)] font-semibold leading-[1.12] tracking-[-0.02em]">A few things people ask</h2>
@@ -384,7 +399,7 @@ function Footer() {
             <BrandMark size={26} />
             <span className="font-display text-[22px] font-semibold text-ink leading-none">ana</span>
           </div>
-          <p className="mt-3 font-serif italic text-[15px] text-ink-soft max-w-[36ch]">{LINE}</p>
+          <p className="mt-3 font-serif italic text-[15px] text-ink-soft max-w-[36ch]">Just here and now.</p>
         </div>
         <nav aria-label="Footer" className="flex items-center gap-1">
           <Link href="/login" className="inline-flex h-10 items-center px-3 rounded-full font-ui text-[14px] font-semibold text-ink hover:bg-surface">Sign in</Link>
