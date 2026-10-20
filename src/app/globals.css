@@ -619,8 +619,12 @@ html, body { overflow-x: clip; }
 @keyframes landing-turn { to { transform: rotate(360deg); } }
 .landing-turn { animation: landing-turn 240s linear infinite; }
 /* Sections that take the screen; the page settles onto them when you scroll near. */
+/* The landing moves a section at a time (SectionPager); without script, it settles near one. */
 html:has(.landing-sky) { scroll-snap-type: y proximity; scroll-padding-top: 64px; }
+html.landing-paged:has(.landing-sky) { scroll-snap-type: none; }
 .landing-snap { scroll-snap-align: start; min-height: calc(100svh - 64px); }
+.landing-snap-start { scroll-snap-align: start; }
+.landing-snap-end { scroll-snap-align: end; }
 @media (prefers-reduced-motion: reduce) {
   .landing-word, .landing-bindu, .landing-turn { animation: none; }
   .landing-ink { animation: none; stroke-dashoffset: 0; }

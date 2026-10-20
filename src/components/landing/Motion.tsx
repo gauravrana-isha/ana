@@ -86,8 +86,10 @@ export function StickyPhone({ steps }: { steps: readonly Step[] }) {
     return () => io.disconnect();
   }, []);
   return (
-    <div className="sticky top-24 flex justify-center">
-      <div className="relative rounded-[42px] p-[8px] bg-[#1d1b17] shadow-[0_40px_80px_-30px_rgba(24,22,15,0.5)] ring-1 ring-black/10 dark:ring-white/10 w-[290px]">
+    // A screen tall below the header, so the phone stays centred beside each step; on short
+    // screens it shrinks to fit.
+    <div className="sticky top-16 h-[calc(100svh-64px)] flex items-center justify-center">
+      <div className="relative rounded-[42px] p-[8px] bg-[#1d1b17] shadow-[0_40px_80px_-30px_rgba(24,22,15,0.5)] ring-1 ring-black/10 dark:ring-white/10 w-[min(290px,calc((100svh-128px)*0.462))]">
         <div className="relative overflow-hidden rounded-[34px] bg-bg aspect-[390/844]">
           {steps.map((s, i) =>
             (["light", "dark"] as const).map((t) => (
@@ -230,9 +232,9 @@ const YANTRA = [
   { d: triangle(70, false), w: 1.6 },
 ];
 
-export function Yantra({ className, draw = true }: { className?: string; draw?: boolean }) {
+export function Yantra({ className, draw = true, show }: { className?: string; draw?: boolean; show?: boolean }) {
   const [ref, seen] = useSeen<SVGSVGElement>("-20% 0px");
-  const on = !draw || seen;
+  const on = !draw || (show ?? seen);
   return (
     <svg ref={ref} viewBox="0 0 400 400" fill="none" aria-hidden="true" className={cn("landing-yantra", className)}>
       {YANTRA.map((p, i) => (
@@ -250,6 +252,165 @@ export function Yantra({ className, draw = true }: { className?: string; draw?: 
       {/* The bindu: here, now. It arrives last, and breathes. */}
       <circle cx={C} cy={C} r="5" fill="currentColor" className={draw ? "landing-bindu" : undefined} style={draw ? { opacity: on ? 1 : 0, transition: `opacity 1.2s ease ${0.4 + YANTRA.length * 0.75}s` } : undefined} />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------- a screen at a time
+
+const HEAD = 64;
+
+/**
+ * The page moves a section at a time, like a product page: one turn of the wheel (or swipe of the
+ * trackpad) goes to the next section in that direction, never stopping halfway between two. A
+ * section taller than the screen scrolls as usual until its end. On touch, wherever a swipe comes
+ * to rest between two sections, it settles into the next one in the swipe's direction.
+ * Stops are the elements marked .landing-snap / .landing-snap-start, and the very end.
+ */
+export function SectionPager() {
+  useEffect(() => {
+    if (reduced()) return;
+    const root = document.documentElement;
+    root.classList.add("landing-paged");
+
+    // Each stop as the scroll range where it fills the screen: [start, end], equal unless taller.
+    const ranges = () => {
+      const view = innerHeight - HEAD;
+      const max = root.scrollHeight - innerHeight;
+      const out = [...document.querySelectorAll<HTMLElement>(".landing-snap, .landing-snap-start")].map((el) => {
+        const r = el.getBoundingClientRect();
+        const start = Math.round(r.top + scrollY - HEAD);
+        return [Math.min(start, max), Math.min(Math.max(start, Math.round(start + r.height - view)), max)] as const;
+      });
+      out.push([max, max]);
+      return out;
+    };
+    const resting = (y: number) => ranges().some(([a, b]) => y >= a - 2 && y <= b + 2);
+    const nextStop = (y: number, dir: number) => {
+      const marks = [...new Set(ranges().flat())].sort((a, b) => a - b);
+      return dir > 0 ? marks.find((m) => m > y + 2) : marks.reverse().find((m) => m < y - 2);
+    };
+
+    let busy = false;
+    let cooling = false;
+    let lastWheel = 0;
+    let anchor = scrollY;
+    let touching = false;
+    let idle: ReturnType<typeof setTimeout> | undefined;
+
+    const go = (to: number) => {
+      busy = true;
+      anchor = to;
+      scrollTo({ top: to, behavior: "smooth" });
+      const t0 = performance.now();
+      const wait = () => {
+        if (Math.abs(scrollY - to) < 2 || performance.now() - t0 > 1200) busy = false;
+        else requestAnimationFrame(wait);
+      };
+      requestAnimationFrame(wait);
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !e.deltaY) return;
+      const now = performance.now();
+      const gap = now - lastWheel;
+      lastWheel = now;
+      // While moving, and through the trackpad's glide after it, the gesture is spent.
+      if (busy || (cooling && gap < 220)) return e.preventDefault();
+      cooling = false;
+      const y = scrollY;
+      const to = y + e.deltaY;
+      // Reading through a tall section: scroll as usual.
+      if (ranges().some(([a, b]) => b > a && y >= a - 2 && y <= b + 2 && to >= a && to <= b)) return;
+      const stop = nextStop(y, Math.sign(e.deltaY));
+      if (stop === undefined) return;
+      e.preventDefault();
+      cooling = true;
+      go(stop);
+    };
+
+    // Touch, keys, anything else: when the page comes to rest between two stops, go on to the
+    // next one in the direction it was moving.
+    const settle = () => {
+      if (touching || busy) return;
+      const y = scrollY;
+      if (resting(y)) {
+        anchor = y;
+        return;
+      }
+      const stop = nextStop(y, Math.sign(y - anchor) || 1);
+      if (stop !== undefined) go(stop);
+    };
+    const onScroll = () => {
+      clearTimeout(idle);
+      idle = setTimeout(settle, 140);
+    };
+    const onTouchStart = () => {
+      touching = true;
+      if (!busy) anchor = scrollY;
+    };
+    const onTouchEnd = () => {
+      touching = false;
+      onScroll();
+    };
+
+    addEventListener("wheel", onWheel, { passive: false });
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("touchstart", onTouchStart, { passive: true });
+    addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      root.classList.remove("landing-paged");
+      clearTimeout(idle);
+      removeEventListener("wheel", onWheel);
+      removeEventListener("scroll", onScroll);
+      removeEventListener("touchstart", onTouchStart);
+      removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+  return null;
+}
+
+/** When a yantra layer (its index in YANTRA) starts drawing. */
+const drawsAt = (i: number) => 0.4 + i * 0.75;
+
+const LEGEND = [
+  { side: "left", top: "8%", at: 0, name: "Bhupura", line: "The square with four gates: the world, and the way in." },
+  { side: "left", top: "50%", at: 2, name: "Circles", line: "Time turning, from the outer towards the inner." },
+  { side: "left", top: "92%", at: 3, name: "Sixteen petals", line: "The lotus beginning to open." },
+  { side: "right", top: "8%", at: 5, name: "Eight petals", line: "Opening further, nearer the centre." },
+  { side: "right", top: "50%", at: 7, name: "Two triangles", line: "Effort and grace, the outer and the inner, held as one." },
+  { side: "right", top: "92%", at: YANTRA.length, name: "Bindu", line: "The one point. Here, now." },
+] as const;
+
+/** The yantra drawing itself, outside in, each part named at the sides as it arrives (wide screens). */
+export function YantraLegend({ className }: { className?: string }) {
+  const [ref, seen] = useSeen<HTMLDivElement>("-20% 0px");
+  return (
+    <div ref={ref} className={cn("relative", className)}>
+      <Yantra show={seen} className="w-[min(78vw,340px)] lg:w-[min(380px,calc(100svh-360px))] h-auto text-accent" />
+      {LEGEND.map((l) => (
+        <div
+          key={l.name}
+          className={cn(
+            "hidden lg:flex absolute w-[250px] xl:w-[280px] items-center gap-4",
+            l.side === "left" ? "right-full mr-8 flex-row-reverse text-right" : "left-full ml-8 text-left"
+          )}
+          style={{
+            top: l.top,
+            opacity: seen ? 1 : 0,
+            transform: `translate(${seen ? 0 : l.side === "left" ? -12 : 12}px, -50%)`,
+            transition: `opacity 1.2s ease ${drawsAt(l.at) + 0.6}s, transform 1.2s ease ${drawsAt(l.at) + 0.6}s`,
+          }}
+        >
+          <span aria-hidden="true" className="relative h-px w-14 shrink-0 bg-accent/35">
+            <span className={cn("absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-accent/60", l.side === "left" ? "right-0" : "left-0")} />
+          </span>
+          <div>
+            <p className="font-ui text-[11.5px] font-semibold uppercase tracking-[0.14em] text-accent">{l.name}</p>
+            <p className="mt-1 font-serif italic text-[15.5px] leading-[1.45] text-ink-soft">{l.line}</p>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
