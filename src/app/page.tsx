@@ -5,7 +5,7 @@ import { Landing } from "@/components/landing/Landing";
 
 export const metadata: Metadata = {
   title: { absolute: "ana · Absolute devotion to what's here and now" },
-  description: "A private journal for your sadhana, your reflections and the moments that matter. Encrypted on your phone; only you can read it.",
+  description: "A private logger for your sadhana, your reflections and the moments that matter. Encrypted on your phone; only you can read it.",
 };
 
 /** Signed in: straight to your journal. Otherwise: what ana is, and how to begin. */
