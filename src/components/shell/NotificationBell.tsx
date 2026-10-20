@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,21 @@ import { BellBadge } from "@/components/push/Notifications";
 import { timeAgo } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { CloseButton } from "@/components/ui/CloseButton";
+import { Sheet } from "@/components/ui/Sheet";
+
+/** Wide screens (lg up) show the list under the bell; phones and tablets, in the bottom sheet. */
+const WIDE = "(min-width: 1024px)";
+function useWide() {
+  return useSyncExternalStore(
+    (on) => {
+      const m = window.matchMedia(WIDE);
+      m.addEventListener("change", on);
+      return () => m.removeEventListener("change", on);
+    },
+    () => window.matchMedia(WIDE).matches,
+    () => true,
+  );
+}
 
 interface Item {
   id: string;
@@ -53,6 +68,7 @@ export function NotificationBell({ className }: { className?: string }) {
   const router = useRouter();
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
+  const wide = useWide();
   const { data } = useNotifications();
   const items = data?.items ?? [];
   const unread = data?.unread ?? 0;
@@ -78,6 +94,27 @@ export function NotificationBell({ className }: { className?: string }) {
     router.push(i.url);
   }
 
+  const markAll = unread > 0 && (
+    <button type="button" onClick={() => markRead({ all: true })} className="press h-8 px-2.5 rounded-[10px] font-ui text-[13px] font-semibold text-accent hover:bg-accent-soft">
+      Mark all read
+    </button>
+  );
+  const list = (
+    <>
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center text-center gap-3 px-6 py-10">
+          <BellBadge size={48} />
+          <p className="font-serif italic text-[15.5px] text-ink-soft max-w-[260px]">Nothing new. Moments coming back, your letter and birthdays will find you here.</p>
+        </div>
+      ) : (
+        <>
+          {fresh.length > 0 && <Group title="New" items={fresh} onOpen={openItem} />}
+          {earlier.length > 0 && <Group title="Earlier" items={earlier} onOpen={openItem} />}
+        </>
+      )}
+    </>
+  );
+
   return (
     <div className={cn("relative", className)}>
       <button
@@ -91,57 +128,35 @@ export function NotificationBell({ className }: { className?: string }) {
         {unread > 0 && <span className="absolute top-[11px] right-[12px] w-2.5 h-2.5 rounded-full bg-saffron ring-2 ring-surface" aria-hidden="true" />}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-[65] bg-[rgba(24,22,15,0.3)] lg:bg-transparent"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
-              aria-hidden="true"
-            />
-            <motion.div
-              role="dialog"
-              aria-label="Notifications"
-              className={cn(
-                "z-[66] flex flex-col bg-bg shadow-[var(--shadow-lift)]",
-                "fixed inset-x-0 bottom-0 max-h-[80dvh] rounded-t-[24px] pb-[env(safe-area-inset-bottom)]",
-                "lg:absolute lg:inset-x-auto lg:bottom-auto lg:right-0 lg:top-11 lg:w-[380px] lg:max-h-[520px] lg:rounded-[20px] lg:border lg:border-line lg:pb-0"
-              )}
-              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
-              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <span className="lg:hidden block mx-auto mt-3 w-10 h-1 rounded-full bg-line" aria-hidden="true" />
-              <div className="flex items-center gap-2 px-5 pt-3 lg:pt-4 pb-2">
-                <h2 className="flex-1 font-display text-[19px] font-semibold text-ink">Notifications</h2>
-                {unread > 0 && (
-                  <button type="button" onClick={() => markRead({ all: true })} className="press h-8 px-2.5 rounded-[10px] font-ui text-[13px] font-semibold text-accent hover:bg-accent-soft">
-                    Mark all read
-                  </button>
-                )}
-                <CloseButton onClick={() => setOpen(false)} size="sm" />
-              </div>
-              <div className="overflow-y-auto overscroll-contain px-2 pb-3">
-                {items.length === 0 ? (
-                  <div className="flex flex-col items-center text-center gap-3 px-6 py-10">
-                    <BellBadge size={48} />
-                    <p className="font-serif italic text-[15.5px] text-ink-soft max-w-[260px]">Nothing new. Moments coming back, your letter and birthdays will find you here.</p>
-                  </div>
-                ) : (
-                  <>
-                    {fresh.length > 0 && <Group title="New" items={fresh} onOpen={openItem} />}
-                    {earlier.length > 0 && <Group title="Earlier" items={earlier} onOpen={openItem} />}
-                  </>
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {wide ? (
+        <AnimatePresence>
+          {open && (
+            <>
+              <motion.div className="fixed inset-0 z-[65]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setOpen(false)} aria-hidden="true" />
+              <motion.div
+                role="dialog"
+                aria-label="Notifications"
+                className="absolute right-0 top-11 z-[66] w-[380px] max-h-[520px] flex flex-col bg-bg shadow-[var(--shadow-lift)] rounded-[20px] border border-line"
+                initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
+                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="flex items-center gap-2 px-5 pt-4 pb-2">
+                  <h2 className="flex-1 font-display text-[19px] font-semibold text-ink">Notifications</h2>
+                  {markAll}
+                  <CloseButton onClick={() => setOpen(false)} size="sm" />
+                </div>
+                <div className="overflow-y-auto overscroll-contain px-2 pb-3">{list}</div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      ) : (
+        <Sheet open={open} onClose={() => setOpen(false)} title="Notifications" action={markAll}>
+          <div className="-mx-3">{list}</div>
+        </Sheet>
+      )}
     </div>
   );
 }

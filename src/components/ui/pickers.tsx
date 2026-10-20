@@ -1,18 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
-import { Portal } from "./Portal";
-import { CloseButton } from "./CloseButton";
-import { useVisibleArea } from "@/lib/visual-viewport";
+import { Sheet } from "./Sheet";
 import { toISODate, today } from "@/lib/dates";
 import { Chevron, RoundArrowButton } from "./Arrows";
 import { CrossMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 import { Segmented } from "@/components/ui/Segmented";
-import { lockScroll } from "@/lib/scroll-lock";
 
 /*
  * ana's own date and time pickers. Used everywhere instead of the browser/device pickers so
@@ -24,51 +20,12 @@ const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 // ---------------------------------------------------------------- panel
 
-/** Bottom sheet on phones, small centred dialog on larger screens; always above other sheets. */
+/** The pickers open in the app's one bottom sheet, in its small size (a small dialog on wider screens). */
 export function PickerPanel({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; footer?: React.ReactNode }) {
-  const reduce = useReducedMotion();
-  const area = useVisibleArea(open);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey, true);
-    const unlock = lockScroll();
-    return () => {
-      window.removeEventListener("keydown", onKey, true);
-      unlock();
-    };
-  }, [open, onClose]);
-
   return (
-    <Portal>
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-6" style={area} role="dialog" aria-modal="true" aria-label={title}>
-          <motion.div className="absolute inset-0 bg-[rgba(24,22,15,0.3)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
-          <motion.div
-            className="relative w-full sm:w-[344px] bg-bg rounded-t-[24px] sm:rounded-[22px] shadow-[var(--shadow-lift)] px-5 pt-3 sm:pt-5 pb-[max(18px,env(safe-area-inset-bottom))] sm:pb-5"
-            initial={reduce ? { opacity: 0 } : { y: 24, opacity: 0, scale: 0.98 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={reduce ? { opacity: 0 } : { y: 24, opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <span className="sm:hidden block mx-auto w-10 h-1 rounded-full bg-line mb-3" aria-hidden="true" />
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-[19px] font-semibold text-ink">{title}</h2>
-              <CloseButton onClick={onClose} size="sm" />
-            </div>
-            {children}
-            {footer && <div className="mt-4 flex gap-2">{footer}</div>}
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-    </Portal>
+    <Sheet open={open} onClose={onClose} title={title} size="sm" footer={footer ? <div className="flex gap-2">{footer}</div> : undefined}>
+      {children}
+    </Sheet>
   );
 }
 

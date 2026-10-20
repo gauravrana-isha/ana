@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { SheetActions } from "@/components/ui/Sheet";
 import { cn } from "@/lib/utils";
 import {
   PasskeyUnsupportedError,
@@ -210,7 +211,8 @@ function strength(p: string) {
   return Math.min(3, s);
 }
 
-export function PassphraseForm({ onSubmit, cta = "Continue", title = "Choose a passphrase" }: { onSubmit: (p: string) => Promise<void>; cta?: string; title?: string }) {
+export function PassphraseForm({ onSubmit, cta = "Continue", title = "Choose a passphrase", inSheet = false }: { onSubmit: (p: string) => Promise<void>; cta?: string; title?: string; /** In a sheet: its button goes to the sheet's bottom bar. */ inSheet?: boolean }) {
+  const formId = useId();
   const [p, setP] = useState("");
   const [again, setAgain] = useState("");
   const [show, setShow] = useState(false);
@@ -236,7 +238,7 @@ export function PassphraseForm({ onSubmit, cta = "Continue", title = "Choose a p
 
   const input = "w-full h-12 px-4 rounded-[14px] bg-surface text-ink font-ui text-[16px] outline-none border border-transparent focus:border-accent transition-colors";
   return (
-    <form onSubmit={submit}>
+    <form id={formId} onSubmit={submit}>
       <ScreenTitle title={title} lead="A short sentence only you would know is easiest to remember, e.g. three or four words with a space between." />
       <div className="mt-7 flex flex-col gap-4">
         <label className="block">
@@ -259,9 +261,17 @@ export function PassphraseForm({ onSubmit, cta = "Continue", title = "Choose a p
           <input type={show ? "text" : "password"} value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" className={cn(input, "mt-2")} />
         </label>
         <FieldError>{error}</FieldError>
-        <Button size="lg" type="submit" className="w-full mt-2" loading={busy} disabled={!p || !again}>
-          {cta}
-        </Button>
+        {inSheet ? (
+          <SheetActions>
+            <Button type="submit" form={formId} loading={busy} disabled={!p || !again}>
+              {cta}
+            </Button>
+          </SheetActions>
+        ) : (
+          <Button size="lg" type="submit" className="w-full mt-2" loading={busy} disabled={!p || !again}>
+            {cta}
+          </Button>
+        )}
       </div>
     </form>
   );

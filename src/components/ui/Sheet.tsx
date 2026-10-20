@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useDragControls, useReducedMotion, type PanInfo } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BusyBar } from "./Busy";
@@ -18,7 +19,12 @@ interface SheetProps {
   footer?: React.ReactNode;
   /** Extra header content under the title (tabs). */
   header?: React.ReactNode;
-  size?: "md" | "lg";
+  /** Beside the title, before the close button (e.g. "Mark all read"). */
+  action?: React.ReactNode;
+  /** sm: a small dialog on wider screens (pickers); lg: a wide one. */
+  size?: "sm" | "md" | "lg";
+  /** A fixed, tall height (lists that change length as you use them). */
+  tall?: boolean;
   /** Saving: fields lock, a bar runs along the top, closing is blocked. */
   busy?: boolean;
 }
@@ -26,13 +32,28 @@ interface SheetProps {
 /** The sheets open now, oldest first (the last is on top). */
 const openSheets: string[] = [];
 
+/** The open sheet's footer, for actions placed from inside its body (see SheetActions). */
+const FooterSlot = createContext<HTMLElement | null>(null);
+
+/**
+ * A sheet's actions, from anywhere in its body: they go to the sheet's footer, the one bar at
+ * the bottom every sheet shares. (A submit button there needs form="…", being outside the form.)
+ * Outside a sheet they sit in a row under the content.
+ */
+export function SheetActions({ children }: { children: React.ReactNode }) {
+  const slot = useContext(FooterSlot);
+  const row = <div className="flex justify-end gap-3">{children}</div>;
+  return slot ? createPortal(row, slot) : <div className="mt-6">{row}</div>;
+}
+
 /** Bottom sheet on phones, centred dialog on larger screens. */
-export function Sheet({ open, onClose, title, children, footer, header, size = "md", busy = false }: SheetProps) {
+export function Sheet({ open, onClose, title, children, footer, header, action, size = "md", tall = false, busy = false }: SheetProps) {
   const reduce = useReducedMotion();
   const area = useVisibleArea(open);
   const bodyRef = useRef<HTMLDivElement>(null);
   const drag = useDragControls();
   const id = useId();
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
 
   // Phones: pull the sheet down by its handle or title to close it; a short pull springs back.
   const startDrag = (e: React.PointerEvent) => {
@@ -120,7 +141,8 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
           <motion.div
             className={cn(
               "relative w-full max-h-[94%] sm:max-h-[88%] flex flex-col bg-bg rounded-t-[24px] sm:rounded-[24px] shadow-[var(--shadow-lift)] overflow-hidden",
-              size === "lg" ? "sm:max-w-[680px]" : "sm:max-w-[560px]"
+              size === "lg" ? "sm:max-w-[680px]" : size === "sm" ? "sm:max-w-[380px]" : "sm:max-w-[560px]",
+              tall && "h-[92%] sm:h-[min(820px,88%)]"
             )}
             initial={reduce ? { opacity: 0 } : { y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -139,17 +161,19 @@ export function Sheet({ open, onClose, title, children, footer, header, size = "
             </div>
             <header onPointerDown={startDrag} className="shrink-0 px-5 sm:px-6 pt-4 sm:pt-6 max-sm:touch-none">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="font-display text-[24px] font-semibold tracking-[-0.015em] text-ink">{title}</h2>
-                <CloseButton onClick={onClose} disabled={busy} />
+                <h2 className={cn("flex-1 font-display font-semibold tracking-[-0.015em] text-ink", size === "sm" ? "text-[20px]" : "text-[24px]")}>{title}</h2>
+                {action}
+                <CloseButton onClick={onClose} disabled={busy} size={size === "sm" ? "sm" : undefined} />
               </div>
               <div inert={busy}>{header}</div>
             </header>
             <div ref={bodyRef} inert={busy} aria-busy={busy || undefined} className={cn("flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 pt-4 pb-6 transition-opacity duration-200", busy && "opacity-60 select-none")}>
-              {children}
+              <FooterSlot.Provider value={slot}>{children}</FooterSlot.Provider>
             </div>
-            {footer && (
-              <footer className="shrink-0 px-5 sm:px-6 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] border-t border-line bg-bg">{footer}</footer>
-            )}
+            {/* The one bar of actions at the bottom (hidden while there's nothing in it). */}
+            <footer ref={setSlot} className="shrink-0 px-5 sm:px-6 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] border-t border-line bg-bg empty:hidden">
+              {footer}
+            </footer>
           </motion.div>
         </div>
       )}

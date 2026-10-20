@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
-import { Sheet } from "@/components/ui/Sheet";
+import { Sheet, SheetActions } from "@/components/ui/Sheet";
 import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
 import { normaliseCode } from "@/lib/vault/crypto";
@@ -198,6 +198,7 @@ function PassphraseSheet({ open, status, onClose, onDone }: { open: boolean; sta
         <PassphraseForm
           title={old ? "A new passphrase" : "Choose a passphrase"}
           cta={old ? "Change it" : "Add it"}
+          inSheet
           onSubmit={async (p) => {
             await addKey("passphrase", { passphrase: p });
             if (old) await removeKey(old.id);
@@ -294,12 +295,13 @@ function LetInSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       {done ? (
         <div className="flex flex-col gap-4">
           <p className="font-ui text-[15px] leading-[1.6] text-ink">Done. The other device is opening your journal now.</p>
-          <div className="flex justify-end">
+          <SheetActions>
             <Button onClick={close}>Close</Button>
-          </div>
+          </SheetActions>
         </div>
       ) : (
         <form
+          id="let-in-device"
           className="flex flex-col gap-4"
           onSubmit={async (e) => {
             e.preventDefault();
@@ -333,10 +335,10 @@ function LetInSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           />
           <FieldError>{error}</FieldError>
           <p className="font-ui text-[12.5px] leading-[1.55] text-ink-soft">Only let in a device you&rsquo;re holding. Your key goes to it encrypted, so only that device can open it.</p>
-          <div className="flex justify-end gap-3">
+          <SheetActions>
             <Button variant="secondary" type="button" onClick={close}>Cancel</Button>
-            <Button type="submit" loading={busy} disabled={!normal}>Let it in</Button>
-          </div>
+            <Button type="submit" form="let-in-device" loading={busy} disabled={!normal}>Let it in</Button>
+          </SheetActions>
         </form>
       )}
     </Sheet>

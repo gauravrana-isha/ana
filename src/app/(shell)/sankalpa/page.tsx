@@ -17,7 +17,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
 import { fetchCommitment, saveCommitment, type Letter } from "@/lib/journal";
-import { EditMark, InfoMark } from "@/components/art/PenMarks";
+import { InfoMark } from "@/components/art/PenMarks";
+import { EditSaveFab } from "@/components/reflection/EditSaveFab";
 import { Chevron } from "@/components/ui/Arrows";
 import { onScreen } from "@/lib/on-screen";
 
@@ -106,8 +107,25 @@ export default function CommitmentPage() {
     setPatching(false);
   }
 
+  const rewrite = () => {
+    if (!current) return;
+    setDraft(current.body);
+    setRevisit(current.revisit);
+    setWriting(true);
+  };
+
   return (
     <div className="flex flex-col gap-8">
+      {/* The same floating pen / ✓ as Daily and Weekly: rewrite, keep, or go back to the letter. */}
+      <EditSaveFab
+        editing={editing}
+        saving={saving}
+        canSave={!!draft.trim()}
+        what="letter"
+        onEdit={rewrite}
+        onSave={save}
+        onCancel={current ? () => setWriting(false) : undefined}
+      />
       {editing ? (
         <Busy busy={saving} bar={false}>
         <section className="flex flex-col gap-5">
@@ -142,10 +160,6 @@ export default function CommitmentPage() {
             </div>
             <NotifyNudge show={revisit !== "never"} what="it's time to read it again" />
           </div>
-          <div className="flex gap-3">
-            <Button onClick={save} loading={saving} disabled={!draft.trim()}>Keep this letter</Button>
-            {current && <Button variant="secondary" onClick={() => setWriting(false)}>Cancel</Button>}
-          </div>
         </section>
         </Busy>
       ) : (
@@ -172,9 +186,6 @@ export default function CommitmentPage() {
             </div>
             <div className="flex gap-2">
               {data.due && <Button variant="secondary" onClick={() => patch({ revisited: true })}>I&rsquo;ve read it again</Button>}
-              <Button variant="ghost" onClick={() => { setDraft(current.body); setRevisit(current.revisit); setWriting(true); }}>
-                <EditMark size={18} /> Rewrite
-              </Button>
             </div>
           </div>
         </section>
