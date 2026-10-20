@@ -607,4 +607,23 @@ html, body { overflow-x: clip; }
   .landing-sky { animation: landing-dusk linear both; animation-timeline: scroll(root); }
 }
 /* Less motion: the kolam is simply there, drawn. */
-@media (prefers-reduced-motion: reduce) { .landing-kolam * { transition: none !important; } }
+
+/* Landing: the main line's words arrive one by one; the ink stroke draws, then breathes. */
+@keyframes landing-word { from { opacity: 0; transform: translateY(0.35em); filter: blur(4px); } }
+.landing-word { display: inline-block; animation: landing-word 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes landing-ink { 0% { stroke-dashoffset: 1; } 100% { stroke-dashoffset: 0; } }
+@keyframes landing-ink-breathe { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.landing-ink { stroke-dasharray: 1; stroke-dashoffset: 1; animation: landing-ink 1.4s cubic-bezier(0.45, 0, 0.25, 1) 1.2s forwards, landing-ink-breathe 6s ease-in-out 2.8s infinite; }
+@keyframes landing-bindu { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+.landing-bindu { transform-box: fill-box; transform-origin: center; animation: landing-bindu 5s ease-in-out 8s infinite; }
+@keyframes landing-turn { to { transform: rotate(360deg); } }
+.landing-turn { animation: landing-turn 240s linear infinite; }
+/* Sections that take the screen; the page settles onto them when you scroll near. */
+html:has(.landing-sky) { scroll-snap-type: y proximity; scroll-padding-top: 64px; }
+.landing-snap { scroll-snap-align: start; min-height: calc(100svh - 64px); }
+@media (prefers-reduced-motion: reduce) {
+  .landing-word, .landing-bindu, .landing-turn { animation: none; }
+  .landing-ink { animation: none; stroke-dashoffset: 0; }
+  .landing-yantra * { transition: none !important; }
+  html:has(.landing-sky) { scroll-snap-type: none; }
+}

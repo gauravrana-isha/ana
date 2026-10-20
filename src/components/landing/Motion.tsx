@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { cn } from "@/lib/utils";
 
@@ -177,45 +177,128 @@ export function SealedLine({ text }: { text: string }) {
   );
 }
 
-// ---------------------------------------------------------------- a kolam drawing itself
+// ---------------------------------------------------------------- a yantra drawing itself
 
-const DOTS: [number, number][] = [];
-for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) if (Math.abs(x - 2) + Math.abs(y - 2) <= 3) DOTS.push([60 + x * 40, 60 + y * 40]);
+const C = 200;
+const pt = (r: number, deg: number) => {
+  const a = ((deg - 90) * Math.PI) / 180;
+  return [C + r * Math.cos(a), C + r * Math.sin(a)].map((v) => Math.round(v * 10) / 10);
+};
+/** A ring of lotus petals between two radii. */
+function petals(n: number, r1: number, r2: number, phase = 0) {
+  const half = 180 / n;
+  return Array.from({ length: n }, (_, i) => {
+    const a = phase + (i * 360) / n;
+    const [x1, y1] = pt(r1, a - half);
+    const [x2, y2] = pt(r1, a + half);
+    const [tx, ty] = pt(r2, a);
+    const [c1x, c1y] = pt(r2 * 0.92, a - half * 0.55);
+    const [c2x, c2y] = pt(r2 * 0.92, a + half * 0.55);
+    return `M${x1} ${y1} Q${c1x} ${c1y} ${tx} ${ty} Q${c2x} ${c2y} ${x2} ${y2}`;
+  }).join(" ");
+}
+const circle = (r: number) => `M${C} ${C - r} a${r} ${r} 0 1 1 0 ${2 * r} a${r} ${r} 0 1 1 0 ${-2 * r}`;
+/** The square enclosure with a gate on each side (bhupura). */
+function bhupura(h: number, gate: number, depth: number) {
+  const a = C - h, b = C + h, g1 = C - gate, g2 = C + gate;
+  return [
+    `M${a} ${a} L${g1} ${a} L${g1} ${a - depth} L${g2} ${a - depth} L${g2} ${a} L${b} ${a}`,
+    `L${b} ${g1} L${b + depth} ${g1} L${b + depth} ${g2} L${b} ${g2} L${b} ${b}`,
+    `L${g2} ${b} L${g2} ${b + depth} L${g1} ${b + depth} L${g1} ${b} L${a} ${b}`,
+    `L${a} ${g2} L${a - depth} ${g2} L${a - depth} ${g1} L${a} ${g1} Z`,
+  ].join(" ");
+}
+const triangle = (r: number, up: boolean) => {
+  const [p1, p2, p3] = (up ? [0, 120, 240] : [180, 300, 60]).map((d) => pt(r, d));
+  return `M${p1[0]} ${p1[1]} L${p2[0]} ${p2[1]} L${p3[0]} ${p3[1]} Z`;
+};
 
-/** A pulli kolam (loops around a grid of dots), drawn by a slow hand once it's in view. */
-export function DrawnKolam({ className }: { className?: string }) {
+/**
+ * A yantra in the journal's ink: the square with four gates, three circles, sixteen petals,
+ * eight petals, a circle, two interlocking triangles and, at the centre, the bindu. Drawn from
+ * the outside in, as attention moves inward, arriving at the point at the centre.
+ */
+const YANTRA = [
+  { d: bhupura(176, 34, 14), w: 1.6 },
+  { d: bhupura(166, 30, 10), w: 1 },
+  { d: `${circle(152)} ${circle(146)}`, w: 1.2 },
+  { d: petals(16, 112, 146), w: 1.4 },
+  { d: circle(112), w: 1.2 },
+  { d: petals(8, 78, 112, 22.5), w: 1.5 },
+  { d: circle(78), w: 1.2 },
+  { d: triangle(70, true), w: 1.6 },
+  { d: triangle(70, false), w: 1.6 },
+];
+
+export function Yantra({ className, draw = true }: { className?: string; draw?: boolean }) {
   const [ref, seen] = useSeen<SVGSVGElement>("-20% 0px");
-  // Petals round the centre, loops round the rows, a frame with curled corners.
-  const strokes = [
-    "M140 100 C175 100 180 140 140 140 C100 140 105 100 140 100 Z",
-    "M140 180 C175 180 180 140 140 140 C100 140 105 180 140 180 Z",
-    "M100 140 C100 105 140 100 140 140 C140 180 100 175 100 140 Z",
-    "M180 140 C180 105 140 100 140 140 C140 180 180 175 180 140 Z",
-    "M140 40 C190 40 240 90 240 140 C240 190 190 240 140 240 C90 240 40 190 40 140 C40 90 90 40 140 40 Z",
-    "M100 60 C70 60 60 70 60 100 M180 60 C210 60 220 70 220 100 M220 180 C220 210 210 220 180 220 M60 180 C60 210 70 220 100 220",
-    "M140 20 C150 30 150 40 140 50 C130 40 130 30 140 20 M260 140 C250 150 240 150 230 140 C240 130 250 130 260 140 M140 260 C130 250 130 240 140 230 C150 240 150 250 140 260 M20 140 C30 130 40 130 50 140 C40 150 30 150 20 140",
-  ];
+  const on = !draw || seen;
   return (
-    <svg ref={ref} viewBox="0 0 280 280" fill="none" aria-hidden="true" className={cn("landing-kolam", className)}>
-      {DOTS.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="2.6" fill="currentColor" className="transition-opacity duration-700" style={{ opacity: seen ? 0.55 : 0, transitionDelay: `${i * 40}ms` }} />
-      ))}
-      {strokes.map((d, i) => (
+    <svg ref={ref} viewBox="0 0 400 400" fill="none" aria-hidden="true" className={cn("landing-yantra", className)}>
+      {YANTRA.map((p, i) => (
         <path
           key={i}
-          d={d}
+          d={p.d}
           pathLength={1}
           stroke="currentColor"
-          strokeWidth={2}
+          strokeWidth={p.w}
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{
-            strokeDasharray: 1,
-            strokeDashoffset: seen ? 0 : 1,
-            transition: `stroke-dashoffset 2.6s cubic-bezier(0.45, 0, 0.25, 1) ${0.8 + i * 0.9}s`,
-          }}
+          style={draw ? { strokeDasharray: 1, strokeDashoffset: on ? 0 : 1, transition: `stroke-dashoffset 2.4s cubic-bezier(0.45, 0, 0.25, 1) ${0.4 + i * 0.75}s` } : undefined}
         />
       ))}
+      {/* The bindu: here, now. It arrives last, and breathes. */}
+      <circle cx={C} cy={C} r="5" fill="currentColor" className={draw ? "landing-bindu" : undefined} style={draw ? { opacity: on ? 1 : 0, transition: `opacity 1.2s ease ${0.4 + YANTRA.length * 0.75}s` } : undefined} />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------- the main line
+
+/** The main line: its words arrive one by one, then "here and now" lights up, underlined in ink. */
+export function HeroLine() {
+  const words = ["Absolute", "devotion", "to", "what's"];
+  return (
+    <h1 className="mt-5 font-display text-[clamp(38px,6.2vw,66px)] font-semibold leading-[1.06] tracking-[-0.025em] text-balance">
+      {words.map((w, i) => (
+        // The space sits outside each word (inside an inline-block it would be dropped).
+        <Fragment key={w}>
+          <span className="landing-word" style={{ animationDelay: `${0.15 + i * 0.16}s` }}>
+            {w}
+          </span>{" "}
+        </Fragment>
+      ))}
+      <span className="landing-word relative inline-block whitespace-nowrap text-accent" style={{ animationDelay: `${0.15 + words.length * 0.16}s` }}>
+        here and now
+        <svg aria-hidden="true" viewBox="0 0 300 24" preserveAspectRatio="none" className="absolute left-0 -bottom-[0.12em] w-[96%] h-[0.32em] text-accent overflow-visible">
+          <path d="M3 15 C 60 7, 120 19, 180 11 S 270 9, 297 13" pathLength={1} stroke="currentColor" strokeWidth={5} strokeLinecap="round" fill="none" className="landing-ink" />
+        </svg>
+      </span>
+    </h1>
+  );
+}
+
+// ---------------------------------------------------------------- two words, one meaning
+
+/** "Vasari" and "Logger" (the same thing, in Sanskrit and English) gently trading places. */
+export function SwapWord({ words }: { words: readonly [string, string] }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (reduced()) return;
+    const t = setInterval(() => setI((n) => (n + 1) % 2), 3200);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span className="relative inline-grid align-baseline" aria-label={`${words[0]} (${words[1]})`}>
+      {words.map((w, n) => (
+        <span
+          key={w}
+          aria-hidden="true"
+          className={cn("col-start-1 row-start-1 transition-all duration-700 ease-out", n === i ? "opacity-100 translate-y-0 blur-0" : "opacity-0 -translate-y-[0.35em] blur-[3px]")}
+        >
+          {w}
+        </span>
+      ))}
+    </span>
   );
 }

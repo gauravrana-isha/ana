@@ -4,7 +4,7 @@ import { getCurrentUser, homeFor } from "@/lib/session";
 import { Landing } from "@/components/landing/Landing";
 
 export const metadata: Metadata = {
-  title: { absolute: "ana · Absolute devotion towards what is there at present" },
+  title: { absolute: "ana · Absolute devotion to what's here and now" },
   description: "A private journal for your sadhana, your reflections and the moments that matter. Encrypted on your phone; only you can read it.",
 };
 
