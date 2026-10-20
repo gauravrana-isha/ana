@@ -38,7 +38,7 @@ const publicSans = Public_Sans({
 });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://anasadh.vercel.app";
-const DESCRIPTION = "A logger for your sadhana, your reflections and the moments that matter. Only you can open it.";
+const DESCRIPTION = "Logger for you, your reflections and moments that matter.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "ana",
-    title: "ana · a logger for your sadhana",
+    title: "ana · logger",
     description: DESCRIPTION,
     url: "/",
     images: [{ url: "/og.png", secureUrl: `${APP_URL}/og.png`, type: "image/png", width: 1200, height: 630, alt: "ana — your sadhana, and the moments worth keeping" }],
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ana · a logger for your sadhana",
+    title: "ana · logger",
     description: DESCRIPTION,
     images: [{ url: "/og.png", alt: "ana — your sadhana, and the moments worth keeping" }],
   },

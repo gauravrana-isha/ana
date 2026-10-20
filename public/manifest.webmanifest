@@ -1,7 +1,7 @@
 {
-  "name": "ana \u00b7 sadhana logger",
+  "name": "ana \u00b7 logger",
   "short_name": "ana",
-  "description": "A logger for your sadhana, your reflections and the moments that matter.",
+  "description": "Logger for you, your reflections and moments that matter.",
   "start_url": "/home?source=pwa",
   "scope": "/",
   "display": "standalone",
