@@ -5,7 +5,7 @@ import { Ornament } from "@/components/art/Ornament";
 import { Glyph } from "@/components/art/Glyphs";
 import { DoneMark } from "@/components/art/PenMarks";
 import { cn } from "@/lib/utils";
-import { HeroLine, HeroLoop, SealedLine, SeenBadge, StickyPhone, SwapWord, Yantra } from "./Motion";
+import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, SwapWord, Yantra, YantraLegend } from "./Motion";
 
 /*
  * ana's front door, for anyone not signed in: what ana is, what it holds, why it's private,
@@ -30,6 +30,7 @@ export function Landing() {
         <Questions />
       </main>
       <Footer />
+      <SectionPager />
     </div>
   );
 }
@@ -42,12 +43,13 @@ function Wrap({ className, children }: { className?: string; children: React.Rea
 
 function BeginButton({ className, children = "Begin" }: { className?: string; children?: React.ReactNode }) {
   return (
-    <Link
-      href="/login"
-      className={cn("press inline-flex items-center justify-center gap-2 h-12 px-7 rounded-full bg-accent text-bg font-ui text-[15px] font-semibold shadow-[var(--shadow-soft)] hover:brightness-110 transition", className)}
-    >
-      {children}
-      <span aria-hidden="true">→</span>
+    <Link href="/login" className={cn("landing-cta group press", className)}>
+      <span className="relative">{children}</span>
+      <span aria-hidden="true" className="landing-cta-arrow">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 8h10M9 4l4 4-4 4" />
+        </svg>
+      </span>
     </Link>
   );
 }
@@ -107,18 +109,21 @@ function Header() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="landing-snap relative overflow-clip flex items-center">
       <Backdrop className="-right-40 -top-24 w-[760px]" turn />
-      <Wrap className="relative grid lg:grid-cols-[1.05fr_1fr] items-center gap-12 lg:gap-8 pt-12 pb-16 sm:pt-16 lg:pt-20 lg:pb-24">
-        <div className="text-center lg:text-left">
+      <Wrap className="relative grid lg:grid-cols-[1.05fr_1fr] items-center gap-12 lg:gap-8 pt-10 pb-16 sm:pt-12 lg:pt-14 lg:pb-24">
+        <div className="text-center lg:text-left lg:-mt-20">
           <HeroLine />
           <p className="mt-6 mx-auto lg:mx-0 max-w-[40ch] font-serif italic text-[16px] sm:text-[17px] leading-[1.6] text-ink-soft/75">
             <SwapWord words={["Vasari", "Logger"]} /> for you, your reflections and moments that matter.
           </p>
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
             <BeginButton className="w-full sm:w-auto" />
-            <a href="#inside" className="press inline-flex items-center justify-center h-12 px-6 rounded-full font-ui text-[15px] font-semibold text-ink hover:bg-surface w-full sm:w-auto">
+            <a href="#inside" className="landing-ghost group press w-full sm:w-auto">
               See what it holds
+              <svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="landing-ghost-arrow">
+                <path d="M8 3v10M4 9l4 4 4-4" />
+              </svg>
             </a>
           </div>
           <Ornament name="flourish" width={140} className="mt-10 mx-auto lg:mx-0 text-ink-soft/40" />
@@ -178,18 +183,27 @@ const STEPS = [
 
 function Inside() {
   return (
-    <section id="inside" className="relative overflow-hidden scroll-mt-20 border-t border-line/70">
+    <section id="inside" className="relative overflow-clip border-t border-line/70">
       <Backdrop className="-left-64 top-[18%] w-[820px]" />
       <Backdrop className="-right-72 bottom-[8%] w-[760px]" turn />
-      <Wrap className="relative py-20 sm:py-24">
-        <div className="text-center max-w-[640px] mx-auto">
+      <Wrap className="relative pb-12 lg:pb-0">
+        {/* On wide screens a screen of its own, so each step after it has the whole screen. */}
+        <div className="landing-snap-start text-center max-w-[720px] mx-auto pt-20 sm:pt-24 lg:pt-0 lg:min-h-[calc(100svh-64px)] lg:flex lg:flex-col lg:items-center lg:justify-center">
           <Eyebrow>What ana holds</Eyebrow>
-          <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your practice, your reflections, your moments. In one quiet place.</h2>
+          <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,52px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your practice, your reflections, your moments. In one quiet place.</h2>
+          <ul className="mt-10 hidden lg:flex items-center justify-center gap-10">
+            {FEATURES.map((f) => (
+              <li key={f.eyebrow} className="flex items-center gap-3">
+                <SeenBadge k={f.badge} />
+                <Eyebrow>{f.eyebrow}</Eyebrow>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="mt-16 sm:mt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-20">
-          <div className="flex flex-col gap-24 lg:gap-0">
+        <div className="mt-6 sm:mt-10 lg:mt-0 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-20">
+          <div className="flex flex-col">
             {FEATURES.map((f, i) => (
-              <article key={f.eyebrow} data-step={f.step} className="lg:min-h-[78vh] lg:flex lg:flex-col lg:justify-center">
+              <article key={f.eyebrow} data-step={f.step} className="landing-snap-start py-12 lg:py-10 lg:min-h-[calc(100svh-64px)] lg:flex lg:flex-col lg:justify-center">
                 <div className="max-w-[520px] mx-auto lg:mx-0 text-center lg:text-left">
                   <div className="inline-flex items-center gap-3">
                     <SeenBadge k={f.badge} />
@@ -222,15 +236,15 @@ function Inside() {
   );
 }
 
-/** One quiet moment in the page: just the line, and a kolam drawing itself beneath it. */
+/** One quiet moment in the page: just the line, and a yantra drawing itself beneath it, its parts named at the sides. */
 function Quiet() {
   return (
-    <section aria-label="Just here and now" className="landing-snap relative overflow-hidden border-t border-line/70 flex items-center">
+    <section aria-label="Just here and now" className="landing-snap relative overflow-clip border-t border-line/70 flex items-center">
       {/* The same yantra, very large and faint, turning slowly behind. */}
       <Yantra draw={false} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(150vw,1100px)] h-auto text-ink/[0.045] landing-turn" />
       <Wrap className="relative py-16 flex flex-col items-center text-center">
-        <p className="font-display italic text-[clamp(40px,7vw,84px)] leading-[1.05] tracking-[-0.02em] text-ink">Just here and now.</p>
-        <Yantra className="mt-10 sm:mt-12 w-[min(78vw,340px)] h-auto text-accent" />
+        <p className="font-display italic text-[clamp(40px,7vw,84px)] leading-[1.05] tracking-[-0.02em] text-ink">Just here and now</p>
+        <YantraLegend className="mt-10 sm:mt-12" />
       </Wrap>
     </section>
   );
@@ -244,29 +258,31 @@ function Private() {
   ] as const;
   return (
     <section id="private" className="landing-snap flex items-center">
-      <Wrap className="py-12 sm:py-16">
-        <div className="relative overflow-hidden rounded-[32px] bg-accent text-bg px-6 py-14 sm:px-12 sm:py-16">
+      <Wrap className="py-8">
+        <div className="relative overflow-hidden rounded-[32px] bg-accent text-bg px-6 py-10 sm:px-12 sm:py-12">
           <Ornament name="kolam" width={340} className="pointer-events-none absolute -right-20 -bottom-24 text-bg/10" />
           <div className="relative max-w-[620px]">
             <p className="font-ui text-[12.5px] font-semibold uppercase tracking-[0.12em] text-bg/75">Private by design</p>
-            <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your journal is yours alone.</h2>
-            <p className="mt-4 font-serif text-[18px] leading-[1.6] text-bg/85">What you write in ana is between you and you.</p>
+            <h2 className="mt-3 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your journal is yours alone.</h2>
+            <p className="mt-3 font-serif text-[18px] leading-[1.6] text-bg/85">What you write in ana is between you and you.</p>
           </div>
           {/* What leaves your phone: your words, sealed. */}
-          <div className="relative mt-10 rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-5 sm:p-6 max-w-[640px]">
+          <div className="relative mt-7 rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-5 max-w-[640px]">
             <p className="font-ui text-[12px] font-semibold uppercase tracking-[0.1em] text-bg/70">What leaves your phone</p>
             <div className="mt-3">
               <SealedLine text="Sat by the river this morning. The mind was quiet." />
             </div>
           </div>
-          <ul className="relative mt-12 grid sm:grid-cols-3 gap-4 sm:gap-5">
+          <ul className="relative mt-7 grid sm:grid-cols-3 gap-3 sm:gap-4">
             {steps.map((s) => (
-              <li key={s.title} className="rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-6">
-                <span className="grid place-items-center w-11 h-11 rounded-[13px] bg-bg/15">
-                  <Glyph k={s.glyph} size={22} />
+              <li key={s.title} className="flex gap-4 rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-5">
+                <span className="grid place-items-center w-10 h-10 shrink-0 rounded-[12px] bg-bg/15">
+                  <Glyph k={s.glyph} size={20} />
                 </span>
-                <h3 className="mt-4 font-ui text-[16.5px] font-semibold">{s.title}</h3>
-                <p className="mt-1.5 font-ui text-[14.5px] leading-[1.55] text-bg/80">{s.body}</p>
+                <div className="min-w-0">
+                  <h3 className="font-ui text-[16px] font-semibold">{s.title}</h3>
+                  <p className="mt-1 font-ui text-[14px] leading-[1.5] text-bg/80">{s.body}</p>
+                </div>
               </li>
             ))}
           </ul>
@@ -283,9 +299,9 @@ function Anywhere() {
     { glyph: "sunrise", title: "Light and dark", body: "A calm page by day, a quiet one at night. Your choice, kept on every device." },
   ] as const;
   return (
-    <section className="relative overflow-hidden border-y border-line/70 bg-surface/40">
+    <section className="landing-snap relative overflow-clip flex items-center border-y border-line/70 bg-surface/40">
       <Backdrop className="left-1/2 -translate-x-1/2 -top-56 w-[900px]" />
-      <Wrap className="relative py-20 sm:py-24">
+      <Wrap className="relative py-14">
         <div className="text-center max-w-[600px] mx-auto">
           <Eyebrow>With you anywhere</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(28px,3.8vw,40px)] font-semibold leading-[1.12] tracking-[-0.02em] text-balance">On the mat, on the road, in the ashram.</h2>
@@ -308,9 +324,9 @@ function Anywhere() {
 
 function Begin() {
   return (
-    <section id="begin" className="relative overflow-hidden scroll-mt-20">
+    <section id="begin" className="landing-snap relative overflow-clip flex items-center">
       <Backdrop className="-left-56 -bottom-40 w-[700px]" turn />
-      <Wrap className="relative py-20 sm:py-24 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-start">
+      <Wrap className="relative py-14 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-center">
         <div className="text-center lg:text-left">
           <Eyebrow>Begin</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Three small steps.</h2>
@@ -367,7 +383,7 @@ function Questions() {
     { q: "Does it work without internet?", a: "Yes. Everything is kept on your phone, so ana opens and works offline. What you add is sent as soon as you're back online." },
   ];
   return (
-    <section className="relative overflow-hidden border-t border-line/70">
+    <section className="landing-snap-start relative overflow-clip border-t border-line/70">
       <Backdrop className="-right-48 top-0 w-[620px]" />
       <Wrap className="relative py-20 sm:py-24 max-w-[760px]">
         <div className="text-center">
@@ -392,14 +408,14 @@ function Questions() {
 
 function Footer() {
   return (
-    <footer className="border-t border-line/70">
+    <footer className="landing-snap-end border-t border-line/70">
       <Wrap className="py-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
         <div>
           <div className="flex items-center justify-center sm:justify-start gap-2 text-accent">
             <BrandMark size={26} />
             <span className="font-display text-[22px] font-semibold text-ink leading-none">ana</span>
           </div>
-          <p className="mt-3 font-serif italic text-[15px] text-ink-soft max-w-[36ch]">Just here and now.</p>
+          <p className="mt-1 sm:pl-[34px] font-serif italic text-[15px] text-ink-soft">Just here and now</p>
         </div>
         <nav aria-label="Footer" className="flex items-center gap-1">
           <Link href="/login" className="inline-flex h-10 items-center px-3 rounded-full font-ui text-[14px] font-semibold text-ink hover:bg-surface">Sign in</Link>
