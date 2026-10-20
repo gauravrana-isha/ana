@@ -1,6 +1,16 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser, homeFor } from "@/lib/session";
+import { Landing } from "@/components/landing/Landing";
 
-export default async function Home() {
-  redirect(homeFor(await getCurrentUser()));
+export const metadata: Metadata = {
+  title: { absolute: "ana · Absolute devotion towards what is there at present" },
+  description: "A private journal for your sadhana, your reflections and the moments that matter. Encrypted on your phone; only you can read it.",
+};
+
+/** Signed in: straight to your journal. Otherwise: what ana is, and how to begin. */
+export default async function Root() {
+  const user = await getCurrentUser();
+  if (user) redirect(homeFor(user));
+  return <Landing />;
 }
