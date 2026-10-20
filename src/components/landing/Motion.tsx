@@ -515,60 +515,43 @@ export function SectionPager() {
 const drawsAt = (i: number) => 0.4 + i * 0.75;
 
 /**
- * One side's band: the yantra's two square lines (outer and inner, as in its bhupura) carried on
- * sideways, with a gate stepping outwards every so often. Drawn for the left side, starting at
- * the square's corner (x = LEN) and running out to the edge (x = 0); the right side is a mirror.
+ * A temple pillar in straight lines: a stepped base, four lines for the shaft, a double band at
+ * its middle, a stepped capital. Listed bottom to top, the order it rises in.
  */
-const LEN = 1400;
-function band(top: boolean) {
-  const out = top ? -1 : 1; // gates step away from the yantra's centre
-  const line = (y: number, half: number, depth: number) => {
-    let d = `M${LEN} ${y}`;
-    for (let c = LEN - 110; c - half > 0; c -= 220) {
-      d += ` L${c + half} ${y} L${c + half} ${y + out * depth} L${c - half} ${y + out * depth} L${c - half} ${y}`;
-    }
-    return `${d} L0 ${y}`;
-  };
-  return top
-    ? [line(C - 176, 34, 14), line(C - 166, 30, 10)]
-    : [line(C + 176, 34, 14), line(C + 166, 30, 10)];
-}
-const BANDS = [...band(true), ...band(false)];
+const PILLAR = [
+  "M0 440 H60 V432 H54 V424 H48 V416 H12 V424 H6 V432 H0 Z",
+  ...[16, 25, 35, 44].map((x) => `M${x} 416 V24`),
+  "M12 226 H48 M12 214 H48",
+  "M0 0 H60 V8 H54 V16 H48 V24 H12 V16 H6 V8 H0 Z",
+];
 
-/** The yantra drawing itself, outside in, its square's lines running out to both edges as it does. */
-export function GateYantra({ className }: { className?: string }) {
-  const [ref, seen] = useSeen<HTMLDivElement>("-20% 0px");
-  const side = (right: boolean) => (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute top-0 h-full"
-      // The bands meet the square at its corners: 24/400 in from the yantra's own edges.
-      style={{
-        [right ? "left" : "right"]: "94%",
-        maskImage: `linear-gradient(to ${right ? "right" : "left"}, black 35%, transparent 95%)`,
-        WebkitMaskImage: `linear-gradient(to ${right ? "right" : "left"}, black 35%, transparent 95%)`,
-      }}
-    >
-      <svg viewBox={`0 0 ${LEN} 400`} fill="none" className={cn("block h-full w-auto text-accent/70", right && "-scale-x-100")}>
-        {BANDS.map((d, i) => (
-          <path
-            key={i}
-            d={d}
-            pathLength={1}
-            stroke="currentColor"
-            strokeWidth={i % 2 ? 1 : 1.6}
-            strokeLinejoin="round"
-            style={{ strokeDasharray: 1, strokeDashoffset: seen ? 0 : 1, transition: `stroke-dashoffset 5s cubic-bezier(0.45, 0, 0.25, 1) ${drawsAt(0) + 1.2 + (i % 2) * 0.4}s` }}
-          />
-        ))}
-      </svg>
-    </div>
+function Pillar({ on, className }: { on: boolean; className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 60 440" fill="none" className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 h-[112%] w-auto text-accent/70", className)}>
+      {PILLAR.map((d, i) => (
+        <path
+          key={i}
+          d={d}
+          pathLength={1}
+          stroke="currentColor"
+          strokeWidth={i === 0 || i === PILLAR.length - 1 ? 1.4 : 1.1}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          style={{ strokeDasharray: 1, strokeDashoffset: on ? 0 : 1, transition: `stroke-dashoffset ${i > 0 && i < 5 ? 3 : 1.6}s cubic-bezier(0.45, 0, 0.25, 1) ${drawsAt(0) + 0.6 + (i === 0 ? 0 : i < 5 ? 0.8 + (i - 1) * 0.15 : i === 5 ? 3.2 : 3.8)}s` }}
+        />
+      ))}
+    </svg>
   );
+}
+
+/** The yantra drawing itself, outside in, between two pillars rising beside it (wider screens). */
+export function PillarYantra({ className }: { className?: string }) {
+  const [ref, seen] = useSeen<HTMLDivElement>("-20% 0px");
   return (
     <div ref={ref} className={cn("relative", className)}>
-      {side(false)}
-      {side(true)}
-      <Yantra show={seen} className="relative w-[min(78vw,340px)] lg:w-[min(380px,calc(100svh-360px))] h-auto text-accent" />
+      <Pillar on={seen} className="hidden sm:block right-full mr-[clamp(40px,9vw,150px)]" />
+      <Pillar on={seen} className="hidden sm:block left-full ml-[clamp(40px,9vw,150px)]" />
+      <Yantra show={seen} className="w-[min(78vw,340px)] lg:w-[min(380px,calc(100svh-360px))] h-auto text-accent" />
     </div>
   );
 }
