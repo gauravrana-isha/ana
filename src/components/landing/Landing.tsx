@@ -18,7 +18,7 @@ import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, S
 
 export function Landing() {
   return (
-    <div className="landing-sky min-h-dvh text-ink overflow-x-clip">
+    <div className="landing-sky min-h-dvh text-ink overflow-clip">
       <Header />
       <main>
         <Hero />
@@ -80,6 +80,11 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   return <p className="font-ui text-[12.5px] font-semibold uppercase tracking-[0.12em] text-accent">{children}</p>;
 }
 
+/** The name inside an uppercase eyebrow: always lowercase, in the wordmark's face. */
+function Ana() {
+  return <span className="normal-case font-display text-[1.25em] font-semibold tracking-[0] leading-none">ana</span>;
+}
+
 /** Faint yantra geometry behind a section, sometimes turning very slowly. */
 function Backdrop({ className, turn = false }: { className?: string; turn?: boolean }) {
   return <Yantra draw={false} className={cn("pointer-events-none absolute h-auto text-ink/[0.04]", turn && "landing-turn", className)} />;
@@ -109,7 +114,7 @@ function Header() {
 
 function Hero() {
   return (
-    <section className="landing-snap relative overflow-clip flex items-center">
+    <section data-stop="Here and now" className="landing-snap relative flex items-center">
       <Backdrop className="-right-40 -top-24 w-[760px]" turn />
       <Wrap className="relative grid lg:grid-cols-[1.05fr_1fr] items-center gap-12 lg:gap-8 pt-10 pb-16 sm:pt-12 lg:pt-14 lg:pb-24">
         <div className="text-center lg:text-left lg:-mt-20">
@@ -183,13 +188,20 @@ const STEPS = [
 
 function Inside() {
   return (
-    <section id="inside" className="relative overflow-clip border-t border-line/70">
+    <section id="inside" className="relative border-t border-line/70">
       <Backdrop className="-left-64 top-[18%] w-[820px]" />
       <Backdrop className="-right-72 bottom-[8%] w-[760px]" turn />
       <Wrap className="relative pb-12 lg:pb-0">
         {/* On wide screens a screen of its own, so each step after it has the whole screen. */}
-        <div className="landing-snap-start text-center max-w-[720px] mx-auto pt-20 sm:pt-24 lg:pt-0 lg:min-h-[calc(100svh-64px)] lg:flex lg:flex-col lg:items-center lg:justify-center">
-          <Eyebrow>What ana holds</Eyebrow>
+        <div data-stop="What ana holds" className="landing-snap-start text-center max-w-[720px] mx-auto pt-20 sm:pt-24 lg:pt-0 lg:min-h-[calc(100svh-65px)] lg:flex lg:flex-col lg:items-center lg:justify-center">
+          {/* The logo, as in the header. */}
+          <div className="mb-6 flex items-center justify-center gap-2.5">
+            <BrandMark size={44} />
+            <span className="font-display text-[38px] font-semibold text-ink tracking-[-0.01em] leading-none">ana</span>
+          </div>
+          <Eyebrow>
+            What <Ana /> holds
+          </Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,52px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your practice, your reflections, your moments. In one quiet place.</h2>
           <ul className="mt-10 hidden lg:flex items-center justify-center gap-10">
             {FEATURES.map((f) => (
@@ -203,7 +215,7 @@ function Inside() {
         <div className="mt-6 sm:mt-10 lg:mt-0 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-20">
           <div className="flex flex-col">
             {FEATURES.map((f, i) => (
-              <article key={f.eyebrow} data-step={f.step} className="landing-snap-start py-12 lg:py-10 lg:min-h-[calc(100svh-64px)] lg:flex lg:flex-col lg:justify-center">
+              <article key={f.eyebrow} data-step={f.step} data-stop={f.eyebrow} className="landing-snap-start py-12 lg:py-10 lg:min-h-[calc(100svh-65px)] lg:flex lg:flex-col lg:justify-center">
                 <div className="max-w-[520px] mx-auto lg:mx-0 text-center lg:text-left">
                   <div className="inline-flex items-center gap-3">
                     <SeenBadge k={f.badge} />
@@ -239,7 +251,7 @@ function Inside() {
 /** One quiet moment in the page: just the line, and a yantra drawing itself beneath it, its parts named at the sides. */
 function Quiet() {
   return (
-    <section aria-label="Just here and now" className="landing-snap relative overflow-clip border-t border-line/70 flex items-center">
+    <section aria-label="Just here and now" data-stop="Just here and now" className="landing-snap relative overflow-clip border-t border-line/70 flex items-center">
       {/* The same yantra, very large and faint, turning slowly behind. */}
       <Yantra draw={false} className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(150vw,1100px)] h-auto text-ink/[0.045] landing-turn" />
       <Wrap className="relative py-16 flex flex-col items-center text-center">
@@ -257,7 +269,7 @@ function Private() {
     { glyph: "shield", title: "Unreadable to everyone else", body: "Not the server, not the people who run ana. Only what you keep, for you." },
   ] as const;
   return (
-    <section id="private" className="landing-snap flex items-center">
+    <section id="private" data-stop="Private" className="landing-snap flex items-center">
       <Wrap className="py-8">
         <div className="relative overflow-hidden rounded-[32px] bg-accent text-bg px-6 py-10 sm:px-12 sm:py-12">
           <Ornament name="kolam" width={340} className="pointer-events-none absolute -right-20 -bottom-24 text-bg/10" />
@@ -299,7 +311,7 @@ function Anywhere() {
     { glyph: "sunrise", title: "Light and dark", body: "A calm page by day, a quiet one at night. Your choice, kept on every device." },
   ] as const;
   return (
-    <section className="landing-snap relative overflow-clip flex items-center border-y border-line/70 bg-surface/40">
+    <section data-stop="With you anywhere" className="landing-snap relative flex items-center border-y border-line/70 bg-surface/40">
       <Backdrop className="left-1/2 -translate-x-1/2 -top-56 w-[900px]" />
       <Wrap className="relative py-14">
         <div className="text-center max-w-[600px] mx-auto">
@@ -324,7 +336,7 @@ function Anywhere() {
 
 function Begin() {
   return (
-    <section id="begin" className="landing-snap relative overflow-clip flex items-center">
+    <section id="begin" data-stop="Begin" className="landing-snap relative flex items-center">
       <Backdrop className="-left-56 -bottom-40 w-[700px]" turn />
       <Wrap className="relative py-14 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-center">
         <div className="text-center lg:text-left">
@@ -383,8 +395,8 @@ function Questions() {
     { q: "Does it work without internet?", a: "Yes. Everything is kept on your phone, so ana opens and works offline. What you add is sent as soon as you're back online." },
   ];
   return (
-    <section className="landing-snap-start relative overflow-clip border-t border-line/70">
-      <Backdrop className="-right-48 top-0 w-[620px]" />
+    <section data-stop="Questions" className="landing-snap-start relative border-t border-line/70">
+      <Backdrop className="-right-48 top-[25%] w-[620px]" />
       <Wrap className="relative py-20 sm:py-24 max-w-[760px]">
         <div className="text-center">
           <Eyebrow>Questions</Eyebrow>

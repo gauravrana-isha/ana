@@ -88,7 +88,7 @@ export function StickyPhone({ steps }: { steps: readonly Step[] }) {
   return (
     // A screen tall below the header, so the phone stays centred beside each step; on short
     // screens it shrinks to fit.
-    <div className="sticky top-16 h-[calc(100svh-64px)] flex items-center justify-center">
+    <div className="sticky top-[65px] h-[calc(100svh-65px)] flex items-center justify-center">
       <div className="relative rounded-[42px] p-[8px] bg-[#1d1b17] shadow-[0_40px_80px_-30px_rgba(24,22,15,0.5)] ring-1 ring-black/10 dark:ring-white/10 w-[min(290px,calc((100svh-128px)*0.462))]">
         <div className="relative overflow-hidden rounded-[34px] bg-bg aspect-[390/844]">
           {steps.map((s, i) =>
@@ -257,50 +257,58 @@ export function Yantra({ className, draw = true, show }: { className?: string; d
 
 // ---------------------------------------------------------------- a screen at a time
 
-const HEAD = 64;
+/** The sticky header's height (64px and its 1px line), which every stop sits below. */
+const head = () => document.querySelector<HTMLElement>(".landing-sky > header")?.offsetHeight ?? 64;
+
+type Stop = { label: string; a: number; b: number };
+
+/** Each [data-stop] as the scroll range where it fills the screen: a to b (equal unless it's taller). */
+function measureStops(): Stop[] {
+  const top = head();
+  const view = innerHeight - top;
+  const max = document.documentElement.scrollHeight - innerHeight;
+  return [...document.querySelectorAll<HTMLElement>("[data-stop]")].map((el) => {
+    const r = el.getBoundingClientRect();
+    const a = Math.min(Math.round(r.top + scrollY - top), max);
+    return { label: el.dataset.stop ?? "", a, b: Math.min(Math.max(a, Math.round(a + r.height - view)), max) };
+  });
+}
 
 /**
- * The page moves a section at a time, like a product page: one turn of the wheel (or swipe of the
- * trackpad) goes to the next section in that direction, never stopping halfway between two. A
- * section taller than the screen scrolls as usual until its end. On touch, wherever a swipe comes
+ * The page moves a section at a time, like a product page. One swipe of the trackpad, turn of the
+ * wheel or press of a key goes to the next section in that direction, and the glide a trackpad
+ * keeps sending after a swipe is spent, never counted as another swipe. A section taller than the
+ * screen scrolls as usual, stopping at its end before the next. On touch, wherever a swipe comes
  * to rest between two sections, it settles into the next one in the swipe's direction.
- * Stops are the elements marked .landing-snap / .landing-snap-start, and the very end.
+ * A bar at the bottom shows where you are, and takes you to any section.
  */
 export function SectionPager() {
-  useEffect(() => {
-    if (reduced()) return;
-    const root = document.documentElement;
-    root.classList.add("landing-paged");
+  const [stops, setStops] = useState<Stop[]>([]);
+  const [at, setAt] = useState({ i: 0, f: 0 });
+  const goRef = useRef<(to: number) => void>(() => {});
 
-    // Each stop as the scroll range where it fills the screen: [start, end], equal unless taller.
-    const ranges = () => {
-      const view = innerHeight - HEAD;
+  useEffect(() => {
+    const root = document.documentElement;
+    const still = reduced();
+    if (!still) root.classList.add("landing-paged");
+
+    const marks = () => {
       const max = root.scrollHeight - innerHeight;
-      const out = [...document.querySelectorAll<HTMLElement>(".landing-snap, .landing-snap-start")].map((el) => {
-        const r = el.getBoundingClientRect();
-        const start = Math.round(r.top + scrollY - HEAD);
-        return [Math.min(start, max), Math.min(Math.max(start, Math.round(start + r.height - view)), max)] as const;
-      });
-      out.push([max, max]);
-      return out;
+      return [...new Set([...measureStops().flatMap((s) => [s.a, s.b]), max])].sort((x, y) => x - y);
     };
-    const resting = (y: number) => ranges().some(([a, b]) => y >= a - 2 && y <= b + 2);
-    const nextStop = (y: number, dir: number) => {
-      const marks = [...new Set(ranges().flat())].sort((a, b) => a - b);
-      return dir > 0 ? marks.find((m) => m > y + 2) : marks.reverse().find((m) => m < y - 2);
+    const nextMark = (y: number, dir: number) => {
+      const m = marks();
+      return dir > 0 ? m.find((v) => v > y + 2) : m.reverse().find((v) => v < y - 2);
     };
+    // The tall section the page is reading through, if any.
+    const tallAt = (y: number) => measureStops().find((s) => s.b > s.a && y >= s.a - 2 && y <= s.b + 2);
 
     let busy = false;
-    let cooling = false;
-    let lastWheel = 0;
     let anchor = scrollY;
-    let touching = false;
-    let idle: ReturnType<typeof setTimeout> | undefined;
-
     const go = (to: number) => {
       busy = true;
       anchor = to;
-      scrollTo({ top: to, behavior: "smooth" });
+      scrollTo({ top: to, behavior: still ? "auto" : "smooth" });
       const t0 = performance.now();
       const wait = () => {
         if (Math.abs(scrollY - to) < 2 || performance.now() - t0 > 1200) busy = false;
@@ -308,65 +316,199 @@ export function SectionPager() {
       };
       requestAnimationFrame(wait);
     };
+    goRef.current = go;
 
+    // Where you are, for the bar: the stop reached, and how far through it (tall ones).
+    let frame = 0;
+    const track = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const list = measureStops();
+        const y = scrollY;
+        let i = 0;
+        list.forEach((s, k) => {
+          if (y >= s.a - 2) i = k;
+        });
+        const s = list[i];
+        setAt({ i, f: s && s.b > s.a ? Math.min(1, Math.max(0, (y - s.a) / (s.b - s.a))) : 1 });
+      });
+    };
+    const remeasure = () => {
+      setStops(measureStops());
+      track();
+    };
+    remeasure();
+    // Opened part way down (a reload puts back where you were): sit on the nearest stop.
+    anchor = scrollY;
+    const opened = setTimeout(() => settle(false), 300);
+
+    // A swipe is told from its glide: the glide comes without pauses and only slows down. So a
+    // new swipe is a pause (over 160 ms), or, once the glide has begun to fade, a push harder
+    // than the last few. (A swipe's own start speeds up too, which is why the fade comes first.)
+    let lastAt = 0;
+    let recent: number[] = [];
+    let peak = 0;
+    let fading = false;
+    let spent = false; // the gesture that moved the page is still going (its glide)
     const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !e.deltaY) return;
+      if (still || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !e.deltaY) return;
       const now = performance.now();
-      const gap = now - lastWheel;
-      lastWheel = now;
-      // While moving, and through the trackpad's glide after it, the gesture is spent.
-      if (busy || (cooling && gap < 220)) return e.preventDefault();
-      cooling = false;
+      const size = Math.abs(e.deltaY);
+      const gap = now - lastAt;
+      lastAt = now;
+      if (gap > 160) {
+        peak = 0;
+        fading = false;
+        recent = [];
+      }
+      const fresh = gap > 160 || (fading && recent.length >= 2 && size > Math.max(...recent.slice(-3)) + 4);
+      if (fresh) {
+        peak = 0;
+        fading = false;
+      }
+      peak = Math.max(peak, size);
+      if (size < peak * 0.6) fading = true;
+      recent = [...recent.slice(-4), size];
+      const dir = Math.sign(e.deltaY);
+      // Swiped again while moving: carry on to the one after.
+      if (busy) {
+        e.preventDefault();
+        if (fresh) {
+          const stop = nextMark(anchor, dir);
+          if (stop !== undefined) go(stop);
+        }
+        return;
+      }
+      if (spent) {
+        if (!fresh) return e.preventDefault();
+        spent = false;
+      }
       const y = scrollY;
       const to = y + e.deltaY;
-      // Reading through a tall section: scroll as usual.
-      if (ranges().some(([a, b]) => b > a && y >= a - 2 && y <= b + 2 && to >= a && to <= b)) return;
-      const stop = nextStop(y, Math.sign(e.deltaY));
-      if (stop === undefined) return;
+      const tall = tallAt(y);
+      if (tall && to >= tall.a && to <= tall.b) return; // reading through it: as usual
       e.preventDefault();
-      cooling = true;
+      if (tall && !fresh) {
+        // The glide reached the end of a tall section: stop there; the next swipe moves on.
+        scrollTo({ top: to < tall.a ? tall.a : tall.b });
+        spent = true;
+        return;
+      }
+      const stop = nextMark(y, dir);
+      if (stop === undefined) return;
+      spent = true;
       go(stop);
     };
 
-    // Touch, keys, anything else: when the page comes to rest between two stops, go on to the
-    // next one in the direction it was moving.
-    const settle = () => {
-      if (touching || busy) return;
+    // Keys page the same way (not while typing).
+    const onKey = (e: KeyboardEvent) => {
+      if (still || e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement)?.closest?.("input, textarea, select, [contenteditable]")) return;
+      const dir = ["PageDown", "ArrowDown"].includes(e.key) || (e.key === " " && !e.shiftKey) ? 1 : ["PageUp", "ArrowUp"].includes(e.key) || (e.key === " " && e.shiftKey) ? -1 : 0;
+      if (!dir) return;
       const y = scrollY;
-      if (resting(y)) {
+      const tall = tallAt(y);
+      const step = e.key.startsWith("Arrow") ? 80 : innerHeight * 0.8;
+      if (tall && y + dir * step >= tall.a && y + dir * step <= tall.b) return;
+      e.preventDefault();
+      const stop = nextMark(busy ? anchor : y, dir);
+      if (stop !== undefined) go(stop);
+    };
+
+    // When the page comes to rest between two stops: after a swipe on a touch screen, go on to
+    // the next one in its direction; after anything else (a reload putting back where you were,
+    // a link, the page reflowing), to the nearest, without a direction to guess.
+    let touching = false;
+    let swipedAt = -1e9;
+    let idle: ReturnType<typeof setTimeout> | undefined;
+    const settle = (smooth = true) => {
+      if (still || touching || busy) return;
+      const y = scrollY;
+      if (marks().some((m) => Math.abs(m - y) <= 2) || tallAt(y)) {
         anchor = y;
         return;
       }
-      const stop = nextStop(y, Math.sign(y - anchor) || 1);
-      if (stop !== undefined) go(stop);
+      if (performance.now() - swipedAt < 2500) {
+        const stop = nextMark(y, Math.sign(y - anchor) || 1);
+        if (stop !== undefined) go(stop);
+        return;
+      }
+      const nearest = marks().reduce((best, m) => (Math.abs(m - y) < Math.abs(best - y) ? m : best));
+      if (smooth) go(nearest);
+      else {
+        anchor = nearest;
+        scrollTo({ top: nearest });
+      }
     };
     const onScroll = () => {
+      track();
       clearTimeout(idle);
-      idle = setTimeout(settle, 140);
+      idle = setTimeout(settle, 160);
     };
+    // A finger on the screen takes over from any move under way.
     const onTouchStart = () => {
       touching = true;
-      if (!busy) anchor = scrollY;
+      busy = false;
+      anchor = scrollY;
     };
     const onTouchEnd = () => {
       touching = false;
+      swipedAt = performance.now();
       onScroll();
     };
 
     addEventListener("wheel", onWheel, { passive: false });
+    addEventListener("keydown", onKey);
     addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", remeasure);
+    addEventListener("load", remeasure);
     addEventListener("touchstart", onTouchStart, { passive: true });
     addEventListener("touchend", onTouchEnd, { passive: true });
     return () => {
       root.classList.remove("landing-paged");
       clearTimeout(idle);
+      clearTimeout(opened);
+      cancelAnimationFrame(frame);
       removeEventListener("wheel", onWheel);
+      removeEventListener("keydown", onKey);
       removeEventListener("scroll", onScroll);
+      removeEventListener("resize", remeasure);
+      removeEventListener("load", remeasure);
       removeEventListener("touchstart", onTouchStart);
       removeEventListener("touchend", onTouchEnd);
     };
   }, []);
-  return null;
+
+  if (stops.length < 2) return null;
+  return (
+    <nav aria-label="Sections" className="landing-progress fixed left-1/2 -translate-x-1/2 bottom-[max(16px,env(safe-area-inset-bottom))] z-30">
+      <ol className="flex items-center gap-1.5 rounded-full bg-bg/80 backdrop-blur-md ring-1 ring-line/80 shadow-[0_10px_30px_-14px_rgba(20,18,12,0.35)] px-3 py-2.5">
+        {stops.map((s, k) => {
+          const fill = k < at.i ? 1 : k === at.i ? at.f : 0;
+          return (
+            <li key={s.label + k} className="flex">
+              <button
+                type="button"
+                onClick={() => goRef.current(s.a)}
+                aria-label={s.label}
+                aria-current={k === at.i ? "step" : undefined}
+                title={s.label}
+                className="group relative grid place-items-center h-4 -my-1"
+              >
+                <span
+                  className={cn(
+                    "relative block h-[5px] rounded-full overflow-hidden transition-[width,background-color] duration-500 ease-out",
+                    k === at.i ? "w-7 bg-accent/25" : "w-[5px] sm:w-2.5 bg-ink/15 group-hover:bg-ink/30"
+                  )}
+                >
+                  <span className="absolute inset-y-0 left-0 rounded-full bg-accent transition-[width] duration-300 ease-out" style={{ width: `${fill * 100}%` }} />
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
 }
 
 /** When a yantra layer (its index in YANTRA) starts drawing. */
