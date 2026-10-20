@@ -164,7 +164,7 @@ const FEATURES = [
     badge: "daily",
     eyebrow: "Reflection",
     title: "A few quiet questions, one at a time.",
-    body: "Each evening a handful of questions, one card at a time, with room to write and stamps for growth, struggle, insight, stillness or devotion. Each week a deeper look. And your sankalpa, a letter to yourself to return to.",
+    body: "Each evening, a few questions, one at a time. A line or two, and a mark for the day: growth, struggle, insight, stillness, devotion. Once a week, a longer look. And your sankalpa, to come back to.",
     points: ["Daily and weekly questions, your own if you like", "The day's mood in one tap", "Your sankalpa comes back when it's time to read it again"],
   },
   {
@@ -172,8 +172,8 @@ const FEATURES = [
     mobile: { shot: "moments", alt: "Moments, newest first" },
     badge: "expressions",
     eyebrow: "Presence",
-    title: "Keep the moments, and who was with you.",
-    body: "Write, record your voice, keep a photo or a video. Note who or what was there: a person, the river, the food, the mountain, your walk. Moments come back to you on the day you choose, and on this day in years to come.",
+    title: "Your experience and nothing more.",
+    body: "A few words, your voice, a photo, a video. Just what was there: the river, the food, a friend, the mountain, the walk. It comes back to you on the day you choose, and on this day in years to come.",
     points: ["Words, voice, photos and video", "People and things alike, each with their moments", "Birthdays and moments that come back"],
   },
 ] as const;
@@ -262,7 +262,7 @@ function Private() {
   const steps = [
     { glyph: "lock", title: "Sealed on your phone", body: "Every word, photo and recording is encrypted on your phone before it leaves it." },
     { glyph: "fingerprint", title: "Opened only by you", body: "Your passkey or your 12 recovery words open your logger. Nothing else can." },
-    { glyph: "shield", title: "Unreadable to everyone else", body: "Not the server, not the people who run ana. Only what you keep, for you." },
+    { glyph: "shield", title: "Unseen by anyone else", body: "Not the server, not the people who make ana. What you keep is for you." },
   ] as const;
   return (
     <section id="private" data-stop="Private" className="landing-snap flex items-center">
@@ -270,8 +270,7 @@ function Private() {
         <div className="relative overflow-hidden rounded-[32px] bg-accent text-bg px-6 py-10 sm:px-12 sm:py-12">
           <Ornament name="kolam" width={340} className="pointer-events-none absolute -right-20 -bottom-24 text-bg/10" />
           <div className="relative max-w-[620px]">
-            <p className="font-ui text-[12.5px] font-semibold uppercase tracking-[0.12em] text-bg/75">Private by design</p>
-            <h2 className="mt-3 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your logger is yours alone.</h2>
+            <h2 className="font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your logger is yours alone.</h2>
             <p className="mt-3 font-serif text-[18px] leading-[1.6] text-bg/85">What you write in ana is between you and you.</p>
           </div>
           {/* What leaves your phone: your words, sealed. */}
@@ -310,7 +309,8 @@ function Anywhere() {
     <section data-stop="With you anywhere" className="landing-snap relative flex items-center border-y border-line/70 bg-surface/40">
       <Backdrop className="left-1/2 -translate-x-1/2 -top-56 w-[900px]" />
       <Wrap className="relative py-14">
-        <div className="text-center max-w-[600px] mx-auto">
+        <div className="text-center max-w-[600px] mx-auto flex flex-col items-center">
+          <BrandMark size={72} className="mb-6" />
           <Eyebrow>With you anywhere</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(28px,3.8vw,40px)] font-semibold leading-[1.12] tracking-[-0.02em] text-balance">On the mat, on the road, in the ashram.</h2>
         </div>
