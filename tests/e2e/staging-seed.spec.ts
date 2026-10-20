@@ -12,7 +12,7 @@ test("the staging seed script fills a journal the app can read", async ({ page }
   console.log(out.trim().split("\n").pop());
   await page.waitForTimeout(31_000); // the device's copy is no longer fresh, as on a later visit
   await page.goto("/presence");
-  await expect(page.getByRole("region", { name: "Food" }).getByText("Amma's rasam")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("region", { name: "Food" }).getByText("Amma's rasam").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("region", { name: "People" }).getByText("Ravi")).toBeVisible();
   await page.goto("/home");
   await expect(page.getByText("Birthdays this week")).toBeVisible({ timeout: 20_000 });

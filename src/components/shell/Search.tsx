@@ -21,6 +21,8 @@ import { MomentGlyph } from "@/components/art/MomentIcon";
 import { NotificationBell } from "./NotificationBell";
 import { lockScroll } from "@/lib/scroll-lock";
 import { ProfileLink } from "./ProfileLink";
+import { useBundles } from "./Bundles";
+import { CORE_SECTIONS, sectionsOf } from "@/lib/bundles";
 
 /*
  * Search lives on Today: a search field with the bell beside it. Tapping the field opens the
@@ -206,12 +208,15 @@ export function SearchDialog() {
   });
 
   const { data: me } = useMe();
+  // The screens this person has, from their bundles (as the server gave them on this load).
+  const bundles = useBundles();
+  const features = useMemo<string[]>(() => [...CORE_SECTIONS, ...sectionsOf(bundles)], [bundles]);
   const data = useMemo<Results | undefined>(
-    () => (index && debounced.length >= 2 ? searchIndex(index, debounced, (f) => !!me?.features.includes(f as never)) : undefined),
-    [index, debounced, me]
+    () => (index && debounced.length >= 2 ? searchIndex(index, debounced, (f) => features.includes(f)) : undefined),
+    [index, debounced, features]
   );
 
-  const has = (k: string) => !!me?.features.includes(k as never);
+  const has = (k: string) => features.includes(k);
   const filters = (
     [
       { key: "all", label: "All", on: true },
@@ -224,14 +229,14 @@ export function SearchDialog() {
   // Pages you can open (and a few quick actions), matched by name or description.
   const pages = useMemo(() => {
     const all = [
-      ...FEATURES.filter((f) => me?.features.includes(f.key)).map((f) => ({ key: f.key, label: f.label, hint: f.description, href: f.href, icon: "badge" as const })),
-      ...(me?.features.includes("expressions") ? [{ key: "new-moment", label: "New moment", hint: "Write, record or add a photo", href: "/moments?new=1", icon: "plus" as const }] : []),
-      { key: "profile", label: "Profile & settings", hint: "Theme, sections, practices, data", href: "/profile", icon: "profile" as const },
+      ...FEATURES.filter((f) => features.includes(f.key)).map((f) => ({ key: f.key, label: f.label, hint: f.description, href: f.href, icon: "badge" as const })),
+      ...(features.includes("expressions") ? [{ key: "new-moment", label: "New moment", hint: "Write, record or add a photo", href: "/moments?new=1", icon: "plus" as const }] : []),
+      { key: "profile", label: "Profile & settings", hint: "Theme, practices, privacy, data", href: "/profile", icon: "profile" as const },
       ...(me?.role === "ADMIN" ? [{ key: "admin", label: "People & access", hint: "Approve sign-ups, manage access", href: "/admin", icon: "admin" as const }] : []),
     ];
     const q = query.trim().toLowerCase();
     return q ? all.filter((p) => p.label.toLowerCase().includes(q) || p.hint.toLowerCase().includes(q) || p.key.includes(q)) : all;
-  }, [me, query]);
+  }, [me, query, features]);
 
   const searching = debounced.length >= 2;
   const people = searching && (filter === "all" || filter === "people") ? (data?.people ?? []) : [];

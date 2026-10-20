@@ -584,3 +584,14 @@ body:has([data-bare]) .ana-tabbar { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .ana-draw-in { animation: none; }
 }
+
+/* The page never scrolls sideways (anything sliding past the edge is clipped, not scrollable). */
+html, body { overflow-x: clip; }
+
+/* Landing: the screenshots follow the page's theme; the first view rises in gently. */
+.landing-shot-dark { display: none; }
+[data-theme="dark"] .landing-shot-dark { display: block; }
+[data-theme="dark"] .landing-shot-light { display: none; }
+@keyframes landing-rise { from { opacity: 0; transform: translateY(14px); } }
+.landing-rise { animation: landing-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) { .landing-rise { animation: none; } }

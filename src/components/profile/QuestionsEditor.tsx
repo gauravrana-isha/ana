@@ -18,6 +18,8 @@ import { DeleteMark, GripMark, PlusMark } from "@/components/art/PenMarks";
 import { Glyph } from "@/components/art/Glyphs";
 import { cn } from "@/lib/utils";
 import { onScreen } from "@/lib/on-screen";
+import { useBundles } from "@/components/shell/Bundles";
+import { sectionsOf } from "@/lib/bundles";
 
 /*
  * Settings › Reflection questions: reword, describe, hide, add, reorder or reset the questions
@@ -30,7 +32,9 @@ export function QuestionsEditor({ me }: { me: Me }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const ask = useConfirm();
-  const kinds = (["daily", "weekly"] as const).filter((k) => me.features.includes(k));
+  // Reflection's screens this person has (from their bundles, as the server gave them).
+  const screens = sectionsOf(useBundles());
+  const kinds = (["daily", "weekly"] as const).filter((k) => screens.includes(k));
   const [picked, setPicked] = useState<ReflectionKind>(kinds[0]);
   const kind = kinds.includes(picked) ? picked : kinds[0];
   // The question open in the sheet (its key), "new" while adding one, or null.

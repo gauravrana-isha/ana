@@ -99,8 +99,13 @@ const LETTERS = [
 /** The recovery words: typed at the prompt, or piped in (all of stdin). */
 async function askWords() {
   if (!process.stdin.isTTY) {
+    // Piped, or typed where the input isn't a terminal: go on as soon as 12 words are in.
+    process.stdout.write("Recovery words (12, kept on this machine only): ");
     let all = "";
-    for await (const chunk of process.stdin) all += chunk;
+    for await (const chunk of process.stdin) {
+      all += chunk;
+      if (all.trim().split(/\s+/).length >= 12) break;
+    }
     return all;
   }
   const rl = createInterface({ input: process.stdin, output: process.stdout });
