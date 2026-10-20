@@ -21,10 +21,9 @@ import type { Moment, MomentKind } from "@/lib/moment-types";
 import { today as todayStr } from "@/lib/dates";
 import { fetchToday } from "@/lib/journal";
 
+/** The same greeting at any hour: Namaskaram. */
 function greeting(first: string | null | undefined) {
-  const h = new Date().getHours();
-  const part = h < 5 ? "Still night" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-  return first ? `${part}, ${first}` : part;
+  return first ? `Namaskaram, ${first}` : "Namaskaram";
 }
 
 /**
