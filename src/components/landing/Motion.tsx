@@ -269,10 +269,14 @@ function measureStops(): Stop[] {
   const max = document.documentElement.scrollHeight - innerHeight;
   // Below lg some screens stack (the words, then the app in use): those add stops of their own.
   const which = innerWidth < 1024 ? "[data-stop], [data-stop-mobile]" : "[data-stop]";
-  return [...document.querySelectorAll<HTMLElement>(which)].map((el) => {
+  const els = [...document.querySelectorAll<HTMLElement>(which)];
+  return els.map((el) => {
     const r = el.getBoundingClientRect();
     const a = Math.min(Math.round(r.top + scrollY - top), max);
-    return { label: el.dataset.stop ?? el.dataset.stopMobile ?? "", a, b: Math.min(Math.max(a, Math.round(a + r.height - view)), max) };
+    // A stop holding stops of its own (the hero, on phones) ends where they begin: no stop of its
+    // own at its foot, which a phone's growing screen would otherwise put just short of theirs.
+    const holds = els.some((o) => o !== el && el.contains(o));
+    return { label: el.dataset.stop ?? el.dataset.stopMobile ?? "", a, b: holds ? a : Math.min(Math.max(a, Math.round(a + r.height - view)), max) };
   });
 }
 
@@ -344,13 +348,15 @@ export function SectionPager() {
     anchor = scrollY;
     const opened = setTimeout(() => settle(false), 300);
 
-    // A swipe is told from its glide: the glide comes without pauses and only slows down. So a
-    // new swipe is a pause (over 160 ms), or, once the glide has begun to fade, a push harder
-    // than the last few. (A swipe's own start speeds up too, which is why the fade comes first.)
+    // A swipe is told from its glide: the glide comes without pauses and only slows down (give or
+    // take a jitter). So a new swipe is a pause (over 200 ms), or, once the glide has faded, a
+    // push far harder than its slowest (three times, and then some): never the glide's own
+    // wobble. (A swipe's start speeds up too, which is why the fade must come first.)
     let lastAt = 0;
-    let recent: number[] = [];
     let peak = 0;
+    let low = Infinity;
     let fading = false;
+    let movedAt = 0;
     let spent = false; // the gesture that moved the page is still going (its glide)
     const onWheel = (e: WheelEvent) => {
       if (still || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || !e.deltaY) return;
@@ -358,25 +364,22 @@ export function SectionPager() {
       const size = Math.abs(e.deltaY);
       const gap = now - lastAt;
       lastAt = now;
-      if (gap > 160) {
-        peak = 0;
-        fading = false;
-        recent = [];
-      }
-      const fresh = gap > 160 || (fading && recent.length >= 2 && size > Math.max(...recent.slice(-3)) + 4);
+      const fresh = gap > 200 || (fading && now - movedAt > 400 && size > low * 3 + 10);
       if (fresh) {
         peak = 0;
+        low = Infinity;
         fading = false;
       }
       peak = Math.max(peak, size);
       if (size < peak * 0.6) fading = true;
-      recent = [...recent.slice(-4), size];
+      if (fading) low = Math.min(low, size);
       const dir = Math.sign(e.deltaY);
       // Swiped again while moving: carry on to the one after.
       if (busy) {
         e.preventDefault();
         if (fresh) {
           const stop = nextMark(anchor, dir);
+          movedAt = now;
           if (stop !== undefined) go(stop);
         }
         return;
@@ -394,11 +397,13 @@ export function SectionPager() {
         // The glide reached the end of a tall section: stop there; the next swipe moves on.
         scrollTo({ top: to < tall.a ? tall.a : tall.b });
         spent = true;
+        movedAt = now;
         return;
       }
       const stop = nextMark(y, dir);
       if (stop === undefined) return;
       spent = true;
+      movedAt = now;
       go(stop);
     };
 
@@ -448,16 +453,50 @@ export function SectionPager() {
       clearTimeout(idle);
       idle = setTimeout(settle, 160);
     };
-    // A finger on the screen takes over from any move under way.
-    const onTouchStart = () => {
+    // Touch: outside a tall section the page follows the finger itself (no browser glide to fly
+    // through several screens), and on lifting moves exactly one stop that way, or settles back
+    // if the drag was a nudge. A finger takes over from any move under way; swiping during one
+    // carries on from where it was headed. Inside a tall section, the browser scrolls as usual.
+    let dragging = false;
+    let from = 0; // the stop the swipe moves on from
+    let base = 0; // the scroll the finger started at
+    let startY = 0;
+    let lastY = 0;
+    let lastT = 0;
+    let speed = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      if (still || e.touches.length > 1) return;
       touching = true;
+      from = busy ? anchor : scrollY;
       busy = false;
-      anchor = scrollY;
+      base = scrollY;
+      anchor = from;
+      startY = lastY = e.touches[0].clientY;
+      lastT = performance.now();
+      speed = 0;
+      dragging = !tallAt(scrollY);
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!dragging || e.touches.length > 1) return;
+      e.preventDefault();
+      const y = e.touches[0].clientY;
+      const now = performance.now();
+      if (now > lastT) speed = (lastY - y) / (now - lastT);
+      lastY = y;
+      lastT = now;
+      scrollTo({ top: base + (startY - y) });
     };
     const onTouchEnd = () => {
       touching = false;
-      swipedAt = performance.now();
-      onScroll();
+      if (!dragging) {
+        swipedAt = performance.now();
+        onScroll();
+        return;
+      }
+      dragging = false;
+      const moved = startY - lastY;
+      const dir = Math.abs(moved) > 40 ? Math.sign(moved) : Math.abs(speed) > 0.35 ? Math.sign(speed) : 0;
+      go(dir ? (nextMark(from, dir) ?? from) : from);
     };
 
     addEventListener("wheel", onWheel, { passive: false });
@@ -466,7 +505,9 @@ export function SectionPager() {
     addEventListener("resize", remeasure);
     addEventListener("load", remeasure);
     addEventListener("touchstart", onTouchStart, { passive: true });
+    addEventListener("touchmove", onTouchMove, { passive: false });
     addEventListener("touchend", onTouchEnd, { passive: true });
+    addEventListener("touchcancel", onTouchEnd, { passive: true });
     return () => {
       root.classList.remove("landing-paged");
       clearTimeout(idle);
@@ -478,7 +519,9 @@ export function SectionPager() {
       removeEventListener("resize", remeasure);
       removeEventListener("load", remeasure);
       removeEventListener("touchstart", onTouchStart);
+      removeEventListener("touchmove", onTouchMove);
       removeEventListener("touchend", onTouchEnd);
+      removeEventListener("touchcancel", onTouchEnd);
     };
   }, []);
 
