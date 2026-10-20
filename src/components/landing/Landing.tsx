@@ -116,8 +116,8 @@ function Hero() {
   return (
     <section data-stop="Here and now" className="landing-snap relative flex items-center">
       <Backdrop className="-right-40 -top-24 w-[760px]" turn />
-      <Wrap className="relative grid lg:grid-cols-[1.05fr_1fr] items-center gap-12 lg:gap-8 pt-10 pb-16 sm:pt-12 lg:pt-14 lg:pb-24">
-        <div className="text-center lg:text-left lg:-mt-20">
+      <Wrap className="relative grid lg:grid-cols-[1.05fr_1fr] items-center lg:gap-8 lg:pt-14 lg:pb-24">
+        <div className="min-h-[calc(100svh-65px)] lg:min-h-0 flex flex-col justify-center py-8 lg:py-0 text-center lg:text-left lg:-mt-20">
           <HeroLine />
           <p className="mt-6 mx-auto lg:mx-0 max-w-[40ch] font-serif italic text-[16px] sm:text-[17px] leading-[1.6] text-ink-soft/75">
             Logger for you, your reflections and moments that matter.
@@ -135,13 +135,15 @@ function Hero() {
         </div>
 
         {/* The app in use (a practice ticked, the evening question written, a photo kept), with
-            Daily and Presence fanned out behind it. */}
-        <div className="relative mx-auto w-full max-w-[480px] h-[560px] sm:h-[620px] landing-rise [animation-delay:200ms]">
-          <Phone shot="daily" alt="Daily reflection, one question at a time" className="absolute -left-6 sm:left-0 top-16 w-[44vw] max-w-[220px] -rotate-[7deg] opacity-95" />
-          <Phone shot="presence" alt="Presence: the people and things in your moments" className="absolute -right-6 sm:right-0 top-16 w-[44vw] max-w-[220px] rotate-[7deg] opacity-95" />
+            Daily and Presence fanned out behind it. Below lg, a screen of its own. */}
+        <div data-stop-mobile="The app in use" className="min-h-[calc(100svh-65px)] lg:min-h-0 flex items-center justify-center">
+        <div className="relative mx-auto w-full max-w-[480px] h-[min(560px,calc(100svh-140px))] sm:h-[min(620px,calc(100svh-140px))] landing-rise [animation-delay:200ms]">
+          <Phone shot="daily" alt="Daily reflection, one question at a time" className="absolute -left-6 sm:left-0 top-16 w-[44vw] max-w-[min(220px,calc((100svh-300px)*0.462))] -rotate-[7deg] opacity-95" />
+          <Phone shot="presence" alt="Presence: the people and things in your moments" className="absolute -right-6 sm:right-0 top-16 w-[44vw] max-w-[min(220px,calc((100svh-300px)*0.462))] rotate-[7deg] opacity-95" />
           <div className="absolute left-1/2 -translate-x-1/2 top-0">
             <HeroLoop />
           </div>
+        </div>
         </div>
       </Wrap>
     </section>
@@ -191,15 +193,15 @@ function Inside() {
     <section id="inside" className="relative border-t border-line/70">
       <Backdrop className="-left-64 top-[18%] w-[820px]" />
       <Backdrop className="-right-72 bottom-[8%] w-[760px]" turn />
-      <Wrap className="relative pb-12 lg:pb-0">
+      <Wrap className="relative">
         {/* On wide screens a screen of its own, so each step after it has the whole screen. */}
-        <div data-stop="What ana holds" className="landing-snap-start text-center max-w-[720px] mx-auto pt-20 sm:pt-24 lg:pt-0 lg:min-h-[calc(100svh-65px)] lg:flex lg:flex-col lg:items-center lg:justify-center">
+        <div data-stop="What ana holds" className="landing-snap-start min-h-[calc(100svh-65px)] flex flex-col items-center justify-center py-8 text-center max-w-[720px] mx-auto">
           <BrandMark size={72} className="mb-6" />
           <Eyebrow>
             What <Ana /> holds
           </Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,52px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your practice, your reflections, your moments. In one quiet place.</h2>
-          <ul className="mt-10 hidden lg:flex items-center justify-center gap-10">
+          <ul className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 lg:gap-10">
             {FEATURES.map((f) => (
               <li key={f.eyebrow} className="flex items-center gap-3">
                 <SeenBadge k={f.badge} />
@@ -208,18 +210,18 @@ function Inside() {
             ))}
           </ul>
         </div>
-        <div className="mt-6 sm:mt-10 lg:mt-0 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-20">
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-20">
           <div className="flex flex-col">
             {FEATURES.map((f, i) => (
-              <article key={f.eyebrow} data-step={f.step} data-stop={f.eyebrow} className="landing-snap-start py-12 lg:py-10 lg:min-h-[calc(100svh-65px)] lg:flex lg:flex-col lg:justify-center">
+              <article key={f.eyebrow} data-step={f.step} data-stop={f.eyebrow} className="landing-snap-start min-h-[calc(100svh-65px)] flex flex-col justify-center pt-6 pb-16 lg:py-10">
                 <div className="max-w-[520px] mx-auto lg:mx-0 text-center lg:text-left">
                   <div className="inline-flex items-center gap-3">
                     <SeenBadge k={f.badge} />
                     <Eyebrow>{f.eyebrow}</Eyebrow>
                   </div>
-                  <h3 className="mt-5 font-display text-[clamp(26px,3.3vw,36px)] font-semibold leading-[1.15] tracking-[-0.015em] text-balance">{f.title}</h3>
-                  <p className="mt-4 font-serif text-[17.5px] leading-[1.65] text-ink-soft">{f.body}</p>
-                  <ul className="mt-6 flex flex-col gap-2.5 text-left max-w-[420px] mx-auto lg:mx-0" {...(i === 0 ? { "data-step": 1 } : {})}>
+                  <h3 className="hidden sm:block mt-5 font-display text-[clamp(26px,3.3vw,36px)] font-semibold leading-[1.15] tracking-[-0.015em] text-balance">{f.title}</h3>
+                  <p className="hidden sm:block mt-4 font-serif text-[17.5px] leading-[1.65] text-ink-soft">{f.body}</p>
+                  <ul className="mt-5 sm:mt-6 flex flex-col gap-2.5 text-left max-w-[420px] mx-auto lg:mx-0" {...(i === 0 ? { "data-step": 1 } : {})}>
                     {f.points.map((p) => (
                       <li key={p} className="flex items-start gap-3 font-ui text-[15px] text-ink">
                         <DoneMark size={20} className="text-accent shrink-0 mt-[1px]" />
@@ -229,8 +231,8 @@ function Inside() {
                   </ul>
                 </div>
                 {/* Phones: the section's own screen under its words (wider screens: the sticky phone). */}
-                <div className="mt-10 flex justify-center lg:hidden">
-                  <Phone shot={f.mobile.shot} alt={f.mobile.alt} className="w-[min(68vw,270px)]" />
+                <div className="mt-7 sm:mt-10 flex justify-center lg:hidden">
+                  <Phone shot={f.mobile.shot} alt={f.mobile.alt} className="w-[min(64vw,270px,calc((100svh-405px)*0.462))] sm:w-[min(60vw,270px,calc((100svh-605px)*0.462))]" />
                 </div>
               </article>
             ))}
@@ -266,29 +268,29 @@ function Private() {
   ] as const;
   return (
     <section id="private" data-stop="Private" className="landing-snap flex items-center">
-      <Wrap className="py-8">
-        <div className="relative overflow-hidden rounded-[32px] bg-accent text-bg px-6 py-10 sm:px-12 sm:py-12">
+      <Wrap className="pt-3 pb-14 sm:py-8">
+        <div className="relative overflow-hidden rounded-[28px] sm:rounded-[32px] bg-accent text-bg px-5 py-8 sm:px-12 sm:py-12">
           <Ornament name="kolam" width={340} className="pointer-events-none absolute -right-20 -bottom-24 text-bg/10" />
           <div className="relative max-w-[620px]">
             <h2 className="font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Your logger is yours alone.</h2>
-            <p className="mt-3 font-serif text-[18px] leading-[1.6] text-bg/85">What you write in ana is between you and you.</p>
+            <p className="mt-2 sm:mt-3 font-serif text-[17px] sm:text-[18px] leading-[1.55] text-bg/85">What you write in ana is between you and you.</p>
           </div>
           {/* What leaves your phone: your words, sealed. */}
-          <div className="relative mt-7 rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-5 max-w-[640px]">
+          <div className="relative mt-5 sm:mt-7 rounded-[18px] sm:rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-4 sm:p-5 max-w-[640px]">
             <p className="font-ui text-[12px] font-semibold uppercase tracking-[0.1em] text-bg/70">What leaves your phone</p>
             <div className="mt-3">
               <SealedLine text="Sat by the river this morning. The mind was quiet." />
             </div>
           </div>
-          <ul className="relative mt-7 grid sm:grid-cols-3 gap-3 sm:gap-4">
+          <ul className="relative mt-5 sm:mt-7 grid sm:grid-cols-3 gap-2 sm:gap-4">
             {steps.map((s) => (
-              <li key={s.title} className="flex gap-4 rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-5">
-                <span className="grid place-items-center w-10 h-10 shrink-0 rounded-[12px] bg-bg/15">
+              <li key={s.title} className="flex items-center sm:items-start gap-3 sm:gap-4 rounded-[18px] sm:rounded-[22px] bg-bg/10 ring-1 ring-bg/15 p-3 sm:p-5">
+                <span className="grid place-items-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-[11px] sm:rounded-[12px] bg-bg/15">
                   <Glyph k={s.glyph} size={20} />
                 </span>
                 <div className="min-w-0">
                   <h3 className="font-ui text-[16px] font-semibold">{s.title}</h3>
-                  <p className="mt-1 font-ui text-[14px] leading-[1.5] text-bg/80">{s.body}</p>
+                  <p className="hidden sm:block mt-1 font-ui text-[14px] leading-[1.5] text-bg/80">{s.body}</p>
                 </div>
               </li>
             ))}
@@ -308,20 +310,20 @@ function Anywhere() {
   return (
     <section data-stop="With you anywhere" className="landing-snap relative flex items-center border-y border-line/70 bg-surface/40">
       <Backdrop className="left-1/2 -translate-x-1/2 -top-56 w-[900px]" />
-      <Wrap className="relative py-14">
+      <Wrap className="relative pt-8 pb-16 sm:py-14">
         <div className="text-center max-w-[600px] mx-auto flex flex-col items-center">
-          <BrandMark size={72} className="mb-6" />
+          <BrandMark size={72} className="mb-4 sm:mb-6" />
           <Eyebrow>With you anywhere</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(28px,3.8vw,40px)] font-semibold leading-[1.12] tracking-[-0.02em] text-balance">On the mat, on the road, in the ashram.</h2>
         </div>
-        <ul className="mt-12 grid sm:grid-cols-3 gap-4 sm:gap-5">
+        <ul className="mt-8 sm:mt-12 grid sm:grid-cols-3 gap-3 sm:gap-5">
           {items.map((it) => (
-            <li key={it.title} className="rounded-[22px] bg-bg border border-line/70 p-6">
-              <span className="grid place-items-center w-11 h-11 rounded-[13px] bg-accent-soft text-accent">
+            <li key={it.title} className="flex items-center gap-4 sm:block rounded-[18px] sm:rounded-[22px] bg-bg border border-line/70 p-4 sm:p-6">
+              <span className="grid place-items-center w-11 h-11 shrink-0 rounded-[13px] bg-accent-soft text-accent">
                 <Glyph k={it.glyph} size={22} />
               </span>
-              <h3 className="mt-4 font-ui text-[16.5px] font-semibold text-ink">{it.title}</h3>
-              <p className="mt-1.5 font-ui text-[14.5px] leading-[1.55] text-ink-soft">{it.body}</p>
+              <h3 className="sm:mt-4 font-ui text-[16.5px] font-semibold text-ink">{it.title}</h3>
+              <p className="hidden sm:block mt-1.5 font-ui text-[14.5px] leading-[1.55] text-ink-soft">{it.body}</p>
             </li>
           ))}
         </ul>
@@ -334,30 +336,33 @@ function Begin() {
   return (
     <section id="begin" data-stop="Begin" className="landing-snap relative flex items-center">
       <Backdrop className="-left-56 -bottom-40 w-[700px]" turn />
-      <Wrap className="relative py-14 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16 items-center">
+      <Wrap className="relative pt-5 pb-14 sm:py-14 grid lg:grid-cols-[1fr_1.1fr] gap-8 sm:gap-12 lg:gap-16 items-center">
         <div className="text-center lg:text-left">
           <Eyebrow>Begin</Eyebrow>
           <h2 className="mt-4 font-display text-[clamp(30px,4.2vw,44px)] font-semibold leading-[1.1] tracking-[-0.02em] text-balance">Three small steps.</h2>
           <p className="mt-4 font-serif text-[18px] leading-[1.6] text-ink-soft max-w-[40ch] mx-auto lg:mx-0">Sign in, and your logger is opened for you. Then keep it on your home screen.</p>
-          <BeginButton className="mt-8 w-full sm:w-auto" />
+          <BeginButton className="mt-6 sm:mt-8 w-full sm:w-auto" />
         </div>
-        <ol className="flex flex-col gap-4">
+        <ol className="flex flex-col gap-3 sm:gap-4">
           {[
             { n: "1", title: "Sign in with Google", body: "Use the Google account you'd like your logger under." },
             { n: "2", title: "Your access is opened", body: "Once you're let in, you set up your private key: your passkey, and 12 recovery words to keep safe." },
             { n: "3", title: "Put ana on your home screen", body: null },
           ].map((s) => (
-            <li key={s.n} className="flex gap-4 rounded-[22px] bg-surface p-5 sm:p-6">
+            <li key={s.n} className="flex items-center sm:items-start gap-4 rounded-[18px] sm:rounded-[22px] bg-surface p-4 sm:p-6">
               <span className="grid place-items-center w-10 h-10 shrink-0 rounded-full bg-accent text-bg font-display text-[18px] font-semibold">{s.n}</span>
               <div className="min-w-0 flex-1">
                 <h3 className="font-ui text-[16.5px] font-semibold text-ink">{s.title}</h3>
                 {s.body ? (
-                  <p className="mt-1 font-ui text-[14.5px] leading-[1.55] text-ink-soft">{s.body}</p>
+                  <p className="hidden sm:block mt-1 font-ui text-[14.5px] leading-[1.55] text-ink-soft">{s.body}</p>
                 ) : (
-                  <div className="mt-3 grid sm:grid-cols-2 gap-3">
+                  <>
+                  <p className="sm:hidden mt-1 font-ui text-[13.5px] leading-[1.5] text-ink-soft">iPhone: Safari, Share, Add to Home Screen. Android: Chrome, ⋮, Install app.</p>
+                  <div className="hidden sm:grid mt-3 sm:grid-cols-2 gap-3">
                     <Install os="iPhone" steps={["Open ana in Safari", "Tap Share", "Choose Add to Home Screen"]} />
                     <Install os="Android" steps={["Open ana in Chrome", "Tap the ⋮ menu", "Choose Install app"]} />
                   </div>
+                  </>
                 )}
               </div>
             </li>

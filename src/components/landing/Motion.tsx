@@ -39,7 +39,7 @@ const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefe
 /** The app in use, recorded from the real thing: muted, looping, light or dark to match. */
 export function HeroLoop() {
   return (
-    <div className="relative rounded-[42px] p-[8px] bg-[#1d1b17] shadow-[0_40px_80px_-30px_rgba(24,22,15,0.5)] ring-1 ring-black/10 dark:ring-white/10 w-[min(72vw,290px)]">
+    <div className="relative rounded-[42px] p-[8px] bg-[#1d1b17] shadow-[0_40px_80px_-30px_rgba(24,22,15,0.5)] ring-1 ring-black/10 dark:ring-white/10 w-[min(72vw,290px,calc((100svh-185px)*0.462))]">
       <div className="relative overflow-hidden rounded-[34px] bg-bg aspect-[390/844]">
         {(["light", "dark"] as const).map((t) => (
           <video
@@ -267,10 +267,12 @@ function measureStops(): Stop[] {
   const top = head();
   const view = innerHeight - top;
   const max = document.documentElement.scrollHeight - innerHeight;
-  return [...document.querySelectorAll<HTMLElement>("[data-stop]")].map((el) => {
+  // Below lg some screens stack (the words, then the app in use): those add stops of their own.
+  const which = innerWidth < 1024 ? "[data-stop], [data-stop-mobile]" : "[data-stop]";
+  return [...document.querySelectorAll<HTMLElement>(which)].map((el) => {
     const r = el.getBoundingClientRect();
     const a = Math.min(Math.round(r.top + scrollY - top), max);
-    return { label: el.dataset.stop ?? "", a, b: Math.min(Math.max(a, Math.round(a + r.height - view)), max) };
+    return { label: el.dataset.stop ?? el.dataset.stopMobile ?? "", a, b: Math.min(Math.max(a, Math.round(a + r.height - view)), max) };
   });
 }
 
