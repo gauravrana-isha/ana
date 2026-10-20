@@ -1,7 +1,7 @@
 {
-  "name": "ana \u2014 sadhana journal",
+  "name": "ana \u00b7 sadhana logger",
   "short_name": "ana",
-  "description": "Your sadhana, and the moments and people worth keeping.",
+  "description": "A logger for your sadhana, your reflections and the moments that matter.",
   "start_url": "/home?source=pwa",
   "scope": "/",
   "display": "standalone",
