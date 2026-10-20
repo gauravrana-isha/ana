@@ -515,29 +515,32 @@ export function SectionPager() {
 const drawsAt = (i: number) => 0.4 + i * 0.75;
 
 /**
- * A temple pillar in straight lines: a stepped base, four lines for the shaft, a double band at
- * its middle, a stepped capital. Listed bottom to top, the order it rises in.
+ * A temple pillar in straight lines: a stepped base, a shaft of four lines broken by a carved
+ * block at its middle (a ring above and below, a diamond within), a stepped capital. Listed
+ * bottom to top, the order it rises in, each with when it starts and how long it draws.
  */
-const PILLAR = [
-  "M0 440 H60 V432 H54 V424 H48 V416 H12 V424 H6 V432 H0 Z",
-  ...[16, 25, 35, 44].map((x) => `M${x} 416 V24`),
-  "M12 226 H48 M12 214 H48",
-  "M0 0 H60 V8 H54 V16 H48 V24 H12 V16 H6 V8 H0 Z",
+const PILLAR: { d: string; at: number; for: number; w: number }[] = [
+  { d: "M0 440 H60 V432 H54 V424 H48 V416 H12 V424 H6 V432 H0 Z", at: 0, for: 1.6, w: 1.4 },
+  ...[16, 25, 35, 44].map((x, k) => ({ d: `M${x} 416 V250 M${x} 190 V24`, at: 0.8 + k * 0.15, for: 3, w: 1.1 })),
+  { d: "M8 250 H52 V190 H8 Z", at: 2.2, for: 1.4, w: 1.3 },
+  { d: "M12 256 H48 M12 184 H48", at: 2.6, for: 1, w: 1 },
+  { d: "M30 198 L44 220 L30 242 L16 220 Z", at: 3, for: 1.2, w: 1.1 },
+  { d: "M0 0 H60 V8 H54 V16 H48 V24 H12 V16 H6 V8 H0 Z", at: 3.8, for: 1.6, w: 1.4 },
 ];
 
 function Pillar({ on, className }: { on: boolean; className?: string }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 60 440" fill="none" className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 h-[112%] w-auto text-accent/70", className)}>
-      {PILLAR.map((d, i) => (
+      {PILLAR.map((p, i) => (
         <path
           key={i}
-          d={d}
+          d={p.d}
           pathLength={1}
           stroke="currentColor"
-          strokeWidth={i === 0 || i === PILLAR.length - 1 ? 1.4 : 1.1}
+          strokeWidth={p.w}
           strokeLinejoin="round"
           strokeLinecap="round"
-          style={{ strokeDasharray: 1, strokeDashoffset: on ? 0 : 1, transition: `stroke-dashoffset ${i > 0 && i < 5 ? 3 : 1.6}s cubic-bezier(0.45, 0, 0.25, 1) ${drawsAt(0) + 0.6 + (i === 0 ? 0 : i < 5 ? 0.8 + (i - 1) * 0.15 : i === 5 ? 3.2 : 3.8)}s` }}
+          style={{ strokeDasharray: 1, strokeDashoffset: on ? 0 : 1, transition: `stroke-dashoffset ${p.for}s cubic-bezier(0.45, 0, 0.25, 1) ${drawsAt(0) + 0.6 + p.at}s` }}
         />
       ))}
     </svg>
