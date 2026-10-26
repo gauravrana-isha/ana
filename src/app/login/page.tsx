@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -86,6 +87,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               {invite === "used" ? "That invite link has been used up or has ended. You can still continue with Google and an admin will let you in." : "New here? Continue with Google."}
             </p>
           )}
+          <p className="mt-4 font-ui text-[12px] leading-[1.6] text-ink-soft/80">
+            By continuing, you agree to the{" "}
+            <Link href="/terms" className="underline underline-offset-2 hover:text-ink">Terms</Link> and{" "}
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">Privacy</Link> policy.
+          </p>
         </div>
       </main>
     </div>

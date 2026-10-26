@@ -5,6 +5,7 @@ import { Ornament } from "@/components/art/Ornament";
 import { Glyph } from "@/components/art/Glyphs";
 import { DoneMark } from "@/components/art/PenMarks";
 import { cn } from "@/lib/utils";
+import { ConsentLink } from "@/components/shell/Consent";
 import { HeroLine, HeroLoop, SealedLine, SectionPager, SeenBadge, StickyPhone, Yantra, PillarYantra } from "./Motion";
 
 /*
@@ -432,7 +433,9 @@ function Footer() {
         </div>
         <nav aria-label="Footer" className="flex items-center gap-1">
           <Link href="/login" className="inline-flex h-10 items-center px-3 rounded-full font-ui text-[14px] font-semibold text-ink hover:bg-surface">Sign in</Link>
-          <a href="#private" className="inline-flex h-10 items-center px-3 rounded-full font-ui text-[14px] font-medium text-ink-soft hover:text-ink">Privacy</a>
+          <Link href="/terms" className="inline-flex h-10 items-center px-3 rounded-full font-ui text-[14px] font-medium text-ink-soft hover:text-ink">Terms</Link>
+          <Link href="/privacy" className="inline-flex h-10 items-center px-3 rounded-full font-ui text-[14px] font-medium text-ink-soft hover:text-ink">Privacy</Link>
+          <ConsentLink className="inline-flex h-10 items-center px-3 rounded-full font-ui text-[14px] font-medium text-ink-soft hover:text-ink" />
         </nav>
       </Wrap>
     </footer>

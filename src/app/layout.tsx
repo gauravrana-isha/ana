@@ -4,7 +4,7 @@ import Script from "next/script";
 import { Fraunces, Public_Sans } from "next/font/google";
 import { Providers } from "./providers";
 import { SplashController } from "@/components/shell/SplashController";
-import { WebAnalytics } from "@/components/shell/WebAnalytics";
+import { ConsentProvider } from "@/components/shell/Consent";
 import { LAUNCH_SCREENS } from "@/lib/launch-screens";
 import "./globals.css";
 
@@ -112,12 +112,13 @@ const SAFE_TOP_SCRIPT = `try{(function(){var n=navigator,d=document.documentElem
  */
 const THEME_SCRIPT = `try{var m=document.cookie.match(/(?:^|; )ana-theme=(dark|light)/);if(m)document.documentElement.setAttribute('data-theme',m[1])}catch(e){}`;
 
-// The opening coil belongs to the app, not the landing page (shown at / to visitors).
-const SPLASH_SCRIPT = `try{if(location.pathname!=='/'&&!sessionStorage.getItem('ana-splash')){sessionStorage.setItem('ana-splash','1');document.documentElement.classList.add('splash')}}catch(e){}`;
+// The opening coil belongs to the app, not the pages for visitors (the landing, terms, privacy).
+const SPLASH_SCRIPT = `try{if(!/^\\/(terms|privacy)?$/.test(location.pathname)&&!sessionStorage.getItem('ana-splash')){sessionStorage.setItem('ana-splash','1');document.documentElement.classList.add('splash')}}catch(e){}`;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();
   const theme = cookieStore.get("ana-theme")?.value === "dark" ? "dark" : "light";
+  const consent = cookieStore.get("ana-consent")?.value;
 
   return (
     <html
@@ -141,8 +142,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className="font-ui antialiased min-h-dvh">
         <div className="ana-splash" aria-hidden="true" />
         <SplashController />
-        <Providers>{children}</Providers>
-        <WebAnalytics />
+        {/* Cookies asked once; visits are counted only after a yes. */}
+        <ConsentProvider initial={consent === "yes" || consent === "no" ? consent : undefined}>
+          <Providers>{children}</Providers>
+        </ConsentProvider>
       </body>
     </html>
   );
