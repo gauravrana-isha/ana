@@ -697,3 +697,12 @@ body:has([data-bare]) .ana-toasts { bottom: calc(16px + env(safe-area-inset-bott
 
 @keyframes landing-shine { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
 @media (prefers-reduced-motion: reduce) { .landing-cta::before { animation: none; display: none; } }
+
+/* === The cookies question: above the tab bar on phones, above the progress bar on the landing === */
+.ana-consent { bottom: calc(84px + env(safe-area-inset-bottom)); }
+body:has(.landing-sky) .ana-consent { bottom: calc(68px + env(safe-area-inset-bottom)); }
+body:has([data-bare]) .ana-consent,
+body:not(:has(.ana-tabbar)):not(:has(.landing-sky)) .ana-consent { bottom: calc(16px + env(safe-area-inset-bottom)); }
+@media (min-width: 1024px) {
+  .ana-consent, body:has(.landing-sky) .ana-consent { bottom: 24px; }
+}

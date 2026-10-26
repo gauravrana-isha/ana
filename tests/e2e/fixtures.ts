@@ -15,7 +15,11 @@ export const PHRASE_FILE = path.join(__dirname, ".auth", "phrase.txt");
 export const test = base.extend<{ page: Page }>({
   page: async ({ page, context, baseURL }, provide) => {
     await context.addInitScript(() => sessionStorage.setItem("ana-splash", "1"));
-    await context.addCookies([{ name: "authjs.session-token", value: SESSION_TOKEN, url: baseURL! }]);
+    // Signed in, and the cookies question already answered (it's tested on its own).
+    await context.addCookies([
+      { name: "authjs.session-token", value: SESSION_TOKEN, url: baseURL! },
+      { name: "ana-consent", value: "no", url: baseURL! },
+    ]);
     await page.goto("/home");
     await page.getByText("Unlock your journal").waitFor();
     await page.getByRole("button", { name: /Use your recovery words/ }).click();
