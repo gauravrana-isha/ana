@@ -29,8 +29,8 @@ export default function PrivacyPage() {
 
       <Section n={3} title="Cookies">
         <p>
-          Only what ana needs: signing in, light or dark, the sidebar, and your answer to the cookies question. With your yes,
-          Vercel Web Analytics also counts visits, anonymously. Change your answer from &ldquo;Cookies&rdquo; below.
+          Only what ana needs: signing in, light or dark, and the sidebar. Vercel Web Analytics counts visits anonymously,
+          without cookies.
         </p>
       </Section>
 

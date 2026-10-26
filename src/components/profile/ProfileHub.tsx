@@ -24,7 +24,6 @@ import { BUNDLE_SLOTS } from "@/lib/nav-plan";
 import { TabBarChooser } from "@/components/shell/BundleNav";
 import { useBundles } from "@/components/shell/Bundles";
 import { cn } from "@/lib/utils";
-import { ConsentLink } from "@/components/shell/Consent";
 import { whenRestored } from "@/lib/restored";
 import { fetchProfileStats } from "@/lib/journal";
 import { exportJournal, importJournal } from "@/lib/importer";
@@ -310,7 +309,6 @@ function DataPanel() {
       <nav aria-label="Terms and privacy" className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 font-ui text-[13.5px] font-semibold text-ink-soft">
         <Link href="/terms" className="hover:text-ink">Terms</Link>
         <Link href="/privacy" className="hover:text-ink">Privacy</Link>
-        <ConsentLink className="hover:text-ink" />
       </nav>
     </div>
   );

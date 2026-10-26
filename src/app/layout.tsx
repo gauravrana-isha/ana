@@ -4,7 +4,7 @@ import Script from "next/script";
 import { Fraunces, Public_Sans } from "next/font/google";
 import { Providers } from "./providers";
 import { SplashController } from "@/components/shell/SplashController";
-import { ConsentProvider } from "@/components/shell/Consent";
+import { WebAnalytics } from "@/components/shell/WebAnalytics";
 import { LAUNCH_SCREENS } from "@/lib/launch-screens";
 import "./globals.css";
 
@@ -118,7 +118,6 @@ const SPLASH_SCRIPT = `try{if(!/^\\/(terms|privacy)?$/.test(location.pathname)&&
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();
   const theme = cookieStore.get("ana-theme")?.value === "dark" ? "dark" : "light";
-  const consent = cookieStore.get("ana-consent")?.value;
 
   return (
     <html
@@ -142,10 +141,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className="font-ui antialiased min-h-dvh">
         <div className="ana-splash" aria-hidden="true" />
         <SplashController />
-        {/* Cookies asked once; visits are counted only after a yes. */}
-        <ConsentProvider initial={consent === "yes" || consent === "no" ? consent : undefined}>
-          <Providers>{children}</Providers>
-        </ConsentProvider>
+        <Providers>{children}</Providers>
+        <WebAnalytics />
       </body>
     </html>
   );

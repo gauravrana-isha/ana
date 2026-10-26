@@ -29,19 +29,7 @@ test("someone signed in goes straight to their logger", async ({ page }) => {
   await expect(page).toHaveURL(/\/home/);
 });
 
-plain("visitors are asked about cookies once, and can read the terms and privacy", async ({ page, context }) => {
-  await page.goto("/");
-  const bar = page.getByRole("region", { name: "Cookies" });
-  await expect(bar).toBeVisible();
-  await bar.getByRole("button", { name: "No" }).click();
-  await expect(bar).toBeHidden();
-  expect((await context.cookies()).find((c) => c.name === "ana-consent")?.value).toBe("no");
-  await page.reload();
-  await expect(page.getByRole("region", { name: "Cookies" })).toBeHidden();
-  // The answer can be changed from the footer.
-  await page.getByRole("button", { name: "Cookies: No" }).click();
-  await page.getByRole("region", { name: "Cookies" }).getByRole("button", { name: "Yes" }).click();
-  expect((await context.cookies()).find((c) => c.name === "ana-consent")?.value).toBe("yes");
+plain("visitors can read the terms and privacy", async ({ page }) => {
   await page.goto("/terms");
   await expect(page.getByRole("heading", { level: 1, name: "Terms" })).toBeVisible();
   await expect(page.getByText("courts of Coimbatore")).toBeVisible();
