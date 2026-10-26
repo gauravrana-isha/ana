@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/art/BrandMark";
-import { ConsentLink } from "@/components/shell/Consent";
 import { getCurrentUser, homeFor } from "@/lib/session";
 
 /** Who runs ana, and how to reach them: the same on every legal page. */
@@ -37,7 +36,6 @@ export async function LegalPage({ title, summary, children }: { title: string; s
           <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5 gap-y-2 font-ui text-[14px] font-medium text-ink-soft">
             <Link href="/terms" className="hover:text-ink">Terms</Link>
             <Link href="/privacy" className="hover:text-ink">Privacy</Link>
-            <ConsentLink className="hover:text-ink" />
           </nav>
         </div>
       </footer>
