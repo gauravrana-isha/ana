@@ -53,7 +53,7 @@ function ConsentBar({ open, choice, onChoose }: { open: boolean; choice?: Consen
       {open && (
         <motion.section
           aria-label="Cookies"
-          className="ana-consent fixed z-[95] inset-x-3 sm:inset-x-auto sm:left-5 sm:max-w-[340px] rounded-[22px] bg-bg border border-line shadow-[var(--shadow-lift)] p-4 sm:p-5"
+          className="ana-consent fixed z-[95] inset-x-3 sm:inset-x-auto sm:right-5 sm:max-w-[340px] rounded-[22px] bg-bg border border-line shadow-[var(--shadow-lift)] p-4 sm:p-5"
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reduce ? { opacity: 0 } : { opacity: 0, y: 24 }}
@@ -61,8 +61,8 @@ function ConsentBar({ open, choice, onChoose }: { open: boolean; choice?: Consen
         >
           <h2 className="font-display text-[18px] font-semibold text-ink">Cookies</h2>
           <p className="mt-1.5 font-ui text-[14px] leading-[1.55] text-ink-soft">
-            ana uses only the cookies it needs to work. With your yes, it also counts visits, anonymously, to see what helps.{" "}
-            <Link href="/privacy#s5" className="font-semibold text-accent underline underline-offset-2">
+            May ana count visits, anonymously?{" "}
+            <Link href="/privacy#s3" className="font-semibold text-accent underline underline-offset-2">
               More
             </Link>
           </p>

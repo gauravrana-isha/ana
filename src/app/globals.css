@@ -705,4 +705,5 @@ body:has([data-bare]) .ana-consent,
 body:not(:has(.ana-tabbar)):not(:has(.landing-sky)) .ana-consent { bottom: calc(16px + env(safe-area-inset-bottom)); }
 @media (min-width: 1024px) {
   .ana-consent, body:has(.landing-sky) .ana-consent { bottom: 24px; }
+  body:has(.ana-fab) .ana-consent { bottom: 104px; }
 }
