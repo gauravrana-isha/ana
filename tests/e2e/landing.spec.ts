@@ -45,7 +45,15 @@ plain("visitors are asked about cookies once, and can read the terms and privacy
   await page.goto("/terms");
   await expect(page.getByRole("heading", { level: 1, name: "Terms" })).toBeVisible();
   await expect(page.getByText("courts of Coimbatore")).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("link", { name: "Sign in" })).toBeVisible();
   await page.goto("/privacy");
   await expect(page.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
   await expect(page.getByRole("link", { name: "grana4175@gmail.com" }).first()).toBeVisible();
+});
+
+test("someone signed in reading the terms is led back into ana, not to sign in", async ({ page }) => {
+  await page.goto("/terms");
+  const header = page.getByRole("banner");
+  await expect(header.getByRole("link", { name: "Open ana" })).toBeVisible();
+  await expect(header.getByRole("link", { name: "Sign in" })).toHaveCount(0);
 });
