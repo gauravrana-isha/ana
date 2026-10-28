@@ -1,11 +1,15 @@
 "use client";
 
+import type { QuestionPicture as Picture } from "@/lib/questions";
+import { QuestionPicture } from "./QuestionPicture";
 import { StampRow } from "./StampRow";
 
 interface PromptCardProps {
   number: string;
   question: string;
   hint?: string;
+  /** A photo above the question (some built-ins have one). */
+  picture?: Picture;
   answer: string;
   stamps: string[];
   onAnswerChange: (val: string) => void;
@@ -24,6 +28,7 @@ export function PromptCard({
 
   question,
   hint,
+  picture,
   answer,
   stamps,
   onAnswerChange,
@@ -32,6 +37,7 @@ export function PromptCard({
 }: PromptCardProps) {
   return (
     <div className="rounded-[22px] p-5 sm:p-6 mb-3.5 bg-surface border border-line/70">
+      {picture && <QuestionPicture picture={picture} className="-mx-3 -mt-3 sm:-mx-4 sm:-mt-4 mb-4" />}
       <p className="font-display text-[19px] sm:text-[21px] font-semibold leading-[1.3] text-ink text-balance">{question}</p>
       {hint && <p className="mt-1.5 font-serif italic text-[14.5px] text-ink-soft leading-[1.55]">{hint}</p>}
       <textarea

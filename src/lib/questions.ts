@@ -103,3 +103,37 @@ export function toStored(kind: ReflectionKind, list: Question[]): Question[] {
     return { key, q, ...(own ? { hint: hint.trim() } : {}), ...(hidden ? { hidden } : {}), ...(removed ? { removed } : {}) };
   });
 }
+
+export interface QuestionPicture {
+  src: string;
+  alt: string;
+  /** Who took it and under which licence; shown on the picture when the licence asks for it. */
+  credit?: { by: string; licence: string; href: string };
+  /** Which part of the photo stays in view when it's cropped. */
+  focus?: string;
+}
+
+/** Real photos (found on the open web, free to use) above some built-in questions. */
+const PICTURES: Partial<Record<ReflectionKind, Record<string, QuestionPicture>>> = {
+  daily: {
+    "2": {
+      src: "/images/questions/eating.webp",
+      alt: "A meal served on a banana leaf",
+      credit: { by: "Codegeass123", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:%E0%B2%AC%E0%B2%BE%E0%B2%B3%E0%B3%86%E0%B2%B2%E0%B3%86_%E0%B2%8A%E0%B2%9F_(Banana_leaf_meal).jpg" },
+      focus: "center 55%",
+    },
+    "3": { src: "/images/questions/reacting.webp", alt: "Ripples spreading on still water" },
+    "6": {
+      src: "/images/questions/vak-shuddhi.webp",
+      alt: "A single burning diya",
+      credit: { by: "Billjones94", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Single_burning_Diya,_a_type_of_sacred_lamp,_photographed_in_West_Bengal,_India,_on_October_21,_2023.jpg" },
+      focus: "center 60%",
+    },
+  },
+};
+
+/** A built-in question's picture, only while it still reads as the built-in (not reworded). */
+export function questionPicture(kind: ReflectionKind, key: string, q: string) {
+  const own = BUILT_IN[kind].find((b) => b.key === key);
+  return own && own.q === q ? PICTURES[kind]?.[key] : undefined;
+}

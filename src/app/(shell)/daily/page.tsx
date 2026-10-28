@@ -15,7 +15,7 @@ import { DailySkeleton } from "@/components/skeletons/DailySkeleton";
 import { formatDateHand, today } from "@/lib/dates";
 import { fetchDaily, saveDaily } from "@/lib/journal";
 import { useMe } from "@/lib/me";
-import { readingQuestions, shownQuestions } from "@/lib/questions";
+import { questionPicture, readingQuestions, shownQuestions } from "@/lib/questions";
 import { onScreen } from "@/lib/on-screen";
 import { EditSaveFab } from "@/components/reflection/EditSaveFab";
 
@@ -33,7 +33,7 @@ function DailyContent() {
   const [date] = useState(() => (param && /^\d{4}-\d{2}-\d{2}$/.test(param) && param <= today() ? param : today()));
   const qc = useQueryClient();
   const { data: me } = useMe();
-  const prompts = shownQuestions("daily", me?.questions);
+  const prompts = shownQuestions("daily", me?.questions).map((x) => ({ ...x, picture: questionPicture("daily", x.key, x.q) }));
   // null: reading. "first": a day with nothing saved, answered one question at a time.
   // A prompt key (or "mood"): changing a saved day, in the full editor, scrolled to that item.
   const [editing, setEditing] = useState<null | "first" | string>(null);
@@ -205,6 +205,7 @@ function DailyContent() {
                 number={prompt.number}
                 question={prompt.q}
                 hint={prompt.hint}
+                picture={questionPicture("daily", prompt.key, prompt.q)}
                 answer={localAnswers[prompt.key] ?? ""}
                 stamps={localStamps[prompt.key] ?? []}
                 onAnswerChange={(val) => handleAnswerChange(prompt.key, val)}
