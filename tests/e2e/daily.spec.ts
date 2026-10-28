@@ -153,13 +153,12 @@ test("a card changing never makes the page wider than the screen (Android re-lai
   expect(await page.evaluate(() => (window as unknown as { widest: number }).widest)).toBe(0);
 });
 
-test("some Daily questions have a quiet picture above them, with its credit", async ({ page }) => {
+test("every Daily and Weekly question has a quiet picture above it, with its credit", async ({ page }) => {
   await clearReflections();
   await page.goto("/daily");
   const card = page.locator("[aria-roledescription=card]").first();
   await card.waitFor();
-  // The first question has none; the second (eating) has the banana-leaf meal.
-  await expect(card.locator("img")).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "People sitting quietly by the sea at dawn" })).toBeVisible();
   await page.getByRole("button", { name: /^(Next|Skip)$/ }).click();
   const meal = page.getByRole("img", { name: "A meal served on a banana leaf" });
   await expect(meal).toBeVisible();
@@ -170,5 +169,22 @@ test("some Daily questions have a quiet picture above them, with its credit", as
     await page.screenshot({ path: `${process.env.SHOTS}/q-phone.png` });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.screenshot({ path: `${process.env.SHOTS}/q-desk.png` });
+  }
+
+  // Each step of the Weekly reflection shows its picture, loaded.
+  await page.goto("/weekly");
+  await page.locator("[aria-roledescription=card]").first().waitFor();
+  const steps = Number((await page.getByText(/^1 \/ \d+$/).innerText()).split("/")[1]);
+  for (let i = 0; i < steps; i++) {
+    const img = page.locator("[aria-roledescription=card] figure img").first();
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth), { message: `weekly step ${i + 1}` }).toBeGreaterThan(0);
+    if (process.env.SHOTS && i === 6) {
+      await page.waitForTimeout(900);
+      await page.screenshot({ path: `${process.env.SHOTS}/q-weekly.png` });
+    }
+    if (i < steps - 1) {
+      await page.getByRole("button", { name: /^(Next|Skip)$/ }).click();
+      await page.waitForTimeout(400);
+    }
   }
 });

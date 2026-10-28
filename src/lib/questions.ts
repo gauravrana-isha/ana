@@ -113,9 +113,14 @@ export interface QuestionPicture {
   focus?: string;
 }
 
-/** Real photos (found on the open web, free to use) above some built-in questions. */
+/** Real photos (found on the open web, free to use) above the built-in questions. */
 const PICTURES: Partial<Record<ReflectionKind, Record<string, QuestionPicture>>> = {
   daily: {
+    "1": {
+      src: "/images/questions/crash-course.webp",
+      alt: "People sitting quietly by the sea at dawn",
+      credit: { by: "Zcognito", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Group_meditation_by_East_Coast_Beach,_Singapore.jpg" },
+    },
     "2": {
       src: "/images/questions/eating.webp",
       alt: "A meal served on a banana leaf",
@@ -123,11 +128,72 @@ const PICTURES: Partial<Record<ReflectionKind, Record<string, QuestionPicture>>>
       focus: "center 55%",
     },
     "3": { src: "/images/questions/reacting.webp", alt: "Ripples spreading on still water" },
+    "4": {
+      src: "/images/questions/willing.webp",
+      alt: "A strawberry resting in an open palm",
+      credit: { by: "Shixart1985", licence: "CC BY 2.0", href: "https://commons.wikimedia.org/wiki/File:Fresh_and_ripe_strawberry_resting_in_an_open_palm_surrounded_by_natural_light.jpg" },
+    },
+    "5": {
+      src: "/images/questions/vibrant.webp",
+      alt: "The sun rising over a sea of clouds",
+      credit: { by: "Sri Chakra Pranav", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Sun_rising_over_a_blanket_of_clouds,_Nandi_Hills,_Karnataka_(edit).jpg" },
+    },
     "6": {
       src: "/images/questions/vak-shuddhi.webp",
       alt: "A single burning diya",
       credit: { by: "Billjones94", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Single_burning_Diya,_a_type_of_sacred_lamp,_photographed_in_West_Bengal,_India,_on_October_21,_2023.jpg" },
       focus: "center 60%",
+    },
+    "7": {
+      src: "/images/questions/focused.webp",
+      alt: "Arrows gathered in the centre of a target",
+      credit: { by: "Wacky1976", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Archery_Arrows_Target_WA_80z.jpg" },
+    },
+  },
+  weekly: {
+    "1": {
+      src: "/images/questions/sadhana.webp",
+      alt: "A temple's pillared corridor for walking around it",
+      credit: { by: "Vasukrishnan57", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Keshava_Temple,_Somanathapura,_Pillared_parikrama_(circumambulation).jpg" },
+    },
+    "2": {
+      src: "/images/questions/bhakti.webp",
+      alt: "Marigold garlands at a temple",
+      credit: { by: "Saileshpat", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Marigold_at_lingaraj_temple.jpg" },
+    },
+    "3": {
+      src: "/images/questions/commitment.webp",
+      alt: "A rock standing in a splash of sea waves",
+      credit: { by: "Kwameghana", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Sea_water_splash_on_a_rock_02.jpg" },
+    },
+    "4": {
+      src: "/images/questions/joy.webp",
+      alt: "A pink lotus in bloom",
+    },
+    "5": {
+      src: "/images/questions/solution.webp",
+      alt: "Hands planting a sapling",
+      credit: { by: "Robbieross123", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Plant_a_Sapling_for_Better_Future.jpg" },
+    },
+    "6": {
+      src: "/images/questions/still.webp",
+      alt: "A still lake reflecting the mountains",
+      credit: { by: "King of Hearts", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Silver_Lake_Mammoth_September_2016_001.jpg" },
+    },
+    "7": {
+      src: "/images/questions/seva.webp",
+      alt: "Hands passing a plate of food",
+      credit: { by: "Kanbail", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:WomenExchangeingKosambri.jpg" },
+    },
+    "8": {
+      src: "/images/questions/holding-back.webp",
+      alt: "A boat's rope and anchor",
+      credit: { by: "Paul van de Velde", licence: "CC BY 2.0", href: "https://commons.wikimedia.org/wiki/File:Rope_and_Anchor_(12935164255).jpg" },
+    },
+    "9": {
+      src: "/images/questions/intensity.webp",
+      alt: "Wooden steps climbing through a forest",
+      credit: { by: "Marshallhash89", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Sone_Mountain_Stairs.png" },
     },
   },
 };
