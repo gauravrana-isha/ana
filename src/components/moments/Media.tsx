@@ -477,7 +477,7 @@ export function UploadBadge({ state, onRetry }: { state: UploadState | undefined
   }
   if (state.status === "done") {
     return (
-      <span aria-label="Uploaded" className="absolute bottom-1.5 left-1.5 grid place-items-center w-6 h-6 rounded-full bg-accent text-bg shadow"><TickMark size={14} /></span>
+      <span aria-label={state.waiting ? "Kept on this phone" : "Uploaded"} className="absolute bottom-1.5 left-1.5 grid place-items-center w-6 h-6 rounded-full bg-accent text-bg shadow"><TickMark size={14} /></span>
     );
   }
   const r = 9, c = 2 * Math.PI * r;
@@ -491,7 +491,7 @@ export function UploadBadge({ state, onRetry }: { state: UploadState | undefined
   );
 }
 
-/** A line under a recording: "Uploading · 42%", "Uploaded", or an error with retry. */
+/** A line under a recording: "Uploading · 42%", "Uploaded" (or kept here, offline), or an error with retry. */
 export function UploadStrip({ state, onRetry }: { state: UploadState | undefined; onRetry?: () => void }) {
   if (!state) return null;
   return (
@@ -504,7 +504,12 @@ export function UploadStrip({ state, onRetry }: { state: UploadState | undefined
           </span>
         </>
       )}
-      {state.status === "done" && <span className="font-ui text-[13px] font-semibold text-good">✓ Uploaded. It&rsquo;s safe to keep writing.</span>}
+      {state.status === "done" &&
+        (state.waiting ? (
+          <span className="font-ui text-[13px] font-semibold text-good">✓ Kept on this phone. It goes up when you&rsquo;re back online.</span>
+        ) : (
+          <span className="font-ui text-[13px] font-semibold text-good">✓ Uploaded. It&rsquo;s safe to keep writing.</span>
+        ))}
       {state.status === "error" && (
         <>
           <span className="flex-1 font-ui text-[13px] text-danger">{state.message}</span>
