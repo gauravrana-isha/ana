@@ -402,7 +402,11 @@ async function passkeyKey(journal: Uint8Array<ArrayBuffer>): Promise<NewKey> {
   if (prf && prf.enabled === false) throw new PasskeyUnsupportedError();
   const id = new Uint8Array(cred.rawId);
 
-  // Register it with the server (its public key, for signing in).
+  // Some authenticators give the secret at creation; others only when the passkey is used.
+  const secret = prf?.results?.first ? new Uint8Array(prf.results.first) : await prfFrom(id, PRF_SALT);
+
+  // Only now, with the secret in hand, is it registered for signing in: a passkey that can sign
+  // in but can't unlock the journal would leave someone signed in and locked out.
   const att = cred.response as AuthenticatorAttestationResponse;
   prepared = null;
   await postJSON("/api/passkeys/register", {
@@ -421,8 +425,6 @@ async function passkeyKey(journal: Uint8Array<ArrayBuffer>): Promise<NewKey> {
   });
   rememberPasskeyHere();
 
-  // Some authenticators give the secret at creation; others only when the passkey is used.
-  const secret = prf?.results?.first ? new Uint8Array(prf.results.first) : await prfFrom(id, PRF_SALT);
   const salt = randomBytes(16);
   const wk = await wrappingKeyFromSecret(secret, salt, "ana passkey v1");
   return { kind: "passkey", label: deviceLabel(), wrapped: await wrap(wk, journal), salt: toB64(salt), iterations: null, credentialId: toB64(id) };
