@@ -190,6 +190,16 @@ async function rememberOnDevice(userId: string, journal: Uint8Array<ArrayBuffer>
   }
 }
 
+/**
+ * Start over, when every way to unlock is lost: the journal is deleted on the server (it can't be
+ * read without its key), and with it this device's copies; a new key is set up next.
+ */
+export async function startOver(confirm: string) {
+  await postJSON("/api/vault/reset", { confirm });
+  raw = null;
+  await del(DEVICE).catch(() => {});
+}
+
 /** Forget the key on this device (sign out, or "lock this device"). */
 export async function forgetDevice() {
   raw = null;
