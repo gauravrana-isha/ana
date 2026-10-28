@@ -36,6 +36,7 @@ export async function LegalPage({ title, summary, children }: { title: string; s
           <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5 gap-y-2 font-ui text-[14px] font-medium text-ink-soft">
             <Link href="/terms" className="hover:text-ink">Terms</Link>
             <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+            <Link href="/credits" className="hover:text-ink">Picture credits</Link>
           </nav>
         </div>
       </footer>

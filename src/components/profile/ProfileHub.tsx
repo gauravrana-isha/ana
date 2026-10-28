@@ -309,6 +309,7 @@ function DataPanel() {
       <nav aria-label="Terms and privacy" className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 font-ui text-[13.5px] font-semibold text-ink-soft">
         <Link href="/terms" className="hover:text-ink">Terms</Link>
         <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+        <Link href="/credits" className="hover:text-ink">Picture credits</Link>
       </nav>
     </div>
   );

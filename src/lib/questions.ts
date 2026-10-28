@@ -107,7 +107,7 @@ export function toStored(kind: ReflectionKind, list: Question[]): Question[] {
 export interface QuestionPicture {
   src: string;
   alt: string;
-  /** Who took it and under which licence; shown on the picture when the licence asks for it. */
+  /** Who took it and under which licence (listed on /credits), when the licence asks for credit. */
   credit?: { by: string; licence: string; href: string };
   /** Which part of the photo stays in view when it's cropped. */
   focus?: string;
@@ -197,6 +197,44 @@ const PICTURES: Partial<Record<ReflectionKind, Record<string, QuestionPicture>>>
     },
   },
 };
+
+/** A photo for each mood, shown as it's chosen. */
+export const MOOD_PICTURES: Record<"low" | "agitated" | "neutral" | "content" | "blissful", QuestionPicture> = {
+  low: {
+    src: "/images/questions/mood-low.webp",
+    alt: "Rain drops on a window",
+    credit: { by: "Frank Vincentz", licence: "CC BY-SA 3.0", href: "https://commons.wikimedia.org/wiki/File:Rain_drops_on_window_03_ies.jpg" },
+  },
+  agitated: {
+    src: "/images/questions/mood-agitated.webp",
+    alt: "Stormy waves beyond a ship's rail",
+    credit: { by: "Liebgard", licence: "CC BY 3.0", href: "https://commons.wikimedia.org/wiki/File:TS_Bremen_life_ring_with_stormy_waves.jpg" },
+  },
+  neutral: {
+    src: "/images/questions/mood-neutral.webp",
+    alt: "A quiet beach under a grey sky",
+    credit: { by: "PattayaPatrol", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:DSC_6685_A_weathered_wooden_boat_rests_on_a_quiet_sandy_beach_under_a_wide_overcast_sky_as_small_fishing_boats_dot_the_calm_horizon.jpg" },
+  },
+  content: {
+    src: "/images/questions/mood-content.webp",
+    alt: "A horse grazing in a mountain meadow",
+    credit: { by: "UnpetitproleX", licence: "CC BY 4.0", href: "https://commons.wikimedia.org/wiki/File:Horses_grazing_at_Trunkol_meadow,_Jammu_and_Kashmir,_India_(crop).jpg" },
+  },
+  blissful: {
+    src: "/images/questions/mood-blissful.webp",
+    alt: "The sun bursting through clouds over hills",
+    credit: { by: "Daniel Case", licence: "CC BY-SA 4.0", href: "https://commons.wikimedia.org/wiki/File:Setting_sun_through_clouds,_sunbeams,_and_landscape_with_acacia_tree_in_Samburu_National_Reserve,_Kenya.jpg" },
+  },
+};
+
+/** Who took each photo, for the credits page (the pictures themselves carry no names). */
+export function pictureCredits() {
+  const questions = (["daily", "weekly"] as const).flatMap((kind) =>
+    Object.entries(PICTURES[kind] ?? {}).map(([key, p]) => ({ ...p, for: `${kind === "daily" ? "Daily" : "Weekly"}: ${BUILT_IN[kind].find((b) => b.key === key)?.q ?? ""}` }))
+  );
+  const moods = Object.entries(MOOD_PICTURES).map(([mood, p]) => ({ ...p, for: `Mood: ${mood[0].toUpperCase()}${mood.slice(1)}` }));
+  return [...questions, ...moods];
+}
 
 /** A built-in question's picture, only while it still reads as the built-in (not reworded). */
 export function questionPicture(kind: ReflectionKind, key: string, q: string) {

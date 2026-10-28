@@ -153,7 +153,7 @@ test("a card changing never makes the page wider than the screen (Android re-lai
   expect(await page.evaluate(() => (window as unknown as { widest: number }).widest)).toBe(0);
 });
 
-test("every Daily and Weekly question has a quiet picture above it, with its credit", async ({ page }) => {
+test("every Daily and Weekly question and the mood have a quiet picture, credited on its own page", async ({ page }) => {
   await clearReflections();
   await page.goto("/daily");
   const card = page.locator("[aria-roledescription=card]").first();
@@ -163,12 +163,28 @@ test("every Daily and Weekly question has a quiet picture above it, with its cre
   const meal = page.getByRole("img", { name: "A meal served on a banana leaf" });
   await expect(meal).toBeVisible();
   await expect.poll(() => meal.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
-  await expect(page.getByRole("link", { name: "Codegeass123, CC BY-SA 4.0" })).toBeVisible();
+  // No names on the pictures themselves.
+  await expect(page.getByRole("link", { name: /CC BY/ })).toHaveCount(0);
   if (process.env.SHOTS) {
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${process.env.SHOTS}/q-phone.png` });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.screenshot({ path: `${process.env.SHOTS}/q-desk.png` });
+  }
+
+  // The mood: five photos side by side, then the chosen one opens out to fill the space.
+  for (let i = 0; i < 6; i++) await page.getByRole("button", { name: /^(Next|Skip)$/ }).click();
+  const strip = page.locator("[aria-roledescription=card] img");
+  await expect(strip).toHaveCount(5);
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(700);
+    await page.screenshot({ path: `${process.env.SHOTS}/q-mood-none.png` });
+  }
+  await page.getByRole("radio", { name: "Content" }).click();
+  await expect.poll(async () => (await strip.nth(3).boundingBox())?.width ?? 0).toBeGreaterThan(((await strip.nth(3).evaluate((el) => el.parentElement!.clientWidth)) as number) * 0.9);
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(700);
+    await page.screenshot({ path: `${process.env.SHOTS}/q-mood.png` });
   }
 
   // Each step of the Weekly reflection shows its picture, loaded.
@@ -187,4 +203,11 @@ test("every Daily and Weekly question has a quiet picture above it, with its cre
       await page.waitForTimeout(400);
     }
   }
+});
+
+test("the picture credits page names who took each photo", async ({ page }) => {
+  await page.goto("/credits");
+  await expect(page.getByRole("heading", { name: "Picture credits" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Codegeass123" })).toHaveAttribute("href", /commons\.wikimedia\.org/);
+  await expect(page.getByText("Mood: Blissful")).toBeVisible();
 });
