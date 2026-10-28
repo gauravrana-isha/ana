@@ -112,8 +112,8 @@ const SAFE_TOP_SCRIPT = `try{(function(){var n=navigator,d=document.documentElem
  */
 const THEME_SCRIPT = `try{var m=document.cookie.match(/(?:^|; )ana-theme=(dark|light)/);if(m)document.documentElement.setAttribute('data-theme',m[1])}catch(e){}`;
 
-// The opening coil belongs to the app, not the pages for visitors (the landing, terms, privacy).
-const SPLASH_SCRIPT = `try{if(!/^\\/(terms|privacy)?$/.test(location.pathname)&&!sessionStorage.getItem('ana-splash')){sessionStorage.setItem('ana-splash','1');document.documentElement.classList.add('splash')}}catch(e){}`;
+// The opening coil belongs to the app, not the pages for visitors (the landing, terms, privacy, credits).
+const SPLASH_SCRIPT = `try{if(!/^\\/(terms|privacy|credits)?$/.test(location.pathname)&&!sessionStorage.getItem('ana-splash')){sessionStorage.setItem('ana-splash','1');document.documentElement.classList.add('splash')}}catch(e){}`;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();

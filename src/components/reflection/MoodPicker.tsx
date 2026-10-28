@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { MoodBadge, MoodFace, type MoodKey } from "@/components/art/MoodFace";
 import { cn } from "@/lib/utils";
+import { MOOD_PICTURES } from "@/lib/questions";
 
 const MOODS: { key: MoodKey; label: string }[] = [
   { key: "low", label: "Low" },
@@ -23,7 +24,8 @@ interface MoodPickerProps {
 /**
  * Five faces, spread across the width: tap one, or slide a finger along the row to move
  * between them. The chosen face turns into its coloured badge, with a soft pill gliding
- * behind it. Arrow keys work too (it's a radio group).
+ * behind it. Arrow keys work too (it's a radio group). Above them, a photo for each mood: side by
+ * side until one is chosen, then the chosen one opens out to fill the space.
  */
 export function MoodPicker({ value, onChange, bare = false }: MoodPickerProps) {
   const reduce = useReducedMotion();
@@ -54,6 +56,24 @@ export function MoodPicker({ value, onChange, bare = false }: MoodPickerProps) {
 
   return (
     <div className={bare ? undefined : "rounded-16 p-5 sm:p-6 bg-surface"}>
+      <div aria-hidden="true" className={cn("flex h-[128px] sm:h-[180px] overflow-hidden rounded-[14px] bg-surface-2 mb-4", bare ? "-mx-3 -mt-3 sm:-mx-5 sm:-mt-5" : "-mx-3 -mt-3 sm:-mx-4 sm:-mt-4")}>
+        {MOODS.map((m, i) => (
+          // eslint-disable-next-line @next/next/no-img-element -- small fixed photos, kept offline by the service worker
+          <img
+            key={m.key}
+            src={MOOD_PICTURES[m.key].src}
+            alt=""
+            draggable={false}
+            onClick={() => onChange(m.key)}
+            className={cn(
+              "ana-question-picture min-w-0 h-full object-cover cursor-pointer",
+              !reduce && "transition-[flex-grow,opacity] duration-500 ease-out",
+              current < 0 ? "opacity-90" : i === current ? "opacity-100" : "opacity-0"
+            )}
+            style={{ flexGrow: current < 0 ? 1 : i === current ? 1 : 0.0001, flexBasis: 0 }}
+          />
+        ))}
+      </div>
       <p className="font-serif text-lg text-ink mb-4">How are you feeling?</p>
 
       <div
