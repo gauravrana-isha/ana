@@ -234,7 +234,9 @@ export function MomentComposer({ open, onClose, moment, defaultPersonIds = [], d
                 : uploads.uploadingCount
                   ? `Uploading ${uploads.uploadingCount} · ${uploads.progress}%`
                   : pending.length
-                    ? "All uploaded ✓"
+                    ? uploads.waiting
+                      ? "Kept on this phone ✓"
+                      : "All uploaded ✓"
                     : "")}
           </span>
           <Button variant="secondary" onClick={close} disabled={!!saving}>

@@ -6,6 +6,7 @@ import { OFFLINE_SCREENS } from "./offline-screens";
 import { isUnlocked } from "./vault/vault";
 import { preloadMomentComposer } from "@/components/moments/LazyMomentComposer";
 import type { MomentsCopy } from "./journal";
+import { keepOnDevice } from "./vault/files";
 
 /*
  * Makes the whole journal open offline. Once it's unlocked and online, every screen's data is
@@ -15,6 +16,8 @@ import type { MomentsCopy } from "./journal";
  */
 
 const RECENT_MOMENTS = 40;
+/** Videos larger than this are kept on the device only once they've been played. */
+const VIDEO_AHEAD_MAX = 25 * 1024 * 1024;
 const MAX_PEOPLE = 150;
 const AGAIN_AFTER = 6 * 60 * 60_000;
 const KEY = "ana:offline-ready";
@@ -58,10 +61,12 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
       waitFor<MomentsCopy>(qc, ["moments", "all"]),
       waitFor<{ id: string }[]>(qc, ["people"]),
     ]);
-    const momentIds = [...(moments?.items ?? [])]
+    const recent = [...(moments?.items ?? [])]
       .sort((a, b) => String(b.occurredAt).localeCompare(String(a.occurredAt)))
-      .slice(0, RECENT_MOMENTS)
-      .map((m) => `/moments/${m.id}`);
+      .slice(0, RECENT_MOMENTS);
+    const momentIds = recent.map((m) => `/moments/${m.id}`);
+    // Their photos, voice notes and (not too large) videos, so they open and play offline.
+    void keepFiles(recent.flatMap((m) => m.attachments ?? []));
     const personIds = (Array.isArray(people) ? people : []).slice(0, MAX_PEOPLE).map((p) => `/presence/${p.id}`);
 
     // Every screen saved ahead by the service worker, with its code. Counted done only once
@@ -75,6 +80,17 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
   } finally {
     running = false;
   }
+}
+
+/** Keep files on the device, two at a time, without holding anything up. */
+async function keepFiles(list: { id: string; kind: string; size: number }[]) {
+  const jobs = list
+    .filter((a) => a.kind !== "video" || a.size <= VIDEO_AHEAD_MAX)
+    .flatMap((a) => (a.kind === "photo" ? [() => keepOnDevice(a.id, "thumb"), () => keepOnDevice(a.id)] : [() => keepOnDevice(a.id)]));
+  const worker = async () => {
+    for (let job = jobs.shift(); job && navigator.onLine; job = jobs.shift()) await job().catch(() => {});
+  };
+  await Promise.all([worker(), worker()]);
 }
 
 /** Send the worker a request and wait for its answer (0 if it doesn't answer in time). */

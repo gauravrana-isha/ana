@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { createStore, del, entries, get, keys, set } from "idb-keyval";
-import { encryptFile } from "./vault/files";
+import { encryptFile, putOnDevice } from "./vault/files";
 import { isUnlocked } from "./vault/vault";
 import { putStored, type AttachmentDTO, type MediaKind } from "./media-client";
 
@@ -162,6 +162,9 @@ export async function flushMedia(
       body: JSON.stringify({ id: m.id, kind: m.kind, pathname, contentType: m.contentType, durationSec: m.durationSec, sealed: m.sealed, thumbPathname }),
     });
     if (res.ok) {
+      // Kept on the device as it was stored, so it still opens offline once it's no longer waiting.
+      await putOnDevice(m.id, "full", m.full, m.contentType);
+      if (m.thumb) await putOnDevice(m.id, "thumb", m.thumb, m.contentType);
       await del(m.id, store).catch(() => {});
       sent++;
       void recount();

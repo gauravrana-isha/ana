@@ -1,6 +1,6 @@
 "use client";
 
-import { encryptFile } from "./vault/files";
+import { encryptFile, putOnDevice } from "./vault/files";
 import { isUnlocked } from "./vault/vault";
 import { reportError } from "./report";
 import { newId } from "./outbox";
@@ -50,7 +50,7 @@ export async function storeFile(
   file: Blob,
   kind: MediaKind,
   opts: { userId: string; storage: Storage; onProgress?: (pct: number) => void; replacing?: string }
-): Promise<{ pathname: string; contentType: string; sealed: boolean }> {
+): Promise<{ pathname: string; contentType: string; sealed: boolean; body: Blob }> {
   try {
     return await storeAt(file, kind, opts);
   } catch (err) {
@@ -72,7 +72,7 @@ async function storeAt(
   const sealed = isUnlocked();
   const body = sealed ? await encryptFile(file) : file;
   const pathname = await putStored(body, kind, contentType, opts.storage, opts.onProgress, opts.replacing);
-  return { pathname, contentType, sealed };
+  return { pathname, contentType, sealed, body };
 }
 
 /** Upload bytes as they are (already encrypted, when they should be). Returns where they landed. */
@@ -177,6 +177,9 @@ export async function uploadMedia(
       reportError("upload-register", err, `status=${reg.status} kind=${kind}`);
       throw Object.assign(err, { refused: true });
     }
+    // Kept here too, so it opens offline later without fetching it back.
+    void putOnDevice(id, "full", stored.body, stored.contentType);
+    if (thumb) void putOnDevice(id, "thumb", thumb.body, thumb.contentType);
     return data as AttachmentDTO;
   } catch (err) {
     // The storage or the server said no (too large, wrong type): that won't change later.

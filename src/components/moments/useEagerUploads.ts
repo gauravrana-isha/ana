@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { uploadMedia, type AttachmentDTO, type MediaKind } from "@/lib/media-client";
-import { dropPendingMedia } from "@/lib/media-outbox";
+import { dropPendingMedia, pendingMedia } from "@/lib/media-outbox";
 import { send } from "@/lib/outbox";
 import type { CapturedMedia } from "./Media";
 
 export type UploadState =
   | { status: "uploading"; pct: number }
-  | { status: "done"; attachment: AttachmentDTO }
+  /** `waiting`: no connection, so it's kept on this phone and goes up once back online. */
+  | { status: "done"; attachment: AttachmentDTO; waiting?: boolean }
   | { status: "error"; message: string };
 
 interface Item {
@@ -56,7 +57,8 @@ export function useEagerUploads(items: Item[], me: { id: string; storage: "r2" |
             await discard(attachment.id);
             return null;
           }
-          setStates((s) => ({ ...s, [key]: { status: "done", attachment } }));
+          const waiting = !!(await pendingMedia(attachment.id, "full").catch(() => null));
+          setStates((s) => ({ ...s, [key]: { status: "done", attachment, waiting } }));
           return attachment;
         })
         .catch((e: unknown) => {
@@ -126,6 +128,7 @@ export function useEagerUploads(items: Item[], me: { id: string; storage: "r2" |
   const uploading = Object.values(states).filter((s) => s.status === "uploading");
   const progress = uploading.length ? Math.round(uploading.reduce((a, s) => a + (s.status === "uploading" ? s.pct : 0), 0) / uploading.length) : 100;
   const failed = Object.values(states).some((s) => s.status === "error");
+  const waiting = Object.values(states).some((s) => s.status === "done" && s.waiting);
 
-  return { states, retry, finish, discardAll, settle, uploadingCount: uploading.length, progress, failed };
+  return { states, retry, finish, discardAll, settle, uploadingCount: uploading.length, progress, failed, waiting };
 }

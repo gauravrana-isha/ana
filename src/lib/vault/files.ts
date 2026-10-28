@@ -60,7 +60,9 @@ export async function decryptFile(data: ArrayBuffer, type: string): Promise<Blob
 
 // ---------- showing them ----------
 
-/** The photo cache the service worker keeps (same name), so photos still open offline. */
+/** The cache of stored files kept on this device (the service worker keeps photos in it too),
+    so photos, voice notes and videos still open offline. The bytes in it are as stored:
+    encrypted. */
 const PHOTO_CACHE = PHOTOS_CACHE;
 
 /**
@@ -79,19 +81,38 @@ async function fetchStored(path: string): Promise<Response> {
     if (url) {
       const res = await fetch(url);
       if (res.ok) {
-        if ((res.headers.get("content-type") ?? "").startsWith("image/")) cache?.put(path, res.clone()).catch(() => {});
+        cache?.put(path, res.clone()).catch(() => {});
         return res;
       }
     }
   } catch {
     // Storage not reachable directly (or not allowed from this site yet): the server streams it.
   }
-  return fetch(path);
+  const res = await fetch(path);
+  if (res.ok && res.status === 200) cache?.put(path, res.clone()).catch(() => {});
+  return res;
+}
+
+export type MediaVariant = "full" | "thumb";
+
+/** Keep a file just uploaded on this device (its stored, encrypted bytes), so it opens offline. */
+export async function putOnDevice(id: string, variant: MediaVariant, body: Blob, contentType: string) {
+  const path = variant === "thumb" ? `/api/media/${id}?v=thumb` : `/api/media/${id}`;
+  const cache = typeof caches === "undefined" ? null : await caches.open(PHOTO_CACHE).catch(() => null);
+  await cache?.put(path, new Response(body, { headers: { "Content-Type": contentType } })).catch(() => {});
+}
+
+/** Keep a stored file on this device for offline use, if it isn't already. */
+export async function keepOnDevice(id: string, variant: MediaVariant = "full") {
+  const path = variant === "thumb" ? `/api/media/${id}?v=thumb` : `/api/media/${id}`;
+  const cache = typeof caches === "undefined" ? null : await caches.open(PHOTO_CACHE).catch(() => null);
+  if (!cache || (await cache.match(path).catch(() => undefined))) return;
+  const res = await fetchStored(path);
+  // Read through, so the copy put in the cache is complete before the next one starts.
+  if (res.ok) await res.arrayBuffer().catch(() => {});
 }
 
 const urls = new Map<string, Promise<string>>();
-
-export type MediaVariant = "full" | "thumb";
 
 /**
  * A displayable URL for a stored file: decrypted on the device when it was encrypted.

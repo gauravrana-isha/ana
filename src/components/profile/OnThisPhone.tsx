@@ -71,7 +71,7 @@ export function OnThisPhone() {
     ? [
         ["Moments", String(copy.moments)],
         ["Presence", String(copy.people)],
-        ["Photos", String(copy.photos)],
+        ["Photos, voice and videos", String(copy.photos)],
         ["Screens", String(copy.screens)],
         ["Space used", copy.bytes === null ? "—" : formatBytes(copy.bytes)],
       ]
