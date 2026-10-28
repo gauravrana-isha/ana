@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { clear } from "idb-keyval";
 
 import { Button } from "@/components/ui/Button";
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -9,6 +10,7 @@ import {
   PasskeyUnsupportedError,
   isValidPhrase,
   requestLink,
+  startOver,
   unlockWithPassphrase,
   unlockWithPasskey,
   unlockWithPhrase,
@@ -16,8 +18,12 @@ import {
 } from "@/lib/vault/vault";
 import { ChoiceCard, FieldError, ScreenTitle, VaultScreen } from "./VaultScreen";
 import { Glyph } from "@/components/art/Glyphs";
+import { clearOutbox } from "@/lib/outbox";
+import { clearPendingMedia } from "@/lib/media-outbox";
+import { dropMediaCache } from "@/lib/vault/files";
+import { RESET_WORDS } from "@/lib/vault/start-over";
 
-type Mode = "choose" | "device" | "passphrase" | "words";
+type Mode = "choose" | "device" | "passphrase" | "words" | "start-over";
 
 /**
  * This device doesn't have the journal key yet (a new device, or after signing out):
@@ -80,6 +86,12 @@ export function Unlock({ userId, email, status }: { userId: string; email?: stri
           <div className="mt-4">
             <FieldError>{error}</FieldError>
           </div>
+          <p className="mt-8 text-center font-ui text-[13px] text-ink-soft">
+            Lost every way in?{" "}
+            <button type="button" onClick={() => go("start-over")} className="press font-semibold text-accent hover:underline">
+              Start over
+            </button>
+          </p>
         </div>
       )}
 
@@ -97,6 +109,8 @@ export function Unlock({ userId, email, status }: { userId: string; email?: stri
       )}
 
       {mode === "words" && <WordsForm userId={userId} status={status} />}
+
+      {mode === "start-over" && <StartOver />}
     </VaultScreen>
   );
 }
@@ -282,4 +296,68 @@ function FromDevice({ userId, email, status }: { userId: string; email?: string;
 
 function Num({ n }: { n: number }) {
   return <span className="grid place-items-center w-6 h-6 rounded-full bg-accent-soft text-accent font-ui text-[12.5px] font-semibold shrink-0 mt-0.5">{n}</span>;
+}
+
+/**
+ * Every way in is lost: nothing in the journal can be read again, not even by ana. Starting over
+ * deletes it, with this device's copies, and sets up a new key. The account stays.
+ */
+function StartOver() {
+  const [value, setValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const ready = value.trim().toLowerCase() === RESET_WORDS;
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!ready) return;
+        setBusy(true);
+        setError("");
+        try {
+          await startOver(value);
+          // Nothing kept here can be opened any more: the saved screens, data and files go too.
+          dropMediaCache();
+          if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+          await Promise.all([clear().catch(() => {}), clearOutbox().catch(() => {}), clearPendingMedia().catch(() => {})]);
+          try {
+            localStorage.removeItem("ana:offline-ready");
+          } catch {
+            /* fine */
+          }
+          location.replace("/home");
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Couldn't start over. Please try again.");
+          setBusy(false);
+        }
+      }}
+    >
+      <ScreenTitle
+        title="Start over"
+        lead="Your journal can only be opened with your key: a passkey, your passphrase, your recovery words or a device you're signed in on. Without one, no one can read it again, not even us."
+      />
+      <div className="mt-6 rounded-[16px] bg-surface p-4 font-ui text-[14px] leading-[1.55] text-ink">
+        <p className="font-semibold">Starting over deletes everything in it, for good:</p>
+        <p className="mt-1 text-ink-soft">your practices and what you logged, reflections, sankalpa, moments, people, photos, voice notes and videos, and your passkeys.</p>
+        <p className="mt-2 text-ink-soft">Your account stays, and you set up a new key next.</p>
+      </div>
+      <label className="block mt-6">
+        <span className="font-ui text-[13px] font-semibold text-ink">Type &ldquo;{RESET_WORDS}&rdquo; to confirm</span>
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          className="mt-2 w-full h-12 px-4 rounded-[14px] bg-surface text-ink font-ui text-[16px] outline-none border border-transparent focus:border-danger transition-colors"
+        />
+      </label>
+      <div className="mt-3">
+        <FieldError>{error}</FieldError>
+      </div>
+      <Button size="lg" type="submit" className="w-full mt-5 bg-danger text-white hover:bg-danger hover:brightness-110" loading={busy} disabled={!ready}>
+        Delete everything and start over
+      </Button>
+    </form>
+  );
 }
