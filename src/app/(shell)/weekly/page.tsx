@@ -14,7 +14,7 @@ import { WeekReview } from "@/components/weekly/WeekReview";
 import { weekStart as getWeekStart, today, addDays } from "@/lib/dates";
 import { fetchWeekly, saveWeekly } from "@/lib/journal";
 import { useMe } from "@/lib/me";
-import { readingQuestions, shownQuestions, type QuestionSets } from "@/lib/questions";
+import { questionPicture, readingQuestions, shownQuestions, type QuestionSets } from "@/lib/questions";
 import { Segmented } from "@/components/ui/Segmented";
 import { onScreen } from "@/lib/on-screen";
 import { EditSaveFab } from "@/components/reflection/EditSaveFab";
@@ -182,7 +182,7 @@ function WeeklyReflectionView({
   onCancel: () => void;
 }) {
   const [editing, setEditing] = useState(true);
-  const prompts = shownQuestions("weekly", questions);
+  const prompts = shownQuestions("weekly", questions).map((x) => ({ ...x, picture: questionPicture("weekly", x.key, x.q) }));
   const hasSavedData = Object.values(serverAnswers).some((v) => v && v.trim().length > 0) || Object.values(serverStamps).some((v) => v.length > 0);
   // A week not answered yet: one question at a time, as cards (decided once, when the week's
   // copy arrives, and kept until Save, even as answers save between cards).
@@ -263,6 +263,7 @@ function WeeklyReflectionView({
           number={String(i + 1)}
           question={prompt.q}
           hint={prompt.hint}
+          picture={prompt.picture}
           answer={localAnswers[prompt.key] ?? ""}
           stamps={localStamps[prompt.key] ?? []}
           onAnswerChange={(val) => onAnswerChange(prompt.key, val)}

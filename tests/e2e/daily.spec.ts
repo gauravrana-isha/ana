@@ -152,3 +152,23 @@ test("a card changing never makes the page wider than the screen (Android re-lai
   await page.waitForTimeout(800);
   expect(await page.evaluate(() => (window as unknown as { widest: number }).widest)).toBe(0);
 });
+
+test("some Daily questions have a quiet picture above them, with its credit", async ({ page }) => {
+  await clearReflections();
+  await page.goto("/daily");
+  const card = page.locator("[aria-roledescription=card]").first();
+  await card.waitFor();
+  // The first question has none; the second (eating) has the banana-leaf meal.
+  await expect(card.locator("img")).toHaveCount(0);
+  await page.getByRole("button", { name: /^(Next|Skip)$/ }).click();
+  const meal = page.getByRole("img", { name: "A meal served on a banana leaf" });
+  await expect(meal).toBeVisible();
+  await expect.poll(() => meal.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  await expect(page.getByRole("link", { name: "Codegeass123, CC BY-SA 4.0" })).toBeVisible();
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: `${process.env.SHOTS}/q-phone.png` });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: `${process.env.SHOTS}/q-desk.png` });
+  }
+});

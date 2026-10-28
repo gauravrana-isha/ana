@@ -7,11 +7,15 @@ import { Chevron } from "@/components/ui/Arrows";
 import { cn } from "@/lib/utils";
 import { StampRow } from "./StampRow";
 import { MoodPicker } from "./MoodPicker";
+import { QuestionPicture } from "./QuestionPicture";
+import type { QuestionPicture as Picture } from "@/lib/questions";
 
 export interface Prompt {
   key: string;
   q: string;
   hint?: string;
+  /** A photo above the question (some built-ins have one). */
+  picture?: Picture;
 }
 
 interface Props {
@@ -145,6 +149,7 @@ export function ReflectionStepper({ prompts, answers, stamps, mood, startAt, sav
               </>
             ) : (
               <>
+                {prompt.picture && <QuestionPicture picture={prompt.picture} className="-mx-3 -mt-3 sm:-mx-5 sm:-mt-5 mb-4" />}
                 <h2 className="font-display text-[23px] sm:text-[26px] font-semibold leading-[1.28] tracking-[-0.01em] text-ink text-balance">{prompt.q}</h2>
                 {prompt.hint && <p className="mt-2 font-serif italic text-[15px] leading-[1.55] text-ink-soft">{prompt.hint}</p>}
                 <Lined

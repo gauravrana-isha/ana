@@ -698,3 +698,7 @@ body:has([data-bare]) .ana-toasts { bottom: calc(16px + env(safe-area-inset-bott
 @keyframes landing-shine { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
 @media (prefers-reduced-motion: reduce) { .landing-cta::before { animation: none; display: none; } }
 
+
+/* Pictures above questions: gentle colour, a little dimmer in dark. */
+.ana-question-picture { filter: saturate(.72) contrast(.94) brightness(1.03); }
+[data-theme="dark"] .ana-question-picture { filter: saturate(.72) contrast(.94) brightness(.9); }
