@@ -62,7 +62,7 @@ export async function editPractice(id: string, change: { name?: string; fields?:
 export function mergeFields(
   stored: PracticeField[] | unknown,
   spec: { key: string; kind: PracticeField["kind"] }[],
-  draft: Record<string, { default?: string | number | null; fill?: number | null }>
+  draft: Record<string, { default?: string | number | null; fill?: number | null; labels?: [string, string, string] | null; max?: number | null }>
 ): PracticeField[] {
   const fields = (Array.isArray(stored) ? stored.map((f) => ({ ...f })) : []) as PracticeField[];
   for (const s of spec) {
@@ -80,6 +80,14 @@ export function mergeFields(
     if (change.fill !== undefined) {
       if (change.fill === null) delete f.fill;
       else f.fill = change.fill;
+    }
+    if (change.labels !== undefined) {
+      if (change.labels === null) delete f.labels;
+      else f.labels = change.labels;
+    }
+    if (change.max !== undefined) {
+      if (change.max === null) delete f.max;
+      else f.max = change.max;
     }
   }
   return fields;

@@ -13,8 +13,8 @@ import type { PracticeField } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Sheet } from "@/components/ui/Sheet";
 import { PracticeLibrary } from "./PracticeLibrary";
-import { PracticeEditor } from "./PracticeEditor";
-import { specFor } from "@/lib/practiceSpec";
+import { LevelNames, PracticeEditor, UpTo } from "./PracticeEditor";
+import { DEFAULT_SCALE, specFor } from "@/lib/practiceSpec";
 import { BusyBar } from "@/components/ui/Busy";
 import { ButtonLoader } from "@/components/ui/Loader";
 import type { Practice } from "@/lib/types";
@@ -40,7 +40,7 @@ const TRACK_OPTIONS: { id: string; label: string; hint: string; icon: string; ha
   { id: "minutes", label: "Minutes", hint: "Tick, and how long", icon: "Timer", hasDoneToggle: true, fields: [{ key: "min", kind: "MINUTES" }] },
   { id: "count", label: "Count", hint: "Tick, and how many", icon: "Hash", hasDoneToggle: true, fields: [{ key: "count", kind: "COUNT" }] },
   { id: "time", label: "Time of day", hint: "When it happened", icon: "Clock", hasDoneToggle: false, fields: [{ key: "time", kind: "TIME" }] },
-  { id: "scale", label: "3-level scale", hint: "Low, medium, high", icon: "ChartBar", hasDoneToggle: false, fields: [{ key: "level", kind: "ICONSCALE" }] },
+  { id: "scale", label: "3-level scale", hint: "Three levels you name", icon: "ChartBar", hasDoneToggle: false, fields: [{ key: "level", kind: "ICONSCALE" }] },
 ];
 
 /** Each way of tracking, in the pen-drawn hand of the app's other marks. */
@@ -136,9 +136,15 @@ function CustomTab({ onDone }: { onDone: () => void }) {
   const [extra, setExtra] = useState(false);
   const [extraName, setExtraName] = useState("");
   const [saving, setSaving] = useState(false);
+  // Times a day: up to 2× or 3×. A scale: what its three levels are called.
+  const [upTo, setUpTo] = useState(3);
+  const [levels, setLevels] = useState<[string, string, string]>(["", "", ""]);
   const track = TRACK_OPTIONS.find((t) => t.id === trackId)!;
+  const named = levels.map((l, n) => l.trim() || DEFAULT_SCALE[n]) as [string, string, string];
   const fields: PracticeField[] = [
-    ...track.fields,
+    ...track.fields.map((f) =>
+      f.kind === "COUNT" && f.max ? { ...f, max: upTo } : f.kind === "ICONSCALE" && named.some((l, n) => l !== DEFAULT_SCALE[n]) ? { ...f, labels: named } : f
+    ),
     ...(extra ? [{ key: "num", kind: "COUNT" as const, label: extraName.trim().toLowerCase() || "count" }] : []),
   ];
 
@@ -226,6 +232,14 @@ function CustomTab({ onDone }: { onDone: () => void }) {
           ))}
         </div>
       </fieldset>
+
+      {trackId === "times" && (
+        <div className="flex items-center justify-between gap-3 rounded-[14px] bg-surface p-3">
+          <span className="font-ui text-[14px] font-semibold text-ink">Times a day, up to</span>
+          <UpTo label="Times a day, up to" value={upTo} onChange={setUpTo} />
+        </div>
+      )}
+      {trackId === "scale" && <LevelNames labels={levels} onChange={setLevels} />}
 
       {/* A second thing to track: a number of its own, beside the first (like kapalbhati in
           Shakti Chalana, beside how many times). */}

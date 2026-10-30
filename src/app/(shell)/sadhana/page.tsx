@@ -96,8 +96,7 @@ export default function TrackerPage() {
     ? localOrder.map(id => practiceList.find(p => p.id === id)).filter(Boolean) as Practice[]
     : practiceList;
 
-  const fixedPractices = orderedPractices.filter((p) => p.tier === "FIXED" && p.name !== "Mood");
-  const customPractices = orderedPractices.filter((p) => p.tier === "CUSTOM");
+  const shownPractices = orderedPractices.filter((p) => p.name !== "Mood");
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -232,7 +231,8 @@ export default function TrackerPage() {
             </Busy>
           ) : (
             <>
-              {fixedPractices.map((practice) => (
+              {/* One list in your own order, as on Home: library and your own practices alike. */}
+              {shownPractices.map((practice) => (
                 <PracticeRow
                   key={practice.id}
                   practice={practice}
@@ -240,20 +240,6 @@ export default function TrackerPage() {
                   onChange={handleChange}
                 />
               ))}
-
-              {customPractices.length > 0 && (
-                <>
-                  <h2 className="font-display text-[17px] font-semibold text-ink mt-6 mb-2.5">My own practices</h2>
-                  {customPractices.map((practice) => (
-                    <PracticeRow
-                      key={practice.id}
-                      practice={practice}
-                      entry={entries[practice.id]}
-                      onChange={handleChange}
-                    />
-                  ))}
-                </>
-              )}
             </>
           )}
 
