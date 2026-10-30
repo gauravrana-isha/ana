@@ -19,6 +19,9 @@ export interface Question {
   hidden?: boolean;
   /** A question someone added and then removed: kept only to show past answers. */
   removed?: boolean;
+  /** Their own picture above it (a stored, encrypted photo's id), or "" for none at all. Not
+      set: a built-in's own picture, while it still reads as the built-in. */
+  picture?: string;
 }
 
 export type QuestionSets = Partial<Record<ReflectionKind, Question[]>>;
@@ -97,16 +100,18 @@ export function newQuestionKey() {
 
 /** What's kept: a description only when it isn't the built-in's own, and no empty flags. */
 export function toStored(kind: ReflectionKind, list: Question[]): Question[] {
-  return list.map(({ key, q, hint, hidden, removed }) => {
+  return list.map(({ key, q, hint, hidden, removed, picture }) => {
     // No description stored means the built-in's own (or none); "" means cleared.
     const own = hint !== undefined && hint.trim() !== (builtInHint(kind, key) ?? "");
-    return { key, q, ...(own ? { hint: hint.trim() } : {}), ...(hidden ? { hidden } : {}), ...(removed ? { removed } : {}) };
+    return { key, q, ...(own ? { hint: hint.trim() } : {}), ...(hidden ? { hidden } : {}), ...(removed ? { removed } : {}), ...(picture !== undefined ? { picture } : {}) };
   });
 }
 
 export interface QuestionPicture {
   src: string;
   alt: string;
+  /** Someone's own photo (stored encrypted, opened on the device), shown in its own colours. */
+  own?: boolean;
   /** Who took it and under which licence (listed on /credits), when the licence asks for credit. */
   credit?: { by: string; licence: string; href: string };
   /** Which part of the photo stays in view when it's cropped. */
@@ -236,8 +241,23 @@ export function pictureCredits() {
   return [...questions, ...moods];
 }
 
-/** A built-in question's picture, only while it still reads as the built-in (not reworded). */
-export function questionPicture(kind: ReflectionKind, key: string, q: string) {
+/** A built-in question's own picture, only while it still reads as the built-in (not reworded). */
+export function defaultPicture(kind: ReflectionKind, key: string, q: string) {
   const own = BUILT_IN[kind].find((b) => b.key === key);
   return own && own.q === q ? PICTURES[kind]?.[key] : undefined;
 }
+
+/** The picture above a question: the person's own if they chose one, none if they removed it, else the built-in's. */
+export function questionPicture(kind: ReflectionKind, x: { key: string; q: string; picture?: string }): QuestionPicture | undefined {
+  if (x.picture === "") return undefined;
+  if (x.picture) return { src: `/api/media/${x.picture}`, alt: "", own: true };
+  return defaultPicture(kind, x.key, x.q);
+}
+
+/** Their own pictures, to keep on the device for offline use. */
+export function ownPictures(sets: QuestionSets | null | undefined) {
+  return Object.values(sets ?? {}).flatMap((list) => (list ?? []).flatMap((x) => (x.picture && !x.removed ? [x.picture] : [])));
+}
+
+/** Width to height of the picture above a question, everywhere, so choosing one shows exactly what will show. */
+export const PICTURE_ASPECT = 3;

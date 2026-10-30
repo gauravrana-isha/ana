@@ -1,3 +1,4 @@
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { test, expect, USER_ID, clearReflections } from "./fixtures";
 
@@ -210,4 +211,48 @@ test("the picture credits page names who took each photo", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Picture credits" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Codegeass123" })).toHaveAttribute("href", /commons\.wikimedia\.org/);
   await expect(page.getByText("Mood: Blissful")).toBeVisible();
+});
+
+test("a question's picture can be your own: chosen in Settings, framed 3 by 1, and put back to the original", async ({ page }) => {
+  await clearReflections();
+  const db = new PrismaClient({ datasources: { db: { url: process.env.TEST_DATABASE_URL } } });
+  try {
+    await page.goto("/profile/questions");
+    const edit = () => page.getByRole("button", { name: /^Edit: How many times a day am I doing the Inner Engineering Crash Course/ }).click();
+    await edit();
+    // The built-in's own picture, until it's changed.
+    await expect(page.getByRole("dialog").getByRole("img", { name: "People sitting quietly by the sea at dawn" })).toBeVisible();
+    await page.getByLabel("Choose a picture").setInputFiles(path.join(__dirname, "../../public/images/questions/eating.webp"));
+    // Framed the way it will show: three wide to one high.
+    const frame = page.getByRole("dialog", { name: "Move and scale" }).locator("div[style*='aspect-ratio']");
+    await expect.poll(async () => { const b = await frame.boundingBox(); return b ? Math.round((b.width / b.height) * 10) / 10 : 0; }).toBe(3);
+    if (process.env.SHOTS) { await page.waitForTimeout(500); await page.screenshot({ path: `${process.env.SHOTS}/qp-crop.png` }); }
+    await page.getByRole("button", { name: "Use photo" }).click();
+    await expect(page.getByRole("dialog").getByRole("img", { name: "People sitting quietly by the sea at dawn" })).toHaveCount(0);
+    if (process.env.SHOTS) { await page.waitForTimeout(500); await page.screenshot({ path: `${process.env.SHOTS}/qp-sheet.png` }); }
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Question saved")).toBeVisible();
+
+    // On Daily, the chosen photo (opened from its encrypted copy) above the question.
+    await page.goto("/daily");
+    const picture = page.locator("[aria-roledescription=card]").first().locator("figure img");
+    await expect.poll(() => picture.evaluate((img: HTMLImageElement) => (img.src.startsWith("blob:") ? img.naturalWidth : 0))).toBeGreaterThan(0);
+    const box = (await picture.boundingBox())!;
+    expect(Math.round((box.width / box.height) * 10) / 10).toBe(3);
+    if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/qp-daily.png` });
+
+    // Back to the original picture.
+    await page.goto("/profile/questions");
+    await edit();
+    await page.getByRole("button", { name: "Use the original picture" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Question saved")).toBeVisible();
+    await page.goto("/daily");
+    await expect(page.getByRole("img", { name: "People sitting quietly by the sea at dawn" })).toBeVisible();
+    // The photo it replaced is gone from storage.
+    await expect.poll(() => db.attachment.count({ where: { userId: USER_ID, kind: "photo", createdAt: { gt: new Date(Date.now() - 5 * 60_000) } } })).toBe(0);
+  } finally {
+    await db.user.update({ where: { id: USER_ID }, data: { questions: null } });
+    await db.$disconnect();
+  }
 });

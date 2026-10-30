@@ -4,27 +4,32 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Portal } from "./Portal";
 import { MinusMark, PlusMark } from "@/components/art/PenMarks";
+import { cn } from "@/lib/utils";
 
 /*
- * Choose what part of a photo shows, the way phones do it: the photo sits behind a round
- * frame; drag to move it, pinch (or scroll, or the slider) to zoom. The photo always covers
- * the frame. "Use photo" hands back a square JPEG of just the framed part.
+ * Choose what part of a photo shows, the way phones do it: the photo sits behind a frame;
+ * drag to move it, pinch (or scroll, or the slider) to zoom. The photo always covers the
+ * frame. "Use photo" hands back a JPEG of just the framed part. The frame is round (a square
+ * picture, like a profile photo) or, given an aspect, a wide rectangle of that shape (the
+ * picture above a question), so what's framed is exactly what will show.
  */
 
 const OUT = 640; // pixels on each side of the saved square
+const OUT_WIDE = 1200; // pixels across a saved wide picture
 const MAX_ZOOM = 5;
 
 type View = { z: number; x: number; y: number };
 
-export function PhotoCropper({ file, onCancel, onDone }: { file: Blob | null; onCancel: () => void; onDone: (cropped: Blob) => void }) {
+export function PhotoCropper({ file, aspect = 1, onCancel, onDone }: { file: Blob | null; aspect?: number; onCancel: () => void; onDone: (cropped: Blob) => void }) {
   return (
     <Portal>
-      <AnimatePresence>{file && <Cropper key={String(file.size) + file.type} file={file} onCancel={onCancel} onDone={onDone} />}</AnimatePresence>
+      <AnimatePresence>{file && <Cropper key={String(file.size) + file.type} file={file} aspect={aspect} onCancel={onCancel} onDone={onDone} />}</AnimatePresence>
     </Portal>
   );
 }
 
-function Cropper({ file, onCancel, onDone }: { file: Blob; onCancel: () => void; onDone: (cropped: Blob) => void }) {
+function Cropper({ file, aspect, onCancel, onDone }: { file: Blob; aspect: number; onCancel: () => void; onDone: (cropped: Blob) => void }) {
+  const round = aspect === 1;
   const stage = useRef<HTMLDivElement>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [unreadable, setUnreadable] = useState(false);
@@ -66,15 +71,18 @@ function Cropper({ file, onCancel, onDone }: { file: Blob; onCancel: () => void;
     return () => document.removeEventListener("keydown", onKey, true);
   }, [onCancel]);
 
-  const cover = img ? Math.max(size / img.w, size / img.h) : 1;
+  // The frame: `size` across, and as high as its shape asks.
+  const fw = size;
+  const fh = size / aspect;
+  const cover = img ? Math.max(fw / img.w, fh / img.h) : 1;
 
   /** Keep the photo covering the frame at this zoom. */
   function clamp(v: View): View {
     if (!img) return v;
     const z = Math.min(MAX_ZOOM, Math.max(1, v.z));
     const s = cover * z;
-    const mx = Math.max(0, (img.w * s - size) / 2);
-    const my = Math.max(0, (img.h * s - size) / 2);
+    const mx = Math.max(0, (img.w * s - fw) / 2);
+    const my = Math.max(0, (img.h * s - fh) / 2);
     return { z, x: Math.min(mx, Math.max(-mx, v.x)), y: Math.min(my, Math.max(-my, v.y)) };
   }
 
@@ -137,15 +145,18 @@ function Cropper({ file, onCancel, onDone }: { file: Blob; onCancel: () => void;
     try {
       const bitmap = await createImageBitmap(file);
       const s = cover * view.z;
-      const side = size / s; // the frame, in the photo's own pixels
-      const sx = img.w / 2 - (size / 2 + view.x) / s;
-      const sy = img.h / 2 - (size / 2 + view.y) / s;
-      const out = Math.min(OUT, Math.round(side));
+      const sw = fw / s; // the frame, in the photo's own pixels
+      const sh = fh / s;
+      const sx = img.w / 2 - (fw / 2 + view.x) / s;
+      const sy = img.h / 2 - (fh / 2 + view.y) / s;
+      const outW = Math.min(round ? OUT : OUT_WIDE, Math.round(sw));
+      const outH = Math.round(outW / aspect);
       const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = out;
+      canvas.width = outW;
+      canvas.height = outH;
       const ctx = canvas.getContext("2d")!;
       ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(bitmap, sx, sy, side, side, 0, 0, out, out);
+      ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, outW, outH);
       bitmap.close();
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
       if (blob) onDone(blob);
@@ -180,7 +191,8 @@ function Cropper({ file, onCancel, onDone }: { file: Blob; onCancel: () => void;
       <div className="flex-1 grid place-items-center px-4 min-h-0">
         <div
           ref={stage}
-          className="relative w-full max-w-[420px] aspect-square cursor-grab active:cursor-grabbing"
+          className={cn("relative w-full cursor-grab active:cursor-grabbing", round ? "max-w-[420px]" : "max-w-[720px]")}
+          style={{ aspectRatio: String(aspect) }}
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
@@ -208,10 +220,10 @@ function Cropper({ file, onCancel, onDone }: { file: Blob; onCancel: () => void;
             }}
           />}
           {/* Outside the circle is dimmed; while moving, a light grid helps line things up. */}
-          <span aria-hidden="true" className="absolute inset-0 rounded-full shadow-[0_0_0_100vmax_rgba(15,14,11,0.62)] ring-2 ring-white/90 pointer-events-none" />
+          <span aria-hidden="true" className={cn("absolute inset-0 shadow-[0_0_0_100vmax_rgba(15,14,11,0.62)] ring-2 ring-white/90 pointer-events-none", round ? "rounded-full" : "rounded-[14px]")} />
           <span
             aria-hidden="true"
-            className="absolute inset-0 rounded-full overflow-hidden pointer-events-none transition-opacity duration-200"
+            className={cn("absolute inset-0 overflow-hidden pointer-events-none transition-opacity duration-200", round ? "rounded-full" : "rounded-[14px]")}
             style={{
               opacity: moving ? 1 : 0,
               backgroundImage: "linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255,255,255,0.35) 33.33%, transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255,255,255,0.35) 66.66%, transparent calc(66.66% + 0.5px)), linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255,255,255,0.35) 33.33%, transparent calc(33.33% + 0.5px), transparent calc(66.66% - 0.5px), rgba(255,255,255,0.35) 66.66%, transparent calc(66.66% + 0.5px))",

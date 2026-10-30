@@ -1,5 +1,6 @@
 "use client";
 
+import { ownPictures, type QuestionSets } from "./questions";
 import type { QueryClient } from "@tanstack/react-query";
 import { prefetchScreen } from "./prefetch";
 import { OFFLINE_SCREENS } from "./offline-screens";
@@ -67,6 +68,8 @@ export async function makeReadyOffline(qc: QueryClient, opts: { force?: boolean 
     const momentIds = recent.map((m) => `/moments/${m.id}`);
     // Their photos, voice notes and (not too large) videos, so they open and play offline.
     void keepFiles(recent.flatMap((m) => m.attachments ?? []));
+    // And the pictures someone chose for their questions.
+    void waitFor<{ questions?: QuestionSets | null }>(qc, ["me"]).then((me) => keepFiles(ownPictures(me?.questions).map((id) => ({ id, kind: "picture", size: 0 }))));
     const personIds = (Array.isArray(people) ? people : []).slice(0, MAX_PEOPLE).map((p) => `/presence/${p.id}`);
 
     // Every screen saved ahead by the service worker, with its code. Counted done only once

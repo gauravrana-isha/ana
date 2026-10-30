@@ -33,7 +33,7 @@ function DailyContent() {
   const [date] = useState(() => (param && /^\d{4}-\d{2}-\d{2}$/.test(param) && param <= today() ? param : today()));
   const qc = useQueryClient();
   const { data: me } = useMe();
-  const prompts = shownQuestions("daily", me?.questions).map((x) => ({ ...x, picture: questionPicture("daily", x.key, x.q) }));
+  const prompts = shownQuestions("daily", me?.questions).map((x) => ({ ...x, picture: questionPicture("daily", x) }));
   // null: reading. "first": a day with nothing saved, answered one question at a time.
   // A prompt key (or "mood"): changing a saved day, in the full editor, scrolled to that item.
   const [editing, setEditing] = useState<null | "first" | string>(null);
@@ -205,7 +205,7 @@ function DailyContent() {
                 number={prompt.number}
                 question={prompt.q}
                 hint={prompt.hint}
-                picture={questionPicture("daily", prompt.key, prompt.q)}
+                picture={questionPicture("daily", prompt)}
                 answer={localAnswers[prompt.key] ?? ""}
                 stamps={localStamps[prompt.key] ?? []}
                 onAnswerChange={(val) => handleAnswerChange(prompt.key, val)}
