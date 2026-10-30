@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { SnakeLoader } from "@/components/ui/Loader";
 import { useToast } from "@/components/ui/Toast";
 import { configureOutbox, flush } from "@/lib/outbox";
-import { fetchStatus, start, useVault, type VaultStatus } from "@/lib/vault/vault";
+import { fetchStatus, start, takePasskeyFix, tidyPasskeys, useVault, type VaultStatus } from "@/lib/vault/vault";
 import { sealEverything } from "@/lib/vault/migrate";
 import { KeySetup } from "./KeySetup";
 import { Unlock } from "./Unlock";
@@ -58,13 +58,24 @@ export function VaultGate({
         toast(`A ${kind === "audio" ? "voice note" : kind} added offline couldn't be kept (too large for the space left?). Please add it again.`, "error", 6000),
     });
     void flush();
+    void tidyPasskeys(user.id);
+    // Signed in with Google after a passkey couldn't sign in: point to where it's fixed.
+    const fix = takePasskeyFix();
+    if (fix)
+      toast(
+        fix === "unlock-only"
+          ? "To sign in with your passkey next time: Profile → Privacy & keys → Use to sign in."
+          : "To sign in with a passkey next time, add one in Profile → Privacy & keys.",
+        "error",
+        8000
+      );
     // Save the whole journal for offline use (every screen and its data), now and when the
     // connection comes back.
     void makeReadyOffline(qc);
     const back = () => void makeReadyOffline(qc);
     window.addEventListener("online", back);
     return () => window.removeEventListener("online", back);
-  }, [state.status, qc, toast]);
+  }, [state.status, qc, toast, user.id]);
 
   if (state.status === "idle" || (state.status === "locked" && !status && !statusError)) return <Waiting />;
 

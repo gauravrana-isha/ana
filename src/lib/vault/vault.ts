@@ -54,6 +54,8 @@ export interface VaultStatus {
   keys: VaultKey[];
   /** Some of the journal is still stored unencrypted (from before), waiting to be sealed. */
   legacy: boolean;
+  /** Credential ids of every passkey that still signs in or unlocks. */
+  passkeys?: string[];
 }
 
 type Status = "idle" | "none" | "locked" | "unlocked";
@@ -255,7 +257,7 @@ type NewKey = Omit<VaultKey, "id" | "createdAt" | "lastUsedAt">;
 async function postJSON(url: string, body: unknown, method = "POST") {
   const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? "Something went wrong. Please try again.");
+  if (!res.ok) throw Object.assign(new Error(data.error ?? "Something went wrong. Please try again."), { code: data.code as string | undefined });
   return data;
 }
 
@@ -508,6 +510,15 @@ export async function signInWithPasskey() {
       },
       clientExtensionResults: {},
     },
+  }).catch((e: Error & { code?: string }) => {
+    if (e.code === "unknown" || e.code === "unlock-only") {
+      try {
+        localStorage.setItem(PASSKEY_FIX, e.code);
+      } catch {}
+      // A passkey ana no longer knows: ask this device's passkey manager to stop offering it.
+      if (e.code === "unknown") void signal("signalUnknownCredential", { rpId: o.rpId ?? location.hostname, credentialId: assertion.id });
+    }
+    throw e;
   })) as { userId: string };
   rememberPasskeyHere();
 
@@ -524,6 +535,53 @@ export async function signInWithPasskey() {
   } catch {
     /* signed in; the journal asks to be unlocked */
   }
+}
+
+const PASSKEY_FIX = "ana:passkey-fix";
+const PASSKEYS_TIDIED = "ana:passkeys-tidied";
+
+type SignalName = "signalUnknownCredential" | "signalAllAcceptedCredentials";
+
+/** The WebAuthn Signal API (Chrome 132+, Safari 26): tell the passkey manager what ana knows. */
+async function signal(name: SignalName, options: Record<string, unknown>) {
+  const fn = (PublicKeyCredential as unknown as Record<SignalName, ((o: unknown) => Promise<void>) | undefined>)[name];
+  if (typeof fn !== "function") return;
+  await fn.call(PublicKeyCredential, options).catch(() => {});
+}
+
+/** A failed passkey sign-in left something to fix ("unknown" or "unlock-only"); read once. */
+export function takePasskeyFix() {
+  try {
+    const v = localStorage.getItem(PASSKEY_FIX);
+    localStorage.removeItem(PASSKEY_FIX);
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Tell this device's passkey manager which of this person's ana passkeys still work, so ones
+ * removed (or wiped by Start over) stop being offered at sign-in. Uses a fresh list from the
+ * server, never a cached one, since a stale list could drop a passkey just added elsewhere.
+ * At most once a day per device.
+ */
+export async function tidyPasskeys(userId: string) {
+  if (typeof PublicKeyCredential === "undefined" || !navigator.onLine) return;
+  try {
+    const last = Number(localStorage.getItem(PASSKEYS_TIDIED) ?? 0);
+    if (Date.now() - last < 86_400_000) return;
+  } catch {}
+  const status = await fetchStatus().catch(() => null);
+  if (!status || !Array.isArray(status.passkeys)) return;
+  await signal("signalAllAcceptedCredentials", {
+    rpId: location.hostname,
+    userId: toB64(new TextEncoder().encode(userId)),
+    allAcceptedCredentialIds: status.passkeys,
+  });
+  try {
+    localStorage.setItem(PASSKEYS_TIDIED, String(Date.now()));
+  } catch {}
 }
 
 export async function unlockWithPasskey(userId: string, status: VaultStatus) {
