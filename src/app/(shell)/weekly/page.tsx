@@ -182,7 +182,7 @@ function WeeklyReflectionView({
   onCancel: () => void;
 }) {
   const [editing, setEditing] = useState(true);
-  const prompts = shownQuestions("weekly", questions).map((x) => ({ ...x, picture: questionPicture("weekly", x.key, x.q) }));
+  const prompts = shownQuestions("weekly", questions).map((x) => ({ ...x, picture: questionPicture("weekly", x) }));
   const hasSavedData = Object.values(serverAnswers).some((v) => v && v.trim().length > 0) || Object.values(serverStamps).some((v) => v.length > 0);
   // A week not answered yet: one question at a time, as cards (decided once, when the week's
   // copy arrives, and kept until Save, even as answers save between cards).

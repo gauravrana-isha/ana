@@ -7,7 +7,10 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import type { Me } from "@/lib/me";
 import { saveQuestions } from "@/lib/journal";
-import { BUILT_IN, HINT_MAX, QUESTION_MAX, allQuestions, newQuestionKey, toStored, type Question, type ReflectionKind } from "@/lib/questions";
+import { BUILT_IN, HINT_MAX, PICTURE_ASPECT, QUESTION_MAX, allQuestions, defaultPicture, newQuestionKey, questionPicture, toStored, type Question, type ReflectionKind } from "@/lib/questions";
+import { uploadMedia } from "@/lib/media-client";
+import { PhotoCropper } from "@/components/ui/PhotoCropper";
+import { QuestionPicture } from "@/components/reflection/QuestionPicture";
 import { useToast } from "@/components/ui/Toast";
 import { useConfirm } from "@/components/ui/Confirm";
 import { Busy } from "@/components/ui/Busy";
@@ -59,7 +62,7 @@ export function QuestionsEditor({ me }: { me: Me }) {
   const original = JSON.stringify(toStored(kind, listed)) === JSON.stringify(toStored(kind, BUILT_IN[kind]));
   const open = sheet && sheet.key !== "new" ? listed.find((x) => x.key === sheet.key) ?? null : null;
 
-  async function commit(next: Question[], done?: string) {
+  async function commit(next: Question[], done?: string): Promise<boolean> {
     const sets = { ...me.questions, [kind]: toStored(kind, next) };
     setSaving(true);
     setEditing(null);
@@ -70,18 +73,45 @@ export function QuestionsEditor({ me }: { me: Me }) {
       // Today counts the questions answered.
       qc.invalidateQueries({ queryKey: ["today"] });
       if (done) toast(done, "success", 1600);
+      setSaving(false);
+      return true;
     } catch {
       toast("Couldn't save. Please try again.", "error");
       void qc.invalidateQueries({ queryKey: ["me"] });
+      setSaving(false);
+      return false;
     }
-    setSaving(false);
   }
 
   const change = (key: string, to: Partial<Question>) => all.map((x) => (x.key === key ? { ...x, ...to } : x));
 
-  function edit(x: Question, q: string, hint: string) {
-    if (q === x.q && hint === (x.hint ?? "")) return setEditing(null);
-    commit(change(x.key, { q, hint }), "Question saved");
+  /** A newly chosen photo goes up (encrypted) first; a photo of their own it replaces is removed after. */
+  async function withPicture(pic: PictureChoice): Promise<string | undefined | false> {
+    if (!pic.blob) return pic.value;
+    setSaving(true);
+    try {
+      return (await uploadMedia(pic.blob, "photo", { userId: me.id, storage: me.storage, thumbnail: false })).id;
+    } catch {
+      toast("Couldn't keep that picture. Please try again.", "error");
+      setSaving(false);
+      return false;
+    }
+  }
+  const dropOld = (before: string | undefined, after: string | undefined) => {
+    if (before && before !== after) void fetch(`/api/attachments/${before}`, { method: "DELETE" }).catch(() => {});
+  };
+
+  async function edit(x: Question, q: string, hint: string, pic: PictureChoice) {
+    if (q === x.q && hint === (x.hint ?? "") && !pic.blob && pic.value === x.picture) return setEditing(null);
+    const picture = await withPicture(pic);
+    if (picture === false) return;
+    if (await commit(change(x.key, { q, hint, picture }), "Question saved")) dropOld(x.picture, picture);
+  }
+
+  async function add(q: string, hint: string, pic: PictureChoice) {
+    const picture = await withPicture(pic);
+    if (picture === false) return;
+    commit([...all, { key: newQuestionKey(), q, hint, ...(picture ? { picture } : {}) }], "Question added");
   }
 
   function toggle(x: Question) {
@@ -154,11 +184,12 @@ export function QuestionsEditor({ me }: { me: Me }) {
 
       <QuestionSheet
         key={sheet?.id ?? 0}
+        kind={kind}
         open={editing !== null}
         question={open}
         original={open && builtIn(open.key) ? BUILT_IN[kind].find((b) => b.key === open.key) ?? null : null}
         onClose={() => setEditing(null)}
-        onSave={(q, hint) => (open ? edit(open, q, hint) : commit([...all, { key: newQuestionKey(), q, hint }], "Question added"))}
+        onSave={(q, hint, pic) => void (open ? edit(open, q, hint, pic) : add(q, hint, pic))}
       />
     </div>
   );
@@ -221,31 +252,43 @@ function QuestionRow({
 const fieldClass =
   "mt-2 w-full resize-none rounded-[14px] bg-surface-2 px-4 py-3 text-ink outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/80";
 
+/** The picture chosen in the sheet: a new photo to keep, or the stored value (an id, "" for none, undefined for the built-in's). */
+type PictureChoice = { blob?: Blob; value: string | undefined };
+
 /**
- * A question in a sheet (a centred dialog on wider screens): its wording and the description
- * shown under it. Enter in the question moves to the description; Enter there saves.
+ * A question in a sheet (a centred dialog on wider screens): its picture, its wording and the
+ * description shown under it. Enter in the question moves to the description; Enter there saves.
  */
 function QuestionSheet({
+  kind,
   open,
   question,
   original,
   onClose,
   onSave,
 }: {
+  kind: ReflectionKind;
   open: boolean;
   /** The question being changed, or null when adding one. */
   question: Question | null;
   /** A built-in's original wording and description, for putting them back. */
   original: Question | null;
   onClose: () => void;
-  onSave: (q: string, hint: string) => void;
+  onSave: (q: string, hint: string, picture: PictureChoice) => void;
 }) {
   const [text, setText] = useState(question?.q ?? "");
   const [hint, setHint] = useState(question?.hint ?? "");
+  const [pic, setPic] = useState<PictureChoice>({ value: question?.picture });
+  const [cropping, setCropping] = useState<Blob | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const hintRef = useRef<HTMLTextAreaElement>(null);
   const q = text.trim();
   const changed = !!original && (q !== original.q || hint.trim() !== (original.hint ?? ""));
-  const save = () => q && onSave(q, hint.trim());
+  const save = () => q && onSave(q, hint.trim(), pic);
+  // What will show above the question, as the wording reads now.
+  const shown = pic.blob && preview ? { src: preview, alt: "" } : questionPicture(kind, { key: question?.key ?? "", q, picture: pic.value });
+  const fallback = original ? defaultPicture(kind, original.key, original.q) : undefined;
 
   return (
     <Sheet
@@ -260,6 +303,57 @@ function QuestionSheet({
       }
     >
       <div className="flex flex-col gap-5">
+        <div>
+          <span className="font-ui text-[13px] font-semibold text-ink">Picture</span>
+          {shown ? (
+            <QuestionPicture picture={shown} className="mt-2" />
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="press mt-2 w-full aspect-[3/1] grid place-items-center rounded-[14px] border border-dashed border-line bg-surface font-ui text-[13.5px] font-semibold text-ink-soft hover:text-ink hover:bg-surface-2"
+            >
+              No picture · tap to add one
+            </button>
+          )}
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <button type="button" onClick={() => fileRef.current?.click()} className="press inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-surface font-ui text-[13px] font-semibold text-accent hover:bg-surface-2">
+              <Glyph k="images" size={15} /> {shown ? "Change picture" : "Choose a picture"}
+            </button>
+            {shown && (
+              <button type="button" onClick={() => setPic({ value: "" })} className="press inline-flex items-center gap-1.5 h-9 px-3 rounded-full font-ui text-[13px] font-semibold text-ink-soft hover:text-danger hover:bg-surface">
+                <DeleteMark size={15} /> Remove picture
+              </button>
+            )}
+            {fallback && (pic.blob || pic.value !== undefined) && (
+              <button type="button" onClick={() => setPic({ value: undefined })} className="press inline-flex items-center gap-1.5 h-9 px-3 rounded-full font-ui text-[13px] font-semibold text-ink-soft hover:text-ink hover:bg-surface">
+                <Glyph k="returns" size={15} /> Use the original picture
+              </button>
+            )}
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            aria-label="Choose a picture"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) setCropping(f);
+            }}
+          />
+          <PhotoCropper
+            file={cropping}
+            aspect={PICTURE_ASPECT}
+            onCancel={() => setCropping(null)}
+            onDone={(cropped) => {
+              setCropping(null);
+              setPic({ blob: cropped, value: pic.value });
+              setPreview(URL.createObjectURL(cropped));
+            }}
+          />
+        </div>
         <label className="block">
           <span className="font-ui text-[13px] font-semibold text-ink">Question</span>
           <textarea
