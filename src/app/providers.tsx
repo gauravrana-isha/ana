@@ -197,6 +197,9 @@ function RestoreAfterHydration({
         .finally(() => {
           markRestored();
           setIsRestoring(false);
+          // The page itself may be the copy saved on this device: what's on screen came from
+          // the device too, so it's all fetched fresh behind it (online), however recent.
+          if (navigator.onLine) void client.invalidateQueries();
         });
     };
     if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(begin, { timeout: 300 });
