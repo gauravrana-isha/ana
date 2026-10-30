@@ -17,7 +17,7 @@ import { PracticeIcon } from "./PracticeIcon";
 import { DeleteMark, MinusMark, PlusMark } from "@/components/art/PenMarks";
 import { useConfirm } from "@/components/ui/Confirm";
 
-type Draft = Record<string, { default?: string | number | null; fill?: number | null }>;
+type Draft = Record<string, { default?: string | number | null; fill?: number | null; labels?: [string, string, string] | null; max?: number | null }>;
 
 /**
  * Edit one practice: its name, and the values it uses. For rhythm practices that's the default
@@ -38,7 +38,18 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
     setOpenedFor(key);
     if (key && practice && spec) {
       setName(practice.name);
-      setDraft(Object.fromEntries(spec.fields.map((f) => [f.key, spec.rhythm ? { default: f.default ?? null } : { fill: f.fill ?? null }])));
+      setDraft(
+        Object.fromEntries(
+          spec.fields.map((f) => [
+            f.key,
+            {
+              ...(spec.rhythm ? { default: f.default ?? null } : { fill: f.fill ?? null }),
+              ...(f.kind === "ICONSCALE" ? { labels: f.labels ?? DEFAULT_SCALE } : {}),
+              ...(f.taps && practice.tier === "CUSTOM" ? { max: f.max ?? 2 } : {}),
+            },
+          ])
+        )
+      );
       setSaving(null);
     }
   }
@@ -50,8 +61,16 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
   async function save() {
     if (!practice || !spec || !name.trim()) return;
     setSaving("save");
+    // Level names: blank ones fall back to Low / Medium / High; unchanged defaults aren't stored.
+    const cleaned: Draft = Object.fromEntries(
+      Object.entries(draft).map(([k, v]) => {
+        if (!v.labels) return [k, v];
+        const labels = v.labels.map((l, n) => l.trim() || DEFAULT_SCALE[n]) as [string, string, string];
+        return [k, { ...v, labels: labels.every((l, n) => l === DEFAULT_SCALE[n]) ? null : labels }];
+      })
+    );
     try {
-      await editPractice(practice.id, { name: name.trim(), fields: mergeFields(practice.fields, spec.fields, draft) });
+      await editPractice(practice.id, { name: name.trim(), fields: mergeFields(practice.fields, spec.fields, cleaned) });
     } catch {
       setSaving(null);
       return toast("Couldn't save. Please try again.", "error");
@@ -120,8 +139,42 @@ export function PracticeEditor({ practice, open, onClose }: { practice: Practice
               </p>
             </div>
             {spec.fields.map((f) => (
-              <FieldDefault key={f.key} field={f} rhythm={spec.rhythm} value={draft[f.key]} onChange={(v) => set(f.key, v)} practiceName={practice.name} />
+              <FieldDefault
+                key={f.key}
+                field={{ ...f, labels: draft[f.key]?.labels ?? f.labels, max: draft[f.key]?.max ?? f.max }}
+                rhythm={spec.rhythm}
+                value={draft[f.key]}
+                onChange={(v) => set(f.key, v)}
+                practiceName={practice.name}
+              />
             ))}
+          </section>
+        )}
+
+        {/* How it's tracked, where it can change: the names of the three levels, and how many
+            times a day (library practices keep their own count). */}
+        {spec.fields.some((f) => f.kind === "ICONSCALE" || (f.taps && practice.tier === "CUSTOM")) && (
+          <section className="flex flex-col gap-3">
+            <h3 className="font-display text-[17px] font-semibold text-ink">Tracking</h3>
+            {spec.fields.map((f) =>
+              f.kind === "ICONSCALE" ? (
+                <LevelNames key={f.key} labels={draft[f.key]?.labels ?? f.labels ?? DEFAULT_SCALE} onChange={(labels) => set(f.key, { labels })} />
+              ) : f.taps && practice.tier === "CUSTOM" ? (
+                <div key={f.key} className="flex items-center justify-between gap-3 rounded-[16px] bg-surface p-3.5">
+                  <p className="font-ui text-[14.5px] font-semibold text-ink">Times a day, up to</p>
+                  <UpTo
+                    label={`${practice.name}: times a day, up to`}
+                    value={draft[f.key]?.max ?? f.max ?? 2}
+                    onChange={(max) => {
+                      // A usual value above the new limit comes down to it.
+                      const v = draft[f.key] ?? {};
+                      const cap = (n: unknown) => (typeof n === "number" && n > max ? max : n);
+                      set(f.key, { max, ...(v.fill !== undefined ? { fill: cap(v.fill) as number | null } : {}), ...(v.default !== undefined ? { default: cap(v.default) as number | null } : {}) });
+                    }}
+                  />
+                </div>
+              ) : null
+            )}
           </section>
         )}
       </div>
@@ -168,6 +221,45 @@ function FieldDefault({ field, rhythm, value, onChange, practiceName }: { field:
         />
       )}
     </div>
+  );
+}
+
+/** The names of a 3-level scale's levels (Low, Medium, High unless renamed). */
+export function LevelNames({ labels, onChange }: { labels: [string, string, string]; onChange: (labels: [string, string, string]) => void }) {
+  return (
+    <fieldset className="rounded-[16px] bg-surface p-3.5">
+      <legend className="sr-only">Names of the three levels</legend>
+      <p className="font-ui text-[14.5px] font-semibold text-ink" aria-hidden="true">Names of the three levels</p>
+      <p className="font-ui text-[12.5px] text-ink-soft">e.g. Few words · Some · Many</p>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {labels.map((l, n) => (
+          <input
+            key={n}
+            value={l}
+            aria-label={`Level ${n + 1}`}
+            placeholder={DEFAULT_SCALE[n]}
+            onChange={(e) => onChange(labels.map((x, i) => (i === n ? e.target.value.slice(0, 16) : x)) as [string, string, string])}
+            className="min-w-0 h-11 px-3 rounded-[12px] bg-surface-2 text-ink font-ui text-[15px] outline-none border border-transparent focus:border-accent placeholder:text-ink-soft/80"
+          />
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** How many times a day a practice can be ticked: 2× or 3×. */
+export function UpTo({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+  return (
+    <Segmented
+      label={label}
+      tone="accent"
+      size="sm"
+      className="bg-surface-2"
+      itemClassName="min-w-[44px] px-2.5 tabular"
+      value={String(value)}
+      onChange={(v) => onChange(Number(v))}
+      options={[2, 3].map((n) => ({ value: String(n), label: `${n}×` }))}
+    />
   );
 }
 
