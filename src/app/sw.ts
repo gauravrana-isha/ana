@@ -8,9 +8,13 @@ import { OFFLINE_PAGE, OFFLINE_SCREENS, OFFLINE_TEMPLATES, PAGES_CACHE, PHOTOS_C
  * /serwist/sw.js). The app's code is precached from the build's own list, so every screen's
  * scripts and styles (even ones loaded only when needed, like the moment form) are on the
  * device; old versions are cleaned up on update.
- *  - pages: network first (a few seconds), else the saved copy, kept by path (so
- *    /home?source=pwa opens /home); every screen is saved ahead on start and when the app
- *    asks; a moment or person page falls back to its template; else a plain offline page
+ *  - app screens saved by this version: opened from the saved copy at once, and fetched again
+ *    behind it (the next open has the new copy; one no longer allowed is dropped, and the page
+ *    asking is told to load again)
+ *  - other pages, and screens saved by an older version: network first (a few seconds), else
+ *    the saved copy, kept by path (so /home?source=pwa opens /home); every screen is saved
+ *    ahead on start and when the app asks; a moment or person page falls back to its
+ *    template; else a plain offline page
  *  - a person's own photos from /api/media: kept on the device (whole-file images only)
  *  - images and fonts: cache first
  *  - /api and sign-in: never cached here (private; the app keeps its own encrypted copy)
@@ -35,6 +39,85 @@ function templateFor(path: string) {
   return Object.entries(OFFLINE_TEMPLATES).find(([prefix]) => path.startsWith(prefix) && path.length > prefix.length)?.[1];
 }
 
+/*
+ * Saved pages are stamped with the version of the app that saved them. A page saved by an older
+ * version points at that version's scripts, which are gone once this one takes over, so only
+ * this version's pages open straight from the device.
+ */
+const STAMP = "x-ana-build";
+const BUILD = (() => {
+  const text = JSON.stringify(self.__SW_MANIFEST ?? []);
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+})();
+
+/**
+ * A page response worth keeping, stamped with this version; null if it isn't a real app page:
+ * a redirect (to sign-in, or home when a section was switched off; once a page has started
+ * streaming, Next sends a 200 that redirects from inside the page), an error, or something else.
+ */
+async function toKeep(res: Response): Promise<Response | null> {
+  if (!res.ok || res.redirected || res.type === "opaqueredirect" || !(res.headers.get("content-type") ?? "").includes("text/html")) return null;
+  const html = await res.text();
+  // (In the page's own data, or as a meta tag. The server puts nothing of anyone's journal in a
+  // page, so these can't come from what someone wrote.)
+  if (html.includes("NEXT_REDIRECT;") || html.includes('id="__next-page-redirect"')) return null;
+  const headers = new Headers(res.headers);
+  headers.set(STAMP, BUILD);
+  return new Response(html, { status: res.status, statusText: res.statusText, headers });
+}
+
+/** The app's own screens: these open from the device when this version saved them. */
+const APP_PAGES = new Set(OFFLINE_SCREENS);
+const isAppPage = (path: string) =>
+  APP_PAGES.has(path) || Object.keys(OFFLINE_TEMPLATES).some((prefix) => path.startsWith(prefix) && path.length > prefix.length);
+
+const networkFirst = new NetworkFirst({
+  cacheName: PAGES_CACHE,
+  // On a weak connection, open the saved copy instead of waiting on the network.
+  networkTimeoutSeconds: 5,
+  plugins: [
+    { cacheKeyWillBeUsed: async ({ request }) => pageKey(request.url) },
+    // Only real app pages, never a redirect to sign-in.
+    { cacheWillUpdate: async ({ response }) => toKeep(response.clone()) },
+    {
+      handlerDidError: async ({ request }) => {
+        const cache = await caches.open(PAGES_CACHE);
+        const template = templateFor(new URL(request.url).pathname);
+        return (
+          (template && (await cache.match(pageKey(template)))) ||
+          (await caches.match(OFFLINE_PAGE, { ignoreSearch: true })) ||
+          Response.error()
+        );
+      },
+    },
+  ],
+});
+
+/** Screens opened from the device and being fetched again: path → whether it was dropped. */
+const refreshing = new Map<string, Promise<boolean>>();
+
+/** Fetch a screen opened from the device again, behind it. True if it's no longer allowed (dropped). */
+async function refresh(event: FetchEvent, request: Request): Promise<boolean> {
+  try {
+    const res = (await event.preloadResponse.catch(() => undefined)) ?? (await fetch(request));
+    const cache = await caches.open(PAGES_CACHE);
+    const keep = await toKeep(res);
+    if (keep) {
+      await cache.put(pageKey(request.url), keep);
+      return false;
+    }
+    // Redirected (signed out, no longer approved, a section switched off) or gone: drop it, so
+    // the next open asks the server. A server error leaves the saved copy be.
+    if (res.status >= 500) return false;
+    await cache.delete(pageKey(request.url));
+    return true;
+  } catch {
+    return false; // offline: the saved copy is all there is
+  }
+}
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   precacheOptions: { cleanupOutdatedCaches: true },
@@ -44,27 +127,21 @@ const serwist = new Serwist({
   runtimeCaching: [
     {
       matcher: ({ request, sameOrigin, url }) => sameOrigin && request.mode === "navigate" && !url.pathname.startsWith("/api/"),
-      handler: new NetworkFirst({
-        cacheName: PAGES_CACHE,
-        // On a weak connection, open the saved copy instead of waiting on the network.
-        networkTimeoutSeconds: 5,
-        plugins: [
-          { cacheKeyWillBeUsed: async ({ request }) => pageKey(request.url) },
-          // Only real app pages, never a redirect to sign-in.
-          { cacheWillUpdate: async ({ response }) => (response.ok && !response.redirected ? response : null) },
-          {
-            handlerDidError: async ({ request }) => {
-              const cache = await caches.open(PAGES_CACHE);
-              const template = templateFor(new URL(request.url).pathname);
-              return (
-                (template && (await cache.match(pageKey(template)))) ||
-                (await caches.match(OFFLINE_PAGE, { ignoreSearch: true })) ||
-                Response.error()
-              );
-            },
-          },
-        ],
-      }),
+      handler: async ({ request, event, url }) => {
+        const fetchEvent = event as FetchEvent;
+        // A new open of this screen: an earlier answer about it no longer applies.
+        refreshing.delete(url.pathname);
+        if (isAppPage(url.pathname)) {
+          const saved = await caches.open(PAGES_CACHE).then((c) => c.match(pageKey(request.url)));
+          if (saved && saved.headers.get(STAMP) === BUILD) {
+            const done = refresh(fetchEvent, request);
+            refreshing.set(url.pathname, done);
+            fetchEvent.waitUntil(done);
+            return saved;
+          }
+        }
+        return networkFirst.handle({ request, event: fetchEvent });
+      },
     },
     {
       // A person's own photos (whole files; audio and video stream with Range from the network).
@@ -90,8 +167,9 @@ async function warm(urls: string[]) {
     for (let url = list.shift(); url; url = list.shift()) {
       try {
         const res = await fetch(url, { credentials: "same-origin", headers: { Accept: "text/html" } });
-        if (!res.ok || res.redirected || !(res.headers.get("content-type") ?? "").includes("text/html")) continue;
-        await cache.put(pageKey(url), res);
+        const keep = await toKeep(res);
+        if (!keep) continue;
+        await cache.put(pageKey(url), keep);
         saved++;
       } catch {
         return; // offline again: stop
@@ -118,6 +196,12 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data === "clear") {
     event.waitUntil(caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))));
+  } else if (event.data?.type === "fresh?" && typeof event.data.path === "string") {
+    // A screen opened from the device asks whether it's still allowed (answered once the
+    // server has been asked; true means load again).
+    const done = refreshing.get(event.data.path) ?? Promise.resolve(false);
+    refreshing.delete(event.data.path);
+    event.waitUntil(done.then((gone) => event.ports[0]?.postMessage({ gone })));
   } else if (event.data?.type === "warm" && Array.isArray(event.data.urls)) {
     // Saved, then told back: the app only counts it done once this worker says so.
     const urls = [...EVERY_PAGE, ...event.data.urls.filter((u: unknown): u is string => typeof u === "string")];

@@ -4,6 +4,7 @@ import { MobileTabBar } from "@/components/shell/MobileTabBar";
 import { Topbar } from "@/components/shell/Topbar";
 import { SearchDialog } from "@/components/shell/Search";
 import { CacheGuard } from "@/components/shell/CacheGuard";
+import { SavedPageCheck } from "@/components/shell/SavedPageCheck";
 import { NavProgress } from "@/components/shell/NavProgress";
 import { TapFeedback } from "@/components/shell/TapFeedback";
 import { PullToRefresh } from "@/components/shell/PullToRefresh";
@@ -21,6 +22,9 @@ export default async function ShellLayout({ children }: { children: React.ReactN
     user.role === "ADMIN" ? { key: "admin", label: "Access", href: "/admin" } : null;
 
   return (
+    <>
+    {/* Outside the gate: a saved screen that's no longer allowed must load again even while locked. */}
+    <SavedPageCheck />
     <VaultGate
       user={{ id: user.id, name: user.name ?? "", email: user.email ?? "", storage: storageMode() }}
       vault={{ set: !!user.vaultAt, check: user.vaultCheck, sealed: !!user.vaultSealedAt }}
@@ -50,5 +54,6 @@ export default async function ShellLayout({ children }: { children: React.ReactN
     </div>
     </BundlesProvider>
     </VaultGate>
+    </>
   );
 }

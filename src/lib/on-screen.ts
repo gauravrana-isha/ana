@@ -21,6 +21,15 @@ let keepTimer: ReturnType<typeof setTimeout> | null = null;
 /** The app's query cache (the providers register it once). */
 export function showChangesIn(client: QueryClient) {
   qc = client;
+  // Leaving the page (the next one opens at once, from the device): a change still waiting to
+  // be written is written now, not after its short pause.
+  if (typeof window !== "undefined")
+    window.addEventListener("pagehide", () => {
+      if (!keepTimer) return;
+      clearTimeout(keepTimer);
+      keepTimer = null;
+      void keepNow?.().catch(() => {});
+    });
 }
 
 /** How to write the device's copy right away (the providers register it). */
@@ -35,7 +44,10 @@ function set<T>(key: readonly unknown[], change: (old: T | undefined) => T | und
   qc?.setQueryData<T>(key, change);
   // Written to the device's copy at once (a few changes in a row are written together).
   if (keepTimer) clearTimeout(keepTimer);
-  keepTimer = setTimeout(() => void keepNow?.().catch(() => {}), 50);
+  keepTimer = setTimeout(() => {
+    keepTimer = null;
+    void keepNow?.().catch(() => {});
+  }, 50);
 }
 
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
