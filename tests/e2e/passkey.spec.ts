@@ -49,3 +49,43 @@ test("a passkey whose secret never comes (the second prompt dismissed) isn't kep
   await expect(page.getByText("No passkey was made.")).toBeVisible();
   expect(await counts()).toEqual({ signIn: 0, unlock: 0 });
 });
+
+test("a passkey ana no longer knows says why, and the device is told to stop offering it", async ({ page }) => {
+  await authenticator(page, true);
+  // Record what the passkey manager is told (the Signal API), across reloads.
+  await page.addInitScript(() => {
+    const keep = (kind: string, o: unknown) => {
+      localStorage.setItem("test:signals", JSON.stringify([...JSON.parse(localStorage.getItem("test:signals") ?? "[]"), [kind, o]]));
+    };
+    for (const [name, kind] of [["signalUnknownCredential", "unknown"], ["signalAllAcceptedCredentials", "accepted"]])
+      Object.defineProperty(PublicKeyCredential, name, { configurable: true, writable: true, value: async (o: unknown) => keep(kind, o) });
+  });
+  // Signing in (the fixture) already told the device once today; let it tell again.
+  await page.evaluate(() => localStorage.removeItem("ana:passkeys-tidied"));
+  const signals = () => page.evaluate(() => JSON.parse(localStorage.getItem("test:signals") ?? "[]") as [string, { allAcceptedCredentialIds?: string[]; userId?: string }][]);
+  await page.goto("/profile/privacy");
+  // Opening the journal tells the device which passkeys still work (none yet).
+  await expect.poll(async () => (await signals()).find((s) => s[0] === "accepted")?.[1]).toEqual({ rpId: "ana.localhost", userId: Buffer.from(USER_ID).toString("base64url"), allAcceptedCredentialIds: [] });
+  await page.getByRole("button", { name: "Add a passkey" }).click();
+  await expect(page.getByText("Passkey added")).toBeVisible();
+
+  const db = new PrismaClient({ datasources: { db: { url: process.env.TEST_DATABASE_URL } } });
+  try {
+    // A passkey from before passkey sign-in: it unlocks, but has no sign-in record.
+    await db.passkey.deleteMany({ where: { userId: USER_ID } });
+    await page.context().clearCookies();
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Sign in with passkey" }).click();
+    await expect(page.getByText("This passkey unlocks your journal but can't sign you in yet.")).toBeVisible();
+
+    // Removed altogether (or wiped by Start over): the device is asked to forget it.
+    await db.vaultKey.deleteMany({ where: { userId: USER_ID, kind: "passkey" } });
+    await page.getByRole("button", { name: "Sign in with passkey" }).click();
+    await expect(page.getByText("This passkey was removed from ana")).toBeVisible();
+    expect((await signals()).some((s) => s[0] === "unknown")).toBe(true);
+  } finally {
+    await db.passkey.deleteMany({ where: { userId: USER_ID } });
+    await db.vaultKey.deleteMany({ where: { userId: USER_ID, kind: "passkey" } });
+    await db.$disconnect();
+  }
+});

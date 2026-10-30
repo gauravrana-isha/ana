@@ -30,7 +30,14 @@ export async function POST(req: NextRequest) {
   if (!challenge || !body?.response) return fail("That took too long. Please try again.");
 
   const passkey = await db.passkey.findUnique({ where: { id: body.response.id }, include: { user: { select: { id: true, status: true } } } });
-  if (!passkey) return fail("This passkey isn't set up to sign in to ana yet. Sign in with Google, then add it in Profile → Privacy & keys.", 404);
+  if (!passkey) {
+    // Either a passkey from before passkey sign-in (it still unlocks), or one ana no longer
+    // knows (removed, or after Start over) that the phone keeps offering.
+    const unlocks = await db.vaultKey.findFirst({ where: { credentialId: body.response.id }, select: { id: true } });
+    return unlocks
+      ? NextResponse.json({ error: "This passkey unlocks your journal but can't sign you in yet. Continue with Google, unlock with it, then tap Use to sign in beside it in Profile → Privacy & keys.", code: "unlock-only" }, { status: 404 })
+      : NextResponse.json({ error: "This passkey was removed from ana, so it can't sign you in. Continue with Google, then add a new passkey in Profile → Privacy & keys.", code: "unknown" }, { status: 404 });
+  }
   if (passkey.user.status === "SUSPENDED") return fail("Your access is paused.", 403);
 
   let verified;

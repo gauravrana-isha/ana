@@ -33,6 +33,8 @@ export async function GET() {
     check: user.vaultCheck,
     // Passkeys made before passkey sign-in only unlock; the others sign in too.
     keys: keys.map((k) => ({ ...k, signsIn: !!k.credentialId && canSignIn.has(k.credentialId) })),
+    // Every passkey that still does something here (signs in or unlocks), so a device can drop the rest.
+    passkeys: [...new Set([...canSignIn, ...keys.flatMap((k) => (k.credentialId ? [k.credentialId] : []))])],
     legacy: user.vaultAt ? (await legacyLeft(user.id)) > 0 : false,
   });
 }
