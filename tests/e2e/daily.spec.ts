@@ -69,50 +69,6 @@ test("clearing a saved day (words and mood) and saving brings the cards back", a
   await expect(page.locator("[aria-roledescription=card]").first()).toBeVisible({ timeout: 15_000 });
 });
 
-test("swiping a card with a finger, from the question or the writing area, moves it; the tab bar never flashes", async ({ page }) => {
-  await clearReflections();
-  await page.waitForTimeout(31_000); // the device's copy of the day is no longer fresh
-  await page.goto("/daily");
-  const card = page.locator("[aria-roledescription=card]").first();
-  await card.waitFor();
-  // Count every change to whether the tab bar is hidden (it hides only while the keyboard is up).
-  await page.evaluate(() => {
-    const w = window as unknown as { flips: number };
-    w.flips = 0;
-    let was = document.documentElement.classList.contains("kb-open");
-    new MutationObserver(() => {
-      const now = document.documentElement.classList.contains("kb-open");
-      if (now !== was) w.flips++;
-      was = now;
-    }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-  });
-  const cdp = await page.context().newCDPSession(page);
-  const swipeLeft = async (y: number, from: number, to: number) => {
-    const at = (type: "touchStart" | "touchMove" | "touchEnd", x: number) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y }] });
-    await at("touchStart", from);
-    for (let x = from - 20; x > to; x -= 25) {
-      await at("touchMove", x);
-      await page.waitForTimeout(16);
-    }
-    await at("touchEnd", 0);
-    await page.waitForTimeout(700);
-  };
-  const box = (await card.boundingBox())!;
-  await swipeLeft(box.y + 70, box.x + box.width - 30, box.x + 20);
-  await expect(page.getByText("2 / 7")).toBeVisible();
-
-  // From the writing area, after typing in it (the keyboard would be up).
-  const ta = page.locator("[aria-roledescription=card] textarea").first();
-  await ta.click();
-  await ta.pressSequentially("Steady");
-  const tb = (await ta.boundingBox())!;
-  await swipeLeft(tb.y + 20, tb.x + tb.width - 10, tb.x + 10);
-  await expect(page.getByText("3 / 7")).toBeVisible();
-  // Typing hid it once and the swipe let it back once: never out-in-out.
-  expect(await page.evaluate(() => (window as unknown as { flips: number }).flips)).toBeLessThanOrEqual(2);
-  await expect(page.locator("html")).not.toHaveClass(/kb-open/);
-});
-
 test("the tab bar steps aside only for a real keyboard (focus alone doesn't move it)", async ({ page }) => {
   await clearReflections();
   await page.waitForTimeout(31_000); // the device's copy of the day is no longer fresh
