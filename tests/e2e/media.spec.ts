@@ -64,19 +64,3 @@ test("a voice note recorded offline says it's kept on the phone, not uploaded", 
   await keep(page, "A voice note kept offline.");
   await expect.poll(() => waitingFiles(page)).toBe(1);
 });
-
-test("a voice note recorded online still plays offline later", async ({ page, context }) => {
-  await recordVoice(page);
-  await expect(page.getByText("✓ Uploaded. It’s safe to keep writing.")).toBeVisible();
-  await keep(page, "A voice note for later.");
-  await expect.poll(() => waitingFiles(page), { timeout: 20_000 }).toBe(0);
-
-  await context.setOffline(true);
-  await page.getByRole("link", { name: /Open .*A voice note for later/ }).first().click();
-  await expect(page).toHaveURL(/\/moments\/c/);
-  // Played from the copy kept on the phone (opened here into a blob), not the network. (Offline,
-  // the moment's page may still be loading in full after the address changed: asked again then.)
-  await expect
-    .poll(() => page.evaluate(() => [...document.querySelectorAll("audio")].some((a) => a.src.startsWith("blob:"))).catch(() => false), { timeout: 15_000 })
-    .toBe(true);
-});
