@@ -212,8 +212,12 @@ function Lined({ value, onChange, label }: { value: string; onChange: (v: string
       placeholder="Write as it comes…"
       aria-label={label}
       rows={5}
-      className="mt-4 flex-1 w-full resize-none bg-transparent px-0.5 font-serif text-[17px] leading-[28px] text-ink outline-none placeholder:italic placeholder:text-ink-soft/55"
+      // It grows to fit, so it never scrolls inside itself: on a phone a box that can scroll keeps
+      // a sideways swipe for itself, and the card wouldn't move. Sideways is the card's; up and
+      // down is the page's.
+      className="mt-4 flex-1 w-full resize-none overflow-hidden bg-transparent px-0.5 font-serif text-[17px] leading-[28px] text-ink outline-none placeholder:italic placeholder:text-ink-soft/55"
       style={{
+        touchAction: "pan-y",
         backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--line) 27px, var(--line) 28px)",
         backgroundAttachment: "local",
         backgroundPosition: "0 0",
