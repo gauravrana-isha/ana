@@ -81,3 +81,14 @@ export async function PATCH(req: NextRequest) {
   if (parsed.data.revisited || parsed.data.revisit === "never") await resolveNotifications("commitment:", user.id);
   return NextResponse.json({ ok: true });
 }
+
+/** Delete an earlier letter (never the current one: that is rewritten, not deleted). */
+export async function DELETE(req: NextRequest) {
+  const user = await resolveUser("commitment");
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const parsed = z.object({ id: z.string().min(1).max(40) }).safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  // Already gone (sent again after a dropped connection, or never reached the server): done.
+  await db.commitment.deleteMany({ where: { id: parsed.data.id, userId: user.id, supersededAt: { not: null } } });
+  return NextResponse.json({ ok: true });
+}

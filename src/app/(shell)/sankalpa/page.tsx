@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useMe } from "@/lib/me";
 import { cn } from "@/lib/utils";
-import { fetchCommitment, saveCommitment, type Letter } from "@/lib/journal";
+import { deleteLetter, fetchCommitment, saveCommitment, type Letter } from "@/lib/journal";
+import { useConfirm } from "@/components/ui/Confirm";
 import { InfoMark } from "@/components/art/PenMarks";
 import { EditSaveFab } from "@/components/reflection/EditSaveFab";
 import { Chevron } from "@/components/ui/Arrows";
@@ -41,6 +42,7 @@ function longDate(iso: string) {
 export default function CommitmentPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const ask = useConfirm();
   const { data: me } = useMe();
   const { data, isPending: isLoading } = useQuery({
     queryKey: ["commitment"],
@@ -105,6 +107,19 @@ export default function CommitmentPage() {
     if (!res.ok) toast("Couldn't update. Please try again.", "error");
     void Promise.all([qc.invalidateQueries({ queryKey: ["commitment"] }), qc.invalidateQueries({ queryKey: ["today"] })]);
     setPatching(false);
+  }
+
+  async function remove(l: Letter) {
+    const when = `${longDate(l.createdAt)} – ${longDate(l.supersededAt!)}`;
+    if (!(await ask({ title: "Delete this letter?", body: `Your letter from ${when} will be gone for good.`, confirmLabel: "Delete", tone: "danger" }))) return;
+    try {
+      await deleteLetter(l.id);
+    } catch {
+      return toast("Couldn't delete. Please try again.", "error");
+    }
+    // Gone from the list now (offline too, until it reaches the server).
+    onScreen.letterGone(l.id);
+    toast("Letter deleted", "success", 2000);
   }
 
   const rewrite = () => {
@@ -201,7 +216,10 @@ export default function CommitmentPage() {
             <ul className="mt-3 flex flex-col gap-3">
               {data.history.map((l) => (
                 <li key={l.id} className="rounded-[18px] border border-line p-5">
-                  <p className="font-ui text-[12.5px] text-ink-soft tabular mb-2">{longDate(l.createdAt)} – {longDate(l.supersededAt!)}</p>
+                  <div className="flex items-center justify-between gap-3 mb-2 -mt-1.5 -mr-2">
+                    <p className="font-ui text-[12.5px] text-ink-soft tabular">{longDate(l.createdAt)} – {longDate(l.supersededAt!)}</p>
+                    <Button variant="danger" size="sm" onClick={() => remove(l)} aria-label={`Delete the letter from ${longDate(l.createdAt)}`}>Delete</Button>
+                  </div>
                   <p className="font-serif text-[16px] leading-[1.7] text-ink-soft whitespace-pre-line">{l.body}</p>
                 </li>
               ))}

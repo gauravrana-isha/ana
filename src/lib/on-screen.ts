@@ -111,6 +111,13 @@ export const onScreen = {
     }));
   },
 
+  /** An earlier letter, deleted. */
+  letterGone(id: string) {
+    set<{ current: Letter | null; due: boolean; history: Letter[] }>(["commitment"], (old) =>
+      old ? { ...old, history: old.history.filter((l) => l.id !== id) } : old
+    );
+  },
+
   /** A day's reflection as saved. */
   daily(date: string, r: DailyReflection) {
     set<DailyReflection>(["daily", date], () => r);
