@@ -89,7 +89,23 @@ og.alpha_composite(L.resize((230, 230), Image.LANCZOS), ((1200 - 230) // 2, 108)
 save(og.convert("RGB"), f"{pub}/og.png")
 
 # iPhone / iPad launch screens (home-screen app), light and dark: the splash's own ground
-# (paper with a faint teal glow), so the app opens straight into its splash.
+# (paper with a faint teal glow) and its mark, the lotus and the snake at rest, at exactly the
+# size and place the app draws them (globals.css .ana-logo-screen: min(56vw, 230px) wide, the
+# coil, 44.7% 59.47% into the artwork, on the screen's centre), so the phone's launch screen
+# hands over to the app's without anything moving or appearing.
+SPLASH = {n: Image.open(f"{pub}/splash/splash-{n}.webp").convert("RGBA").split()[3] for n in ("lotus", "snake")}
+
+def with_mark(g, w, h, r, ink):
+    lw = min(0.56 * w, 230) * r
+    lh = lw * SPLASH["lotus"].size[1] / SPLASH["lotus"].size[0]
+    x, y = round(w * r / 2 - 0.447 * lw), round(h * r / 2 - 0.5947 * lh)
+    for mask in SPLASH.values():
+        m = mask.resize((round(lw), round(lh)), Image.LANCZOS)
+        layer = Image.new("RGBA", m.size, ink + (255,))
+        layer.putalpha(m)
+        g.alpha_composite(layer, (x, y))
+    return g
+
 DEVICES = [  # css width, css height, pixel ratio
     (375, 667, 2), (414, 736, 3), (375, 812, 3), (414, 896, 2), (414, 896, 3), (390, 844, 3),
     (428, 926, 3), (393, 852, 3), (430, 932, 3), (402, 874, 3), (440, 956, 3),
@@ -99,13 +115,12 @@ startup = []
 for w, h, r in DEVICES:
     W, H = w * r, h * r
     for theme, bg, mark, glow in (("light", CREAM, L, TEAL), ("dark", NIGHT, D, TEAL_D)):
-        g = ground(W, H, bg, glow, 0.10)
-        # No mark: the app's own splash (lotus and snake) appears on this same ground next.
+        g = with_mark(ground(W, H, bg, glow, 0.10), w, h, r, glow)
         name = f"/splash/launch-{W}x{H}-{theme}.png"
         g.convert("RGB").save(pub + name, optimize=True)
         startup.append({"url": name, "media": f"(device-width: {w}px) and (device-height: {h}px) and (-webkit-device-pixel-ratio: {r}) and (orientation: portrait) and (prefers-color-scheme: {theme})"})
 ts = ["/**", " * iPhone and iPad launch screens for the home-screen app (portrait, light and dark): the splash's",
-      " * own ground, so the app opens straight into its splash. Written by scripts/make-icons.py.", " */",
+      " * own ground and mark, in the same place, so the app opens straight into it. Written by", " * scripts/make-icons.py.", " */",
       "export const LAUNCH_SCREENS: { url: string; media: string }[] = ["]
 ts += [f'  {{ url: "{x["url"]}", media: "{x["media"]}" }},' for x in startup]
 open("src/lib/launch-screens.ts", "w").write("\n".join(ts + ["];", ""]))

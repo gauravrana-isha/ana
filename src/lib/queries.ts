@@ -63,13 +63,23 @@ export function useUpdateDayLog(date: string) {
 }
 
 // === Quote ===
+type Quote = { quote: string; source: string; today?: boolean };
+
 export function useQuote(date: string) {
+  const qc = useQueryClient();
   return useQuery({
     queryKey: keys.quote(date),
+    // A new day's quote is fetched: until it's here, the latest one kept (yesterday's) holds its
+    // place, so Home doesn't jump when it arrives.
+    placeholderData: () =>
+      qc
+        .getQueriesData<Quote>({ queryKey: ["quote"] })
+        .filter(([key, data]) => String(key[1]) < date && data?.quote)
+        .sort(([a], [b]) => String(b[1]).localeCompare(String(a[1])))[0]?.[1],
     queryFn: async () => {
       const res = await fetch(`/api/quote?date=${date}`);
       if (!res.ok) return { quote: "", source: "fallback", today: false };
-      return res.json() as Promise<{ quote: string; source: string; today?: boolean }>;
+      return res.json() as Promise<Quote>;
     },
     // Today's quote holds for the day; until it's out (before ~07:31 IST), check again soon.
     staleTime: (q) => (q.state.data?.today ? 6 * 60 * 60 * 1000 : 4 * 60 * 1000),

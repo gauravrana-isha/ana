@@ -53,3 +53,39 @@ test.describe("opening", () => {
     await context.close();
   });
 });
+
+test.describe("opening, steadily", () => {
+  test("opening shows the launch screen's own logo screen, and it fades away once the journal is there", async ({ page }) => {
+    await page.goto("/home?source=pwa", { waitUntil: "commit" });
+    await expect(page.locator(".ana-logo-screen").first()).toBeAttached();
+    await expect(page.getByText(/^Namaskaram/).first()).toBeVisible();
+    await expect(page.locator(".ana-logo-screen")).toHaveCount(0, { timeout: 3000 });
+  });
+
+  test("the quote's place is kept while it loads, so Home doesn't jump when it arrives", async ({ page, context }) => {
+    // A phone with no quote kept yet, and a slow quote.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          const open = indexedDB.open("keyval-store");
+          open.onsuccess = () => {
+            const tx = open.result.transaction("keyval", "readwrite");
+            tx.objectStore("keyval").delete("ana-query-cache");
+            tx.oncomplete = () => resolve();
+          };
+        })
+    );
+    await context.route(/\/api\/quote/, async (route) => {
+      await new Promise((r) => setTimeout(r, 2500));
+      await route.continue().catch(() => {});
+    });
+    await page.goto("/home?source=pwa");
+    const below = page.getByRole("heading", { name: "Keep a moment" });
+    await expect(below).toBeVisible();
+    const before = (await below.boundingBox())!.y;
+    await expect(page.getByRole("main").locator("figure blockquote")).toBeVisible({ timeout: 10_000 });
+    const after = (await below.boundingBox())!.y;
+    console.log(`cards below moved ${Math.round(after - before)}px when the quote arrived`);
+    expect(Math.abs(after - before)).toBeLessThan(40);
+  });
+});
