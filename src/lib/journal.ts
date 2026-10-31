@@ -345,6 +345,11 @@ export async function saveCommitment(body: string, revisit: Letter["revisit"]) {
   return send("/api/commitment", "POST", { id: newId(), body: await seal(body), revisit }, { queue: true });
 }
 
+/** Delete an earlier letter. Offline it waits in the outbox. */
+export async function deleteLetter(id: string) {
+  return send("/api/commitment", "DELETE", { id }, { queue: true });
+}
+
 // ---------- portraits ----------
 
 export async function fetchPortraits<T>(): Promise<T[]> {
