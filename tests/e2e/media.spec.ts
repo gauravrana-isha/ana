@@ -74,6 +74,9 @@ test("a voice note recorded online still plays offline later", async ({ page, co
   await context.setOffline(true);
   await page.getByRole("link", { name: /Open .*A voice note for later/ }).first().click();
   await expect(page).toHaveURL(/\/moments\/c/);
-  // Played from the copy kept on the phone (opened here into a blob), not the network.
-  await expect.poll(() => page.evaluate(() => [...document.querySelectorAll("audio")].some((a) => a.src.startsWith("blob:")))).toBe(true);
+  // Played from the copy kept on the phone (opened here into a blob), not the network. (Offline,
+  // the moment's page may still be loading in full after the address changed: asked again then.)
+  await expect
+    .poll(() => page.evaluate(() => [...document.querySelectorAll("audio")].some((a) => a.src.startsWith("blob:"))).catch(() => false), { timeout: 15_000 })
+    .toBe(true);
 });
