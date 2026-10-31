@@ -116,13 +116,22 @@ export function VaultGate({
   );
 }
 
-/** The phone's launch screen, carried on while the journal opens (the snake turns if it takes a while). */
+/**
+ * The phone's launch screen (the ground alone), carried on while the journal opens; if that
+ * takes more than a second, the turning snake eases in so it never looks stuck.
+ */
 function Waiting() {
-  return <div className="ana-logo-screen is-opening" role="status" aria-label="Opening your journal" />;
+  return (
+    <div className="ana-logo-screen is-plain grid place-items-center" role="status" aria-label="Opening your journal">
+      <span className="ana-late-in">
+        <SnakeLoader size={56} />
+      </span>
+    </div>
+  );
 }
 
 /**
- * The journal is open: the logo screen stays over it until what's kept on this device is on
+ * The journal is open: the opening screen stays over it until what's kept on this device is on
  * screen (not a skeleton in its place; a moment at most), then fades away rather than vanishing.
  */
 function LogoFade() {
@@ -145,7 +154,7 @@ function LogoFade() {
     return () => clearTimeout(t);
   }, [phase]);
   if (phase === "gone") return null;
-  return <div className={cn("ana-logo-screen is-cover", phase === "leaving" && "is-leaving")} aria-hidden="true" />;
+  return <div className={cn("ana-logo-screen is-plain is-cover", phase === "leaving" && "is-leaving")} aria-hidden="true" />;
 }
 
 function Sealing({ me, first, onDone }: { me: { id: string; storage: "r2" | "local" }; first: boolean; onDone: () => void }) {

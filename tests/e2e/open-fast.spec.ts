@@ -55,9 +55,9 @@ test.describe("opening", () => {
 });
 
 test.describe("opening, steadily", () => {
-  test("opening shows the launch screen's own logo screen, and it fades away once the journal is there", async ({ page }) => {
+  test("opening carries on the launch screen's plain ground (no logo), and it fades away once the journal is there", async ({ page }) => {
     await page.goto("/home?source=pwa", { waitUntil: "commit" });
-    await expect(page.locator(".ana-logo-screen").first()).toBeAttached();
+    await expect(page.locator(".ana-logo-screen.is-plain").first()).toBeAttached();
     await expect(page.getByText(/^Namaskaram/).first()).toBeVisible();
     await expect(page.locator(".ana-logo-screen")).toHaveCount(0, { timeout: 3000 });
   });
@@ -87,5 +87,24 @@ test.describe("opening, steadily", () => {
     const after = (await below.boundingBox())!.y;
     console.log(`cards below moved ${Math.round(after - before)}px when the quote arrived`);
     expect(Math.abs(after - before)).toBeLessThan(40);
+  });
+
+  test("opening never looks stuck: if it takes a while, the turning snake eases in on the plain ground", async ({ browser, baseURL }) => {
+    // A device that hasn't unlocked yet, with a slow server: opening has to wait.
+    const context = await browser.newContext({ baseURL });
+    await context.addInitScript(() => localStorage.setItem("ana-splash", "1"));
+    await context.addCookies([{ name: "authjs.session-token", value: SESSION_TOKEN, url: baseURL! }]);
+    await context.route(/\/api\/vault$/, async (route) => {
+      await new Promise((r) => setTimeout(r, 4000));
+      await route.continue().catch(() => {});
+    });
+    const page = await context.newPage();
+    await page.goto("/home");
+    const opening = page.getByRole("status", { name: "Opening your journal" });
+    await expect(opening).toBeVisible();
+    const shown = () => opening.locator(".ana-late-in").evaluate((el) => Number(getComputedStyle(el).opacity));
+    expect(await shown()).toBeLessThan(0.5); // at first, just the ground
+    await expect.poll(shown, { timeout: 3000 }).toBeGreaterThan(0.9); // then the snake
+    await context.close();
   });
 });

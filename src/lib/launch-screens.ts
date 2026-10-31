@@ -1,7 +1,6 @@
 /**
  * iPhone and iPad launch screens for the home-screen app (portrait, light and dark): the splash's
- * own ground and mark, in the same place, so the app opens straight into it. Written by
- * scripts/make-icons.py.
+ * own ground, so the app opens straight into its splash. Written by scripts/make-icons.py.
  */
 export const LAUNCH_SCREENS: { url: string; media: string }[] = [
   { url: "/splash/launch-750x1334-light.png", media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: light)" },
