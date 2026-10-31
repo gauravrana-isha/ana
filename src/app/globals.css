@@ -220,12 +220,13 @@ html.theme-switching *::after {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* === The logo screen: the lotus still, the snake turning around its coil ===
-   The phone's own launch screen is this same picture (scripts/make-icons.py draws it at this size
-   and place), so opening hands over without anything moving. Used by the splash (the first open
-   on a device; the class is set by an inline script before first paint) and while the journal
-   opens (VaultGate). Sized to the whole screen (the large viewport), not the visible part, so it
-   stays put when an iPhone settles its status bar or toolbar a moment late. */
+/* === The splash and the opening screen ===
+   The splash, the first time ana opens on a device (the class is set by an inline script before
+   first paint): the lotus still, the snake turning around its coil. The opening screen, while
+   the journal opens (VaultGate): the same ground without the mark, as the phone's own launch
+   screen is (scripts/make-icons.py), so every everyday open is ground, then Home. Both are sized
+   to the whole screen (the large viewport), not the visible part, so they stay put when an
+   iPhone settles its status bar or toolbar a moment late. */
 .ana-splash {
   display: none;
 }
@@ -275,17 +276,19 @@ html.splash .ana-splash::after,
   transform-origin: 44.7% 59.47%;
   animation: ana-splash-spin 2.4s linear infinite;
 }
-/* While the journal opens: at rest, as on the launch screen; turning only if it takes a while. */
-.ana-logo-screen.is-opening::after {
-  animation-delay: 500ms;
+/* The opening screen: the ground alone. */
+.ana-logo-screen.is-plain::before,
+.ana-logo-screen.is-plain::after {
+  content: none;
 }
-/* The journal is open: the logo screen stays over it a moment, then fades away. */
+/* Opening is taking a while: the turning snake eases in, so it never looks stuck. */
+.ana-late-in {
+  animation: ana-skeleton-in 0.4s ease-out 1s both;
+}
+/* The journal is open: the opening screen stays over it a moment, then fades away. */
 .ana-logo-screen.is-cover {
   z-index: 2147483645;
   pointer-events: none;
-}
-.ana-logo-screen.is-cover::after {
-  animation-delay: 500ms;
 }
 .ana-logo-screen.is-leaving {
   animation: ana-fade-out 260ms ease-out forwards;
