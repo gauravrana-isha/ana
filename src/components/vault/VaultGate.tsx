@@ -5,6 +5,8 @@ import { makeReadyOffline } from "@/lib/offline-ready";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { SnakeLoader } from "@/components/ui/Loader";
+import { whenRestored } from "@/lib/restored";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { configureOutbox, flush } from "@/lib/outbox";
 import { fetchStatus, start, takePasskeyFix, tidyPasskeys, useVault, type VaultStatus } from "@/lib/vault/vault";
@@ -106,15 +108,44 @@ export function VaultGate({
 
   if (justSetUp) return <Done onOpen={() => setJustSetUp(false)} />;
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <LogoFade />
+    </>
+  );
 }
 
+/** The phone's launch screen, carried on while the journal opens (the snake turns if it takes a while). */
 function Waiting() {
-  return (
-    <div className="min-h-dvh grid place-items-center bg-bg" role="status" aria-label="Opening your journal">
-      <SnakeLoader size={56} />
-    </div>
-  );
+  return <div className="ana-logo-screen is-opening" role="status" aria-label="Opening your journal" />;
+}
+
+/**
+ * The journal is open: the logo screen stays over it until what's kept on this device is on
+ * screen (not a skeleton in its place; a moment at most), then fades away rather than vanishing.
+ */
+function LogoFade() {
+  const [phase, setPhase] = useState<"cover" | "leaving" | "gone">("cover");
+  useEffect(() => {
+    let frame = 0;
+    const leave = () => setPhase((p) => (p === "cover" ? "leaving" : p));
+    const cap = setTimeout(leave, 800);
+    void whenRestored().then(() => {
+      frame = requestAnimationFrame(() => (frame = requestAnimationFrame(leave)));
+    });
+    return () => {
+      clearTimeout(cap);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+  useEffect(() => {
+    if (phase !== "leaving") return;
+    const t = setTimeout(() => setPhase("gone"), 300);
+    return () => clearTimeout(t);
+  }, [phase]);
+  if (phase === "gone") return null;
+  return <div className={cn("ana-logo-screen is-cover", phase === "leaving" && "is-leaving")} aria-hidden="true" />;
 }
 
 function Sealing({ me, first, onDone }: { me: { id: string; storage: "r2" | "local" }; first: boolean; onDone: () => void }) {

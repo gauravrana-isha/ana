@@ -220,24 +220,37 @@ html.theme-switching *::after {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* === Splash: Isha orange, the lotus still, the snake turning around its coil ===
-   Shown once per session. The class is set by an inline script before first paint. */
+/* === The logo screen: the lotus still, the snake turning around its coil ===
+   The phone's own launch screen is this same picture (scripts/make-icons.py draws it at this size
+   and place), so opening hands over without anything moving. Used by the splash (the first open
+   on a device; the class is set by an inline script before first paint) and while the journal
+   opens (VaultGate). Sized to the whole screen (the large viewport), not the visible part, so it
+   stays put when an iPhone settles its status bar or toolbar a moment late. */
 .ana-splash {
   display: none;
 }
 html.splash .ana-splash {
-  --splash-w: min(56vw, 230px);
-  --splash-h: calc(var(--splash-w) * 1.2632);
   display: block;
-  position: fixed;
-  inset: 0;
   z-index: 2147483646;
-  /* The paper ground with a soft teal glow; the line art is inked in the accent. */
-  background: radial-gradient(60% 45% at 50% 50%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%), var(--bg);
   transition: opacity 300ms ease, visibility 0s linear 300ms;
 }
+html.splash .ana-splash,
+.ana-logo-screen {
+  --splash-w: min(56vw, 230px);
+  --splash-h: calc(var(--splash-w) * 1.2632);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100lvh;
+  /* The paper ground with a soft teal glow; the line art is inked in the accent. */
+  background: radial-gradient(60% 45% at 50% 50%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%), var(--bg);
+}
 html.splash .ana-splash::before,
-html.splash .ana-splash::after {
+html.splash .ana-splash::after,
+.ana-logo-screen::before,
+.ana-logo-screen::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -250,15 +263,32 @@ html.splash .ana-splash::after {
   -webkit-mask: center / 100% 100% no-repeat;
   mask: center / 100% 100% no-repeat;
 }
-html.splash .ana-splash::before {
+html.splash .ana-splash::before,
+.ana-logo-screen::before {
   -webkit-mask-image: url("/splash/splash-lotus.webp");
   mask-image: url("/splash/splash-lotus.webp");
 }
-html.splash .ana-splash::after {
+html.splash .ana-splash::after,
+.ana-logo-screen::after {
   -webkit-mask-image: url("/splash/splash-snake.webp");
   mask-image: url("/splash/splash-snake.webp");
   transform-origin: 44.7% 59.47%;
   animation: ana-splash-spin 2.4s linear infinite;
+}
+/* While the journal opens: at rest, as on the launch screen; turning only if it takes a while. */
+.ana-logo-screen.is-opening::after {
+  animation-delay: 500ms;
+}
+/* The journal is open: the logo screen stays over it a moment, then fades away. */
+.ana-logo-screen.is-cover {
+  z-index: 2147483645;
+  pointer-events: none;
+}
+.ana-logo-screen.is-cover::after {
+  animation-delay: 500ms;
+}
+.ana-logo-screen.is-leaving {
+  animation: ana-fade-out 260ms ease-out forwards;
 }
 html.splash-out .ana-splash {
   opacity: 0;
@@ -276,9 +306,15 @@ html.splash body {
     transform: translate(-44.7%, -59.47%) rotate(360deg);
   }
 }
+@keyframes ana-fade-out {
+  to {
+    opacity: 0;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  html.splash .ana-splash::after {
+  html.splash .ana-splash::after,
+  .ana-logo-screen::after {
     animation: none;
   }
   .press:active:not(:disabled),

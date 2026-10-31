@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useHydrated } from "@/lib/hydrated";
 import { HomeSkeleton } from "@/components/skeletons/HomeSkeleton";
+import { TextBone } from "@/components/ui/Skeleton";
 import { Ornament } from "@/components/art/Ornament";
 import { FeatureBadge } from "@/components/art/FeatureBadge";
 import { Arrow } from "@/components/ui/Arrows";
@@ -36,7 +37,9 @@ export default function HomePage() {
   const hydrated = useHydrated();
   const bundles = useBundles();
   const { plan } = useNavPlan();
-  const { data: quoteData } = useQuote(date);
+  const { data: quoteData, isPending: quoteMissing, fetchStatus: quoteFetch } = useQuote(date);
+  // None kept yet and on its way (not offline, waiting).
+  const quotePending = quoteMissing && quoteFetch === "fetching";
 
   const { data, isPending } = useQuery({
     queryKey: ["today", date],
@@ -61,10 +64,22 @@ export default function HomePage() {
         <p className="font-serif italic text-[17px] text-ink-soft">{greeting(callName(me))}</p>
       </div>
 
-      {quoteData?.quote && (
+      {/* The quote's place is kept while it loads (a first visit, with none kept yet), so the
+          cards below don't jump when it arrives; a new quote eases in. */}
+      {(quoteData?.quote || quotePending) && (
         <figure className="relative rounded-[22px] bg-surface px-5 py-6 sm:px-8 sm:py-8 overflow-hidden">
           <Ornament name="leaves" width={300} className="absolute -right-16 -top-8 text-ink-soft/10 hidden sm:block" />
-          <blockquote className="relative font-display italic text-[20px] sm:text-[24px] leading-[1.45] text-ink max-w-[36ch]">&ldquo;{quoteData.quote}&rdquo;</blockquote>
+          {quoteData?.quote ? (
+            <blockquote key={quoteData.quote} className="ana-page-in relative font-display italic text-[20px] sm:text-[24px] leading-[1.45] text-ink max-w-[36ch]">&ldquo;{quoteData.quote}&rdquo;</blockquote>
+          ) : (
+            // Four lines, as most quotes are.
+            <div aria-hidden="true" className="flex flex-col justify-around h-[116px] sm:h-[140px] max-w-[36ch]">
+              <TextBone w="92%" h={20} />
+              <TextBone w="84%" h={20} />
+              <TextBone w="88%" h={20} />
+              <TextBone w="48%" h={20} />
+            </div>
+          )}
         </figure>
       )}
 
