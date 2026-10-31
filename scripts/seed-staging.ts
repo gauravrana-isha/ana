@@ -11,7 +11,7 @@
  * words (to unlock the key, on this machine only). It refuses the production database, and
  * refuses a journal that already has moments (unless --force).
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { mnemonicToEntropy, validateMnemonic } from "@scure/bip39";
@@ -27,10 +27,15 @@ const url = process.env.SEED_DATABASE_URL;
 if (!email || args.indexOf("--email") < 0) throw new Error("Pass --email <the staging account's email>.");
 if (!url) throw new Error("Set SEED_DATABASE_URL to the staging database.");
 
-// Never production: the production database is the one in .env.
-const prodUrl = readFileSync(".env", "utf8").match(/^DATABASE_URL="?([^"\n]+)/m)?.[1];
+// Never production: the production database is the one in .env. Without a .env (the test run
+// on GitHub) there's no telling which that is, so only a database on this machine is allowed.
 const host = (u: string) => new URL(u).hostname.replace("-pooler", "");
-if (prodUrl && host(prodUrl) === host(url)) throw new Error("That's the production database. Refusing.");
+if (existsSync(".env")) {
+  const prodUrl = readFileSync(".env", "utf8").match(/^DATABASE_URL="?([^"\n]+)/m)?.[1];
+  if (prodUrl && host(prodUrl) === host(url)) throw new Error("That's the production database. Refusing.");
+} else if (!["localhost", "127.0.0.1"].includes(host(url))) {
+  throw new Error("No .env to tell which database is production, so only a local one is allowed.");
+}
 
 // A steady pseudo-random sequence, so a run is reproducible.
 let s = 20261019;
