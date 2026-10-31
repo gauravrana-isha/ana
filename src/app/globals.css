@@ -234,7 +234,7 @@ html.splash .ana-splash {
   z-index: 2147483646;
   /* The paper ground with a soft teal glow; the line art is inked in the accent. */
   background: radial-gradient(60% 45% at 50% 50%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%), var(--bg);
-  transition: opacity 450ms ease, visibility 0s linear 450ms;
+  transition: opacity 300ms ease, visibility 0s linear 300ms;
 }
 html.splash .ana-splash::before,
 html.splash .ana-splash::after {
