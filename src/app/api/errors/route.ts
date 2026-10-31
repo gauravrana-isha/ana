@@ -36,3 +36,10 @@ export async function GET() {
   const rows = await db.errorLog.findMany({ orderBy: { at: "desc" }, take: 100 });
   return NextResponse.json(rows);
 }
+
+/** Clear the list (admins), once what's in it has been looked at. */
+export async function DELETE() {
+  if (!(await resolveAdmin())) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  await db.errorLog.deleteMany({});
+  return NextResponse.json({ ok: true });
+}
