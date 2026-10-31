@@ -320,6 +320,9 @@ export default function AdminPage() {
 /** The latest errors from the app and server (technical details only), newest first. */
 function RecentErrors() {
   const [open, setOpen] = useState(false);
+  const qc = useQueryClient();
+  const ask = useConfirm();
+  const { toast } = useToast();
   const { data = [] } = useQuery({
     queryKey: ["admin-errors"],
     queryFn: async (): Promise<{ id: string; at: string; source: string; message: string; path: string | null }[]> => {
@@ -328,17 +331,31 @@ function RecentErrors() {
     },
     refetchInterval: open ? 15_000 : false,
   });
+  async function clear() {
+    if (!(await ask({ title: "Clear the errors?", body: "The list empties; new errors will show here as they happen.", confirmLabel: "Clear", tone: "danger" }))) return;
+    const res = await fetch("/api/errors", { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) return toast("Couldn't clear the errors. Try again.", "error");
+    qc.setQueryData(["admin-errors"], []);
+    setOpen(false);
+  }
   if (!data.length) return null;
   const time = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
   return (
     <div className="mt-3 rounded-[16px] bg-surface">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="press w-full flex items-center gap-3 px-4 py-3 text-left">
-        <Glyph k="info" size={20} className="text-danger shrink-0" />
-        <span className="flex-1 font-ui text-[13.5px] text-ink">
-          <span className="font-semibold tabular">{data.length}</span> recent {data.length === 1 ? "error" : "errors"}
-        </span>
-        <span className="font-ui text-[13px] font-semibold text-accent">{open ? "Hide" : "Show"}</span>
-      </button>
+      <div className="flex items-center">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="press flex-1 min-w-0 flex items-center gap-3 px-4 py-3 text-left">
+          <Glyph k="info" size={20} className="text-danger shrink-0" />
+          <span className="flex-1 font-ui text-[13.5px] text-ink">
+            <span className="font-semibold tabular">{data.length}</span> recent {data.length === 1 ? "error" : "errors"}
+          </span>
+          <span className="font-ui text-[13px] font-semibold text-accent">{open ? "Hide" : "Show"}</span>
+        </button>
+        {open && (
+          <button type="button" onClick={clear} className="press shrink-0 -ml-1 pl-3 pr-4 py-3 font-ui text-[13px] font-semibold text-danger">
+            Clear
+          </button>
+        )}
+      </div>
       {open && (
         <ul className="border-t border-line divide-y divide-line max-h-[420px] overflow-y-auto">
           {data.map((e) => (
