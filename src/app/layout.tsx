@@ -98,7 +98,7 @@ export const viewport: Viewport = {
   ],
 };
 
-// Runs before first paint: show the splash once per browser session.
+// Runs before first paint: show the splash the first time ana opens on this device, never after.
 /*
  * iPhone home-screen app: the page draws under the status bar, and some iOS versions report
  * its height (safe-area-inset-top) as 0, so the top of the app sat under the clock. When that
@@ -113,7 +113,7 @@ const SAFE_TOP_SCRIPT = `try{(function(){var n=navigator,d=document.documentElem
 const THEME_SCRIPT = `try{var m=document.cookie.match(/(?:^|; )ana-theme=(dark|light)/);if(m)document.documentElement.setAttribute('data-theme',m[1])}catch(e){}`;
 
 // The opening coil belongs to the app, not the pages for visitors (the landing, terms, privacy, credits).
-const SPLASH_SCRIPT = `try{if(!/^\\/(terms|privacy|credits)?$/.test(location.pathname)&&!sessionStorage.getItem('ana-splash')){sessionStorage.setItem('ana-splash','1');document.documentElement.classList.add('splash')}}catch(e){}`;
+const SPLASH_SCRIPT = `try{if(!/^\\/(terms|privacy|credits)?$/.test(location.pathname)&&!localStorage.getItem('ana-splash')){localStorage.setItem('ana-splash','1');document.documentElement.classList.add('splash')}}catch(e){}`;
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = await cookies();

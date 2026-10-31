@@ -14,7 +14,7 @@ export const PHRASE_FILE = path.join(__dirname, ".auth", "phrase.txt");
  */
 export const test = base.extend<{ page: Page }>({
   page: async ({ page, context, baseURL }, provide) => {
-    await context.addInitScript(() => sessionStorage.setItem("ana-splash", "1"));
+    await context.addInitScript(() => localStorage.setItem("ana-splash", "1"));
     // Signed in.
     await context.addCookies([
       { name: "authjs.session-token", value: SESSION_TOKEN, url: baseURL! },

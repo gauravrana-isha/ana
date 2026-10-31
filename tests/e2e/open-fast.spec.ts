@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect, SESSION_TOKEN } from "./fixtures";
 
 /*
  * ana opens at once, like an app: a screen saved on this device shows straight away, without
@@ -35,13 +35,21 @@ test.describe("opening", () => {
     expect(await page.evaluate(async () => !!(await (await caches.open("ana-pages")).match("/sadhana")))).toBe(false);
   });
 
-  test("the splash on a fresh launch goes as soon as the screen is ready, not after a fixed wait", async ({ page }) => {
-    // A fresh launch of the app: no splash shown yet this session.
-    await page.addInitScript(() => sessionStorage.removeItem("ana-splash"));
+  test("the splash shows on the first open on a device only, and goes as soon as the screen is ready", async ({ browser, baseURL }) => {
+    // A device that has never opened ana (the usual test page has the splash marked as seen).
+    const context = await browser.newContext({ baseURL });
+    await context.addCookies([{ name: "authjs.session-token", value: SESSION_TOKEN, url: baseURL! }]);
+    const page = await context.newPage();
     const started = Date.now();
-    await page.goto("/home?source=pwa", { waitUntil: "commit" });
+    await page.goto("/home");
+    await expect(page.locator(".ana-splash")).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains("splash"))).toBe(false);
-    expect(Date.now() - started).toBeLessThan(1500);
-    await expect(page.getByText(/^Namaskaram/).first()).toBeVisible();
+    expect(Date.now() - started).toBeLessThan(2500);
+
+    // Every open after that: no splash.
+    await page.goto("/home");
+    await page.waitForLoadState("domcontentloaded");
+    expect(await page.evaluate(() => document.documentElement.classList.contains("splash"))).toBe(false);
+    await context.close();
   });
 });

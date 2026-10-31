@@ -15,7 +15,7 @@ test("someone who has lost every key can start over with a new, empty journal", 
   const practices = await db.practice.findMany({ where: { userId: USER_ID } });
   await db.practice.create({ data: { userId: USER_ID, name: "e1:test", iconName: "sun", tier: "CUSTOM", order: 99, fields: [] } });
   try {
-    await context.addInitScript(() => sessionStorage.setItem("ana-splash", "1"));
+    await context.addInitScript(() => localStorage.setItem("ana-splash", "1"));
     await context.addCookies([{ name: "authjs.session-token", value: SESSION_TOKEN, url: baseURL! }]);
     await page.goto("/home");
     await page.getByText("Unlock your journal").waitFor();
