@@ -34,4 +34,14 @@ test.describe("opening", () => {
     await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
     expect(await page.evaluate(async () => !!(await (await caches.open("ana-pages")).match("/sadhana")))).toBe(false);
   });
+
+  test("the splash on a fresh launch goes as soon as the screen is ready, not after a fixed wait", async ({ page }) => {
+    // A fresh launch of the app: no splash shown yet this session.
+    await page.addInitScript(() => sessionStorage.removeItem("ana-splash"));
+    const started = Date.now();
+    await page.goto("/home?source=pwa", { waitUntil: "commit" });
+    await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains("splash"))).toBe(false);
+    expect(Date.now() - started).toBeLessThan(1500);
+    await expect(page.getByText(/^Namaskaram/).first()).toBeVisible();
+  });
 });
